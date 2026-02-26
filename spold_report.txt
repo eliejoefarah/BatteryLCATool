@@ -1,0 +1,501 @@
+======================================================================
+BATTERY LCA TOOL — ECOINVENT CORPUS SCAN REPORT
+Scanned: datasets
+Date:    2026-02-25T18:44:39
+======================================================================
+
+── OVERVIEW ──────────────────────────────────────────────────────────
+  Total .spold files:            26,533
+  Successfully parsed:           26,533
+  Parse errors:                       0
+
+── KEY COUNTS (relevant to parser design) ────────────────────────────
+  Multi-output processes:                    24,627
+  Processes with negative exchange amounts:  13,354
+  Processes with allocation factors:         26,533
+  Foreground-to-foreground linkable pairs:        0
+  Processes with 200+ exchanges:                 82
+  Unique units across corpus:                    21
+  Unique compartments:                           19
+  Unique geographies:                           335
+  Unique formula variable names:              4,707
+
+── FORMULA TYPES ─────────────────────────────────────────────────────
+  arithmetic_with_variables                  6,164
+  arithmetic_constants_only                  2,924
+  single_variable                            2,307
+  variable_division                            124
+  constant                                      65
+  co_product_allocation_sum                     52
+  production_volume_ratio                       22
+
+── ALL UNITS IN CORPUS ───────────────────────────────────────────────
+  kg                             used in 22,055 processes
+  unit                           used in 11,704 processes
+  kWh                            used in 11,349 processes
+  m3                             used in 11,298 processes
+  MJ                             used in  9,764 processes
+  metric ton*km                  used in  6,568 processes
+  m2                             used in  4,013 processes
+  m2*year                        used in  3,073 processes
+  ha                             used in  1,231 processes
+  km                             used in  1,209 processes
+  m                              used in    626 processes
+  kBq                            used in    612 processes
+  hour                           used in    563 processes
+  m*year                         used in    259 processes
+  m3*year                        used in    244 processes
+  Sm3                            used in    197 processes
+  l                              used in    134 processes
+  kg*day                         used in     91 processes
+  person*km                      used in     53 processes
+  km*year                        used in     18 processes
+  guest night                    used in     11 processes
+
+── ELEMENTARY EXCHANGE COMPARTMENTS ──────────────────────────────────
+  unspecified                                    7,689
+  in water                                       5,254
+  non-urban air or from high stacks              4,905
+  surface water                                  4,828
+  in air                                         3,418
+  land                                           3,311
+  urban air close to ground                      3,143
+  waste                                          1,980
+  agricultural                                   1,301
+  ground-                                        1,247
+  ground-, long-term                             1,185
+  in ground                                      1,112
+  biotic                                         1,048
+  ocean                                            822
+  industrial                                       458
+  forestry                                         227
+  low population density, long-term                 95
+  lower stratosphere + upper troposphere            81
+  fossil well                                       65
+
+── TOP 50 GEOGRAPHIES ────────────────────────────────────────────────
+  RoW                   4,730
+  GLO                   4,617
+  CH                    2,711
+  RER                   2,309
+  Europe without Switzerland    620
+  CN                      480
+  CA-QC                   421
+  US                      410
+  BR                      336
+  ZA                      312
+  IN                      307
+  DE                      270
+  FR                      253
+  PE                      177
+  ES                      172
+  GB                      158
+  IT                      158
+  NL                      155
+  JP                      153
+  CO                      152
+  RU                      147
+  KR                      136
+  FI                      136
+  SE                      135
+  CA                      132
+  RNA                     129
+  BE                      129
+  TR                      117
+  PL                      111
+  HU                      106
+  AU                      106
+  CZ                      101
+  AT                      101
+  SK                      100
+  NO                       99
+  MX                       93
+  BG                       90
+  GR                       84
+  HR                       84
+  DK                       84
+  RO                       83
+  AR                       83
+  PT                       83
+  LT                       80
+  SI                       79
+  RoE                      76
+  LV                       73
+  IE                       73
+  EE                       70
+  MY                       70
+
+── DATASET TAGS ──────────────────────────────────────────────────────
+  ConvertedDataset                               5,758
+  combined production                              628
+  fossil fuels                                     439
+  BRLUC                                            394
+  WFLDB                                            368
+  Swiss brush-up completed                         271
+  wind power                                       247
+  Treatment                                        245
+  photovoltaic power                               240
+  with true value                                  231
+  hydro power                                      228
+  natural gas power                                168
+  recontextualization                              122
+  single enterprise data                           117
+  Canada                                           112
+  China                                            111
+  industrial gas power                             102
+  oil power                                        101
+  United States                                     83
+  wood power                                        83
+  India                                             75
+  electricity, primary aluminium industry           72
+  Operation                                         64
+  internal combustion engine                        63
+  biogas power                                      56
+  coal power                                        51
+  nuclear power                                     46
+  No                                                39
+  linking activity                                  37
+  hard coal power                                   36
+  Recontextualization                               33
+  marginal                                          31
+  geothermal power                                  27
+  biomass power                                     26
+   Treatment                                        23
+  lignite power                                     23
+  infrastructure                                    19
+   ConvertedDataset                                 18
+  Concentrated Solar Power                          17
+  CSP                                               16
+  template dataset                                  15
+  consequential version only                        15
+  consequential system model only                   14
+  Infrastructure                                    14
+   combined production,                             14
+  service                                           13
+  Swiss Brushup completed                           13
+   geothermal power                                 10
+   combined production                               9
+  constrained market                                 8
+  geothermal energy                                  7
+  power plant                                        6
+   wind power                                        5
+  certified electricity                              5
+   photovoltaic power                                4
+   Swiss brush-up completed                          4
+   infrastructure                                    4
+  peat power                                         4
+  Converted dataset                                  3
+   None                                              3
+  complementary product                              3
+  Constrained market                                 2
+  construction_EC                                    2
+  consequential database version only                2
+   branded dataset without logo                      2
+   CSP                                               2
+   China                                             2
+  None                                               2
+  Nuclear                                            2
+  nuclear                                            1
+   single enterprise data,                           1
+  used in the consequential version only             1
+   Geothermal power                                  1
+  in-situ leaching                                   1
+  production mix                                     1
+  Geothermal power                                   1
+   Concentrated Solar Power                          1
+  fossil fuel                                        1
+  sevice                                             1
+  margnial                                           1
+   consequential system model only                   1
+  Swiss Brush-up completed                           1
+
+── ACTIVITY TYPES ────────────────────────────────────────────────────
+  type 1 (transforming        ) 26,465
+  type 2 (market group        )     68
+
+── SPECIAL ACTIVITY TYPES ────────────────────────────────────────────
+  specialType 0 (normal              ) 18,133
+  specialType 1 (market activity     )  8,084
+  specialType 4 (supply mix          )    186
+  specialType 10 (?                   )    130
+
+── REFERENCE FLOW PROPERTIES ─────────────────────────────────────────
+  carbon allocation                             26,533
+  carbon content                                26,533
+  price                                         26,533
+  dry mass                                      17,035
+  wet mass                                      17,020
+  water in wet mass                             16,942
+  carbon content, non-fossil                    16,906
+  water content                                 16,834
+  carbon content, fossil                        16,422
+  heating value, net                            15,717
+  oxygen content                                 4,182
+  allocation factor                              4,092
+  true value                                     4,092
+  nitrogen content                               3,463
+  zinc content                                   2,997
+  copper content                                 2,995
+  heating value, gross                           2,967
+  lead content                                   2,966
+  nickel content                                 2,897
+  chromium content                               2,829
+  iron content                                   2,754
+  cadmium content                                2,661
+  sulfur content                                 2,657
+  aluminium content                              2,549
+  mercury content                                2,485
+  arsenic content                                2,475
+  cobalt content                                 2,423
+  manganese content                              2,392
+  sodium content                                 2,374
+  calcium content                                2,280
+
+── TOP 100 FORMULA VARIABLE NAMES ────────────────────────────────────
+  RP                                       used in 1,709 formulas
+  lubricating_oil                          used in   991 formulas
+  lifetime                                 used in   977 formulas
+  E                                        used in   949 formulas
+  waste_oil                                used in   937 formulas
+  electricity                              used in   801 formulas
+  factor_MJ_kWh                            used in   587 formulas
+  water_completely_softened                used in   538 formulas
+  water_decarbonised_user                  used in   534 formulas
+  sewage                                   used in   483 formulas
+  cooling_tower_residue                    used in   480 formulas
+  water_decarbonised_input                 used in   448 formulas
+  RP_amount_1                              used in   434 formulas
+  e                                        used in   432 formulas
+  BP_amount_1                              used in   423 formulas
+  tap_water_input                          used in   407 formulas
+  natural_gas                              used in   405 formulas
+  gas_power_plant                          used in   403 formulas
+  municipal_waste                          used in   399 formulas
+  tapwater                                 used in   356 formulas
+  sf6_emissions                            used in   352 formulas
+  natural_gas_Net_Heat_Value               used in   347 formulas
+  RP_amount                                used in   345 formulas
+  water_softened_input                     used in   338 formulas
+  capacity                                 used in   322 formulas
+  wind_load_hours                          used in   298 formulas
+  installation                             used in   298 formulas
+  water_pv_panels_cleaning                 used in   298 formulas
+  yield_corr                               used in   298 formulas
+  lubricating_oil_maintenance              used in   297 formulas
+  capacity_MW                              used in   296 formulas
+  waste_min_oil_10                         used in   293 formulas
+  distance                                 used in   291 formulas
+  lignite_ash                              used in   273 formulas
+  fly_ash                                  used in   271 formulas
+  scaling_factor                           used in   267 formulas
+  wood_ash                                 used in   256 formulas
+  WW                                       used in   255 formulas
+  efficiency_thermal                       used in   254 formulas
+  steel                                    used in   245 formulas
+  heat                                     used in   228 formulas
+  BP_amount_2                              used in   226 formulas
+  bilge_oil                                used in   209 formulas
+  BP_1                                     used in   202 formulas
+  panel_area_mcSi                          used in   195 formulas
+  water_decarbonised                       used in   193 formulas
+  cooling_tower                            used in   189 formulas
+  BP_4                                     used in   184 formulas
+  NPP                                      used in   174 formulas
+  VEG                                      used in   174 formulas
+  sox_retained                             used in   174 formulas
+  BP_amount_3                              used in   171 formulas
+  REF_PRODUCT                              used in   170 formulas
+  BP                                       used in   160 formulas
+  BP_5                                     used in   153 formulas
+  efficiency_electrical                    used in   152 formulas
+  wastewater                               used in   146 formulas
+  IF                                       used in   145 formulas
+  nox_retained                             used in   139 formulas
+  brake_emissions                          used in   139 formulas
+  road_emissions                           used in   139 formulas
+  tyre_emissions                           used in   139 formulas
+  blast_furnace_gas                        used in   138 formulas
+  hard_coal_power_plant                    used in   137 formulas
+  amount_RP                                used in   137 formulas
+  hard_coal                                used in   135 formulas
+  basic_wood_d                             used in   134 formulas
+  CH4_toAir                                used in   132 formulas
+  amount_residue                           used in   132 formulas
+  NaOCl_amount                             used in   130 formulas
+  light_fuel_oil                           used in   129 formulas
+  amount_ash                               used in   125 formulas
+  BP_amount_4                              used in   125 formulas
+  copper                                   used in   124 formulas
+  BP_6                                     used in   122 formulas
+  LUC_crop_specific                        used in   121 formulas
+  SEED                                     used in   120 formulas
+  concrete                                 used in   120 formulas
+  relation_global_country                  used in   116 formulas
+  scrap                                    used in   116 formulas
+  lower_heating_value                      used in   110 formulas
+  heat_out                                 used in   108 formulas
+  BP_2                                     used in   104 formulas
+  cement                                   used in   103 formulas
+  BP1_amount                               used in   102 formulas
+  water_irrigation_input                   used in    97 formulas
+  electricity_out                          used in    97 formulas
+  panel_area_scSi                          used in    97 formulas
+  planemill                                used in    96 formulas
+  share_shaving                            used in    96 formulas
+  UnitConversion                           used in    95 formulas
+  LHV_share                                used in    90 formulas
+  NGL                                      used in    90 formulas
+  oil                                      used in    87 formulas
+  hazwaste                                 used in    87 formulas
+  lignite_power_plant                      used in    87 formulas
+  waste_min_oil                            used in    85 formulas
+  BP_amount_5                              used in    85 formulas
+  pump_efficiency                          used in    84 formulas
+  RefProd                                  used in    84 formulas
+
+── MULTI-OUTPUT PROCESS EXAMPLES (first 30) ─────────────────────────
+  [RNA] filament winding
+       outputs: filament winding, acetone, liquid, activated carbon, granular, electricity, low voltage, heat, district or industrial, natural gas ... (+13 more)
+  [CH] market for sawnwood, lath, softwood, dried (u=20%), planed
+       outputs: sawnwood, lath, softwood, dried (u=20%), planed, sawnwood, lath, softwood, dried (u=20%), planed, transport, freight, lorry, diesel, unspecified, transport, freight, train, fleet average
+  [CA-ON] cement production, general use (GU)
+       outputs: cement, general use (GU), anhydrite rock, clinker, diesel, electricity, medium voltage ... (+13 more)
+  [BE] treatment of sewage sludge, 97% water, WWT-SLF, municipal solid waste, landfarming
+       outputs: sewage sludge, 97% water, WWT-SLF, municipal solid waste, liquid manure spreading, by vacuum tanker
+  [RER] market for residues, MSWI, cake from recycling of waste plastic, WEEE
+       outputs: residues, MSWI, cake from recycling of waste plastic, WEEE, residues, MSWI, cake from recycling of waste plastic, WEEE, transport, freight, lorry, diesel, unspecified
+  [IN] iron sinter production
+       outputs: iron sinter, aluminium oxide factory, coke, compressed air, 800 kPa gauge, diesel, burned in building machine ... (+7 more)
+  [GLO] treatment of bottom ash, MSWI, copper in car shredder residue, slag compartment
+       outputs: bottom ash, MSWI, copper in car shredder residue, process-specific burdens, slag landfill, process-specific burdens, slag landfill, process-specific burdens, slag landfill, slag landfill
+  [IN-KL] electricity production, hydro, reservoir, non-alpine region
+       outputs: electricity, high voltage, hydropower plant, reservoir, non-alpine regions, lubricating oil, waste mineral oil
+  [CH] market for bottom ash, MSWI[F]-WWT-SLF, waste gypsum
+       outputs: bottom ash, MSWI[F]-WWT-SLF, waste gypsum, bottom ash, MSWI[F]-WWT-SLF, waste gypsum, transport, freight, lorry, diesel, unspecified, transport, freight, train, fleet average
+  [RER] laser machining, metal, with YAG-laser, 500W power
+       outputs: laser machining, metal, with YAG-laser, 500W power, electricity, low voltage, metal working machine, unspecified, tap water
+  [Europe without Switzerland] wood chips production, hardwood, at sawmill
+       outputs: wood chips, green, measured as dry mass, chipper, stationary, electric, electricity, medium voltage, lubricating oil, slab and siding, hardwood, green, measured as dry mass ... (+1 more)
+  [IAI Area, Asia, without China and GCC] market for bauxite
+       outputs: bauxite, bauxite, bauxite, bauxite, bauxite ... (+6 more)
+  [GLO] treatment of waste plastic, mixture, unsanitary landfill, dry infiltration class (100mm)
+       outputs: waste plastic, mixture, diesel, burned in building machine, excavation, skid-steer loader
+  [RoW] board, softwood, raw, kiln drying to u=10%
+       outputs: sawnwood, board, softwood, raw, dried (u=10%), electricity, medium voltage, electricity, medium voltage, electricity, medium voltage, electricity, medium voltage ... (+9 more)
+  [GLO] fraction 1 from naphtha separation to generic market for chemical, organic
+       outputs: chemical, organic, basic precursors and materials, fraction 1 from naphtha separation
+  [US] water pump operation, diesel
+       outputs: water pump operation, diesel, diesel, lubricating oil, waste mineral oil, water pump, 22kW
+  [RoW] swine production
+       outputs: swine for slaughtering, live weight, barley grain, feed, chemical, organic, basic precursors and materials, limestone, crushed, washed, limestone, crushed, washed ... (+22 more)
+  [Europe without Switzerland] market group for waste wood, untreated
+       outputs: waste wood, untreated, waste wood, untreated, waste wood, untreated, waste wood, untreated, waste wood, untreated ... (+31 more)
+  [RER] sulfate pulp production, from softwood, unbleached
+       outputs: sawdust, green, collected, measured as dry mass, chemical, organic, basic precursors and materials, electricity, high voltage, green liquor dregs, hazardous waste, for incineration ... (+17 more)
+  [NO] electricity production, oil
+       outputs: electricity, high voltage, ammonia, anhydrous, liquid, bilge oil, fly ash and scrubber sludge, heavy fuel oil ... (+8 more)
+  [CN-SA] treatment of blast furnace gas, in power plant
+       outputs: heat, district or industrial, other than natural gas, blast furnace gas, gas power plant, 100MW electrical, water, completely softened, water, decarbonised
+  [RoW] natural gas liquids fractionation
+       outputs: butane, chemical factory, organics, electricity, medium voltage, electricity, medium voltage, electricity, medium voltage ... (+86 more)
+  [CH] potato seed production, conventional, hill region
+       outputs: potato seed, [sulfonyl]urea-compound, [thio]carbamate-compound, acetamide-anillide-compound, unspecified, aclonifen ... (+38 more)
+  [CH] ethanol production from wood
+       outputs: ethanol, without water, in 95% solution state, from fermentation, ammonia, anhydrous, liquid, ammonium sulfate, calcium chloride, chemical, organic, basic precursors and materials ... (+22 more)
+  [IN] jute production, irrigated
+       outputs: jute plant, harvested, [thio]carbamate-compound, ammonia, anhydrous, liquid, ammonium nitrate, ammonium sulfate ... (+17 more)
+  [RoW] market for spent cation exchange resin from potable water production
+       outputs: spent cation exchange resin from potable water production, spent cation exchange resin from potable water production, transport, freight, lorry, diesel, unspecified, transport, freight, lorry, diesel, unspecified, transport, freight, lorry, diesel, unspecified
+  [TJ] market for electricity, low voltage
+       outputs: electricity, low voltage, distribution network, electricity, low voltage, electricity, low voltage, electricity, low voltage, sulfur hexafluoride, liquid
+  [RoW] heat and power co-generation, natural gas, 160kW electrical, Jakobsberg
+       outputs: electricity, low voltage, heat and power co-generation unit, 160kW electrical, common components for heat+electricity, heat and power co-generation unit, 160kW electrical, components for electricity only, heat and power co-generation unit, 160kW electrical, components for heat only, lubricating oil ... (+18 more)
+  [GLO] market for catalytic converter, selective catalytic reduction, 200 litre
+       outputs: catalytic converter, selective catalytic reduction, 200 litre, catalytic converter, selective catalytic reduction, 200 litre, catalytic converter, selective catalytic reduction, 200 litre
+  [GLO] market for succinic acid
+       outputs: succinic acid, succinic acid, succinic acid, succinic acid, succinic acid ... (+8 more)
+
+── NEGATIVE EXCHANGE EXAMPLES (first 30) ────────────────────────────
+  [RNA] filament winding
+       negative: wastewater, average, spent solvent mixture, waste plastic, mixture, iron scrap, unsorted
+  [GLO] treatment of waste polyethylene, open dump, very wet infiltration class (1000mm)
+       negative: waste polyethylene
+  [CA-ON] cement production, general use (GU)
+       negative: inert waste, for final disposal, wastewater from concrete production
+  [BE] treatment of sewage sludge, 97% water, WWT-SLF, municipal solid waste, landfarming
+       negative: sewage sludge, 97% water, WWT-SLF, municipal solid waste
+  [GLO] treatment of waste polyethylene terephthalate, open dump, dry infiltration class (100mm)
+       negative: waste polyethylene terephthalate
+  [RER] market for residues, MSWI, cake from recycling of waste plastic, WEEE
+       negative: residues, MSWI, cake from recycling of waste plastic, WEEE
+  [IN] iron sinter production
+       negative: wastewater, average
+  [GLO] treatment of bottom ash, MSWI, copper in car shredder residue, slag compartment
+       negative: bottom ash, MSWI, copper in car shredder residue
+  [IN-KL] electricity production, hydro, reservoir, non-alpine region
+       negative: waste mineral oil
+  [CH] market for bottom ash, MSWI[F]-WWT-SLF, waste gypsum
+       negative: bottom ash, MSWI[F]-WWT-SLF, waste gypsum
+  [GLO] treatment of waste plastic, mixture, unsanitary landfill, dry infiltration class (100mm)
+       negative: waste plastic, mixture
+  [RoW] board, softwood, raw, kiln drying to u=10%
+       negative: wood ash mixture, pure
+  [US] water pump operation, diesel
+       negative: waste mineral oil
+  [RoW] swine production
+       negative: manure, liquid, swine, slaughterhouse waste
+  [Europe without Switzerland] market group for waste wood, untreated
+       negative: waste wood, untreated
+  [RER] sulfate pulp production, from softwood, unbleached
+       negative: green liquor dregs, hazardous waste, for incineration, wood ash mixture, pure, limestone residue
+  [NO] electricity production, oil
+       negative: municipal solid waste, bilge oil, residue from cooling tower, waste mineral oil
+  [CH] ethanol production from wood
+       negative: wastewater, average, waste mineral oil, municipal solid waste, waste gypsum
+  [IN] jute production, irrigated
+       negative: Lead II, waste wood, untreated, Copper ion, Chromium III
+  [RoW] market for spent cation exchange resin from potable water production
+       negative: spent cation exchange resin from potable water production
+  [RoW] heat and power co-generation, natural gas, 160kW electrical, Jakobsberg
+       negative: waste mineral oil
+  [CL] electricity production, wind, >3MW turbine, onshore
+       negative: waste mineral oil
+  [RoW] blown film co-extrusion, monodirectional orienting
+       negative: wastewater, average, waste steel, waste polyethylene, for recycling, unsorted, waste plastic, mixture
+  [FR] barley grain production
+       negative: Copper ion, Zinc II
+  [CA-QC] alfalfa/grass silage production
+       negative: Lead II, Copper ion, Nickel II, Zinc II
+  [CA-SK] electricity production, photovoltaic, 570kWp open ground installation, multi-Si
+       negative: wastewater, average
+  [RoW] maintenance, electric bicycle
+       negative: used Li-ion battery, waste rubber, unspecified, waste plastic, mixture
+  [CH] catch crop growing, ryegrass-Egyptian&Persian clover-mixture, August-October, not fertilised, one cut
+       negative: Mercury II, Copper ion, Zinc II, Chromium III
+  [GLO] concrete production, 35MPa, for building construction, with cement, CEM III/A
+       negative: wastewater from concrete production, waste rubber, unspecified, waste steel, waste mineral oil
+  [CH] lightweight concrete block production, expanded perlite
+       negative: wastewater from concrete production, municipal solid waste
+
+── LARGEST EXCHANGE COUNTS ───────────────────────────────────────────
+    411 exchanges  [RoW] tomato production, fresh grade, in unheated greenhouse
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+    356 exchanges  [RoW] primary zinc production from concentrate
+
+── FOREGROUND-TO-FOREGROUND LINKABLE PAIRS (first 30) ───────────────
+
+======================================================================
+END OF REPORT — upload spold_report.txt to Claude
+======================================================================

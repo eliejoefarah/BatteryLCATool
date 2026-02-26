@@ -1,0 +1,1720 @@
+======================================================================
+BATTERY LCA TOOL — ECOINVENT XML MASTER DATA SCAN REPORT
+Folder:  MasterData
+Date:    2026-02-25T18:49:03
+Files:   Properties.xml, Classifications.xml, SystemModels.xml, ElementaryExchanges.xml, Geographies.xml, Parameters.xml, ActivityNames.xml, Units.xml, ActivityIndex.xml, Languages.xml, IntermediateExchanges.xml
+======================================================================
+
+── ELEMENTARY EXCHANGES ──────────────────────────────────────────────
+  Total flows:             9,850
+  Have CAS number:         9,183
+  Have chemical formula:   9,226
+
+  Units used:
+    kg                    9,004 flows
+    kBq                     598 flows
+    m2                      125 flows
+    m2*year                  57 flows
+    m3                       30 flows
+    MJ                       28 flows
+    EUR2005                   5 flows
+    Sm3                       2 flows
+    m3*year                   1 flows
+
+  Compartment / Subcompartment breakdown:
+    air / unspecified                                  1,276  units: [MJ, kBq, kg, m3]
+      samples: Dalapon, Quizalofop-ethyl, Dinitrogen tetroxide
+    water / unspecified                                1,272  units: [MJ, kBq, kg, m3]
+      samples: 1,2-Dibromoethane, Merphos, Sulfadiazine
+    air / non-urban air or from high stacks            1,237  units: [MJ, kBq, kg, m3]
+      samples: Flurochloridone, Cyprofuram, Pentachlorobenzene
+    water / surface water                              1,181  units: [MJ, kBq, kg, m3]
+      samples: Chloroneb, Sedaxane, Prothioconazole
+    soil / agricultural                                  970  units: [MJ, kg]
+      samples: Barban, Triticonazole, Azinphos-methyl
+    soil / forestry                                      948  units: [MJ, kg]
+      samples: Benzoylprop-ethyl, Copper(II) carbonate--copper(II) hydroxide (1:1), Vernolate
+    soil / unspecified                                   942  units: [MJ, kg]
+      samples: 2,3,6-Trichlorobenzoic acid, Tebufenpyrad, Ioxynil octanoate
+    water / ground-                                      360  units: [MJ, kBq, kg, m3]
+      samples: Benzo(k)fluoranthene, Solids, inorganic, Carbon
+    air / low population density, long-term              347  units: [MJ, kBq, kg, m3]
+      samples: Sodium hypochlorite, Acetylene, Hydrogen sulfide
+    air / urban air close to ground                      333  units: [MJ, kBq, kg, m3]
+      samples: Carbon disulfide, Radon-220, Uranium-238
+    water / ocean                                        278  units: [MJ, kBq, kg, m3]
+      samples: Chloroacetyl chloride, Phenol, Thorium-230
+    water / ground-, long-term                           269  units: [MJ, kBq, kg, m3]
+      samples: Monochloroethane, Phosphorus, Diborane
+    natural resource / land                              182  units: [m2, m2*year]
+      samples: Transformation, to dump site, Transformation, to annual crop, irrigated, Transformation, from dump site, residual material landfill
+    natural resource / in ground                         131  units: [MJ, Sm3, kg, m3]
+      samples: Iridium, Zirconia, as baddeleyite, Scandium
+    soil / industrial                                     48  units: [MJ, kg]
+      samples: Boron, Silicon, Oils, non-fossil
+    natural resource / in water                           20  units: [MJ, kg, m3, m3*year]
+      samples: Iodine, Water, turbine use, unspecified natural origin, Chloride
+    air / lower stratosphere + upper troposphere          15  units: [kg, m3]
+      samples: Selenium IV, Nitrogen oxides, Carbon dioxide, fossil
+    natural resource / in air                             10  units: [MJ, kg, m3]
+      samples: Carbon dioxide, in air, Energy, solar, converted, Xenon
+    natural resource / biotic                              9  units: [MJ, kg, m3]
+      samples: Wood, unspecified, standing, Fish, pelagic, in ocean, Energy, gross calorific value, in biomass
+    inventory indicator / waste                            6  units: [kg]
+      samples: Non-hazardous waste disposed, Hazardous waste disposed, High-level radioactive waste disposed
+    economic / primary production factor                   5  units: [EUR2005]
+      samples: Expenditures on primary production factors, Rent, Net operating surplus
+    inventory indicator / output flow                      5  units: [MJ, kg]
+      samples: Materials for energy recovery, Materials for recycling, Components for re-use
+    inventory indicator / resource use                     4  units: [MJ, kg]
+      samples: Non-renewable secondary fuels, Secondary materials, Renewable secondary fuels
+    water / fossil well                                    1  units: [m3]
+      samples: Water
+    natural resource / fossil well                         1  units: [m3]
+      samples: Water, unspecified natural origin
+
+  Synonym distribution (synonyms per flow):
+    0 synonyms: 7,032 flows
+    1 synonyms: 963 flows
+    2 synonyms: 965 flows
+    3 synonyms: 513 flows
+    4 synonyms: 208 flows
+    5 synonyms: 67 flows
+    6 synonyms: 22 flows
+    7 synonyms: 79 flows
+    8 synonyms: 1 flows
+
+  Properties present on flows:
+    dry mass                                       8,974
+    water in wet mass                              8,974
+    carbon content, fossil                         8,961
+    carbon content, non-fossil                     8,960
+    water content                                  8,525
+    carbon allocation (alt)                        8,503
+    nitrogen content                               7,450
+    oxygen content                                 6,389
+    fluorine content                               4,882
+    chlorine content                               3,080
+    iron content                                   2,252
+    hydrogen content                               1,170
+    sulfur content                                   880
+    silicon content                                  236
+    bromine content                                  230
+    unknown (b3026066...)                             94
+    unknown (dd7e15dc...)                             92
+    phosphorus content                                76
+    unknown (b86d456d...)                             71
+    unknown (d8551abf...)                             54
+    calcium content                                   52
+    unknown (ca949a93...)                             48
+    unknown (30f0aa15...)                             47
+    unknown (33f96fe7...)                             44
+    unknown (e9688cbc...)                             41
+    unknown (2bc683e4...)                             37
+    unknown (e1d2c19b...)                             37
+    unknown (2a256b0b...)                             30
+    unknown (48c987bb...)                             29
+    magnesium content                                 28
+    unknown (d61b8768...)                             27
+    unknown (1dcfb203...)                             26
+    unknown (d8364dfc...)                             17
+    unknown (7e83fd10...)                             15
+    unknown (f767b36f...)                             15
+    unknown (ad7781c7...)                             15
+    unknown (66e996b5...)                             15
+    unknown (e5507d89...)                             15
+    unknown (bf4d71d9...)                             14
+    unknown (dba83ee6...)                             14
+    unknown (35d2e0b2...)                             14
+    unknown (995265a2...)                             14
+    unknown (608190bf...)                             14
+    unknown (84916b80...)                             14
+    unknown (56f09738...)                             14
+    unknown (db0b4bbf...)                             14
+    unknown (83f67a9e...)                             14
+    unknown (999af43a...)                              7
+    unknown (da9aed81...)                              6
+    unknown (ee301bc4...)                              6
+    unknown (4583f86d...)                              6
+    unknown (6c4a1198...)                              6
+    price                                              5
+    unknown (22ca28a0...)                              5
+    unknown (6b093a42...)                              5
+    unknown (832bb926...)                              5
+    unknown (6bc8ac5e...)                              5
+    unknown (94b2be61...)                              5
+    unknown (b181bebd...)                              5
+    unknown (8cd87c78...)                              4
+    unknown (42cc9ae9...)                              4
+    unknown (7c33fa83...)                              4
+    unknown (4054bfa7...)                              2
+    unknown (8aaa7771...)                              2
+    unknown (92dbd49f...)                              2
+    unknown (cd5814c6...)                              2
+    unknown (0650a63d...)                              1
+    unknown (43e30a6f...)                              1
+    unknown (f576f1a0...)                              1
+    unknown (4fb17587...)                              1
+    unknown (df8fa668...)                              1
+    unknown (fdafa860...)                              1
+    unknown (72ca3df5...)                              1
+    unknown (d9e61a10...)                              1
+    unknown (86937b4e...)                              1
+    unknown (0b27405b...)                              1
+    unknown (59d14f7c...)                              1
+    unknown (65387d28...)                              1
+    unknown (ff25f3c3...)                              1
+    unknown (82728b89...)                              1
+    unknown (bbf35356...)                              1
+    unknown (e092deec...)                              1
+    unknown (fbc58d8d...)                              1
+    unknown (aaedfd5e...)                              1
+    unknown (44454aa6...)                              1
+    unknown (a91695f7...)                              1
+    unknown (e9fa11a1...)                              1
+    unknown (a17f5864...)                              1
+    unknown (0a6b459a...)                              1
+    unknown (d8135201...)                              1
+    unknown (fe9f0d92...)                              1
+    unknown (c9432a3d...)                              1
+    unknown (8daf1327...)                              1
+    unknown (4fa5130c...)                              1
+    unknown (e66d61f6...)                              1
+    unknown (d0a2c761...)                              1
+    unknown (48b2521b...)                              1
+    unknown (30fd0072...)                              1
+    unknown (95b6afca...)                              1
+    unknown (ea0dd556...)                              1
+
+  NOTES FOR TOOL DESIGN:
+  - Each (name + compartment + subcompartment + unit) tuple is the
+    unique identifier for BW mapping of elementary flows.
+  - 9,850 flows across 25 compartment/subcompartment pairs.
+  - All units relevant for unit_catalog are listed above.
+
+── ACTIVITY INDEX ────────────────────────────────────────────────────
+  Total dataset entries:                22,993
+  Unique activity names (name IDs):     10,094
+  Activities with multiple geographies:  4,306
+  Max geographies for one activity:        175
+  Unique geography IDs:                    335
+
+  Special activity type breakdown:
+    0 (transforming activity (normal))            14,593
+    1 (market activity)                            8,084
+    4 (supply mix)                                   186
+    10 (constrained market)                          130
+
+  Start year distribution (dataset vintage):
+    1945:   295
+    1950:     1
+    1954:     3
+    1960:     1
+    1967:     1
+    1968:     1
+    1970:     4
+    1976:     5
+    1978:     3
+    1979:    22
+    1980:   493
+    1981:     5
+    1982:     5
+    1983:    15
+    1984:     5
+    1985:    33
+    1986:    18
+    1987:    69
+    1988:    26
+    1989:   147
+    1990:   389
+    1991:   125
+    1992:    90
+    1993:   167
+    1994: 1,030
+    1995:   209
+    1996:   215
+    1997:   262
+    1998:   133
+    1999:   138
+    2000: 1,399
+    2001:   126
+    2002:   154
+    2003:   191
+    2004:    79
+    2005:   674
+    2006:   858
+    2007:   170
+    2008:   298
+    2009:   289
+    2010: 2,920
+    2011: 2,549
+    2012:   969
+    2013:   114
+    2014: 1,029
+    2015:   778
+    2016:   669
+    2017:   693
+    2018:   851
+    2019:   719
+    2020: 1,462
+    2021:   505
+    2022:   157
+    2023:   918
+    2024:   318
+    2025:   194
+
+  NOTES FOR TOOL DESIGN:
+  - 22,993 total entries but only ~8,000 unique activity names.
+  - Same activity can exist for many geographies.
+  - BW mapping uses id (dataset UUID) + activityNameId for lookup.
+  - specialActivityType=0 (transforming) are primary mapping targets.
+  - ActivityIndex needs ActivityNames.xml to resolve names for TF-IDF.
+
+── ACTIVITY NAMES ────────────────────────────────────────────────────
+  Total names: 10,621
+
+  Sample names (first 30):
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+  Top 50 words in activity names (for TF-IDF vocabulary sizing):
+
+── INTERMEDIATE EXCHANGES ────────────────────────────────────────────
+  Total flows:             4,399
+  Have CAS number:           823
+  Have chemical formula:       0
+
+  Units:
+    kg                    3,005
+    unit                    633
+    m3                      205
+    m2                      103
+    metric ton*km           100
+    ha                       83
+    hour                     65
+    km                       58
+    MJ                       54
+    m                        31
+    person*km                14
+    kWh                      14
+    l                         9
+    m*year                    9
+    m2*year                   5
+    guest night               4
+    km*year                   4
+    kg*day                    3
+
+  Sample entries:
+    trawler maintenance, steel                         unit=kg cas=
+    residues, MSWI[F]-WWT, WW from black chrome coating unit=kg cas=
+    PS/ABS, flakes, recycled                           unit=kg cas=
+    transport, passenger, motor scooter, fleet average unit=person*km cas=
+    green manure, Swiss integrated production, until January unit=ha cas=
+    bentonite quarry infrastructure                    unit=unit cas=
+    integrated circuit, logic type                     unit=kg cas=
+    iron scrap, sorted, pressed                        unit=kg cas=
+    carboxymethyl cellulose, powder                    unit=kg cas=9000-11-7
+    transport, freight, lorry 28 metric ton, fatty acid methyl ester 100% unit=metric ton*km cas=
+
+  NOTES FOR TOOL DESIGN:
+  - These are the flow_catalog reference targets for product flows.
+  - intermediateExchangeId in spold files references these UUIDs.
+  - Useful for pre-seeding flow_catalog with ecoinvent canonical names.
+
+── UNITS ─────────────────────────────────────────────────────────────
+  Total units: 135
+
+  Dimension breakdown:
+    (no dimension)                  135 units
+
+  All units (for unit_catalog pre-seeding):
+    [c182d036...] kg/MJ                     dim=
+    [1c978f18...] kWh/kWp                   dim=
+    [40065b9e...] m2/unit                   dim=
+    [77ae64fa...] kWh                       dim=
+    [a309a95f...] kg/hour                   dim=
+    [a5d2899a...] s                         dim=
+    [35dc944d...] m2/kg                     dim=
+    [8266bd67...] m*year                    dim=
+    [9f91c12e...] point score               dim=
+    [0e6f38bc...] person*km                 dim=
+    [be837659...] USD(2011)                 dim=
+    [11910f25...] month                     dim=
+    [06d259de...] l/kg                      dim=
+    [4923348e...] kBq                       dim=
+    [0762a8b8...] m2/m3                     dim=
+    [3ce424af...] kg/s                      dim=
+    [83ecd334...] kg/kg                     dim=
+    [bb1e9b49...] d/year                    dim=
+    [fec81540...] kg TAN/kg TAN             dim=
+    [11043416...] kWp                       dim=
+    [f271f103...] g/mol                     dim=
+    [7de7e78f...] kW                        dim=
+    [86b0e4a2...] l                         dim=
+    [1017f68a...] m2                        dim=
+    [2f4daad7...] metric ton*km             dim=
+    [33964fe2...] km/hour                   dim=
+    [4bb29a33...] unit/kWh                  dim=
+    [b7023e0a...] kg NH3-N                  dim=
+    [441ac753...] Eq                        dim=
+    [07bb5e1b...] kg P/ha.year              dim=
+    [d8c254d2...] m3/kWh                    dim=
+    [91f442fd...] m3/hour                   dim=
+    [f003f001...] K                         dim=
+    [01487f54...] kJ/kg                     dim=
+    [de5b3c87...] m3                        dim=
+    [e3e78ccf...] t*h/(MJ*mm)               dim=
+    [b06bab82...] kg/l                      dim=
+    [201adf23...] l/(h.m2)                  dim=
+    [980b811e...] MJ                        dim=
+    [eb955b7c...] m2*year                   dim=
+    [c1520f88...] metric ton/(ha*year)      dim=
+    [cacb6d36...] kg/m3                     dim=
+    [f4830dbc...] kg/Nm3                    dim=
+    [577e242a...] dimensionless             dim=
+    [aa0d3bf3...] kg/kWh                    dim=
+    [4292d301...] kg/(m2*year)              dim=
+    [18b6bdfc...] kg N/ha                   dim=
+    [f4ade0ac...] MJ/kcal                   dim=
+    [5dc11308...] guest night               dim=
+    [fc6f97ae...] kg/hp*h                   dim=
+    [b61bad7c...] kWh/s                     dim=
+    [3eafae69...] kg N2O-N/kg NH3-N         dim=
+    [22897b16...] TEU                       dim=
+    [00694118...] kg PO4/ha                 dim=
+    [e32b56ef...] hour                      dim=
+    [5fe41b6f...] m2/(m3/d)^2               dim=
+    [54f32be9...] hour/year                 dim=
+    [1eb913ab...] kg/ha.yr                  dim=
+    [02c7d6d0...] mm/year                   dim=
+    [4b73f303...] m3/ha/year                dim=
+    [65876125...] hour/ha                   dim=
+    [a25a4cee...] PMH/m3                    dim=
+    [8295e2d8...] kg/(kg vehicle*km)        dim=
+    [c26ec641...] kg/m                      dim=
+    [487df68b...] kg                        dim=
+    [5ba942c7...] MJ/Sm3                    dim=
+    [1a09df4c...] kJ/(kmol*K)               dim=
+    [0ec6d69a...] kg N2O-N/kg NO3-N         dim=
+    [8aa11f71...] units/m²                  dim=
+    [ae252091...] km                        dim=
+    [07eff02f...] metric ton*day            dim=
+    [88c43a7b...] unit/MJ                   dim=
+    [81817114...] EUR2005basic              dim=
+    [05af3809...] day                       dim=
+    [d88a3aae...] kg/(m3/d)^2               dim=
+    [c4d1b1ec...] BTU/kg                    dim=
+    [f574e378...] kg/seedling               dim=
+    [afc016fa...] m3/PMH                    dim=
+    [c9d0bbb9...] kg NO3-N/ha.year          dim=
+    [56e0f502...] l/m3                      dim=
+    [395f1718...] kg/ha                     dim=
+    [46a269fc...] kWh/year                  dim=
+    [6c73afda...] m3/head/yr                dim=
+    [34e7dd21...] MJ/kWh                    dim=
+    [569f3514...] Nm3                       dim=
+    [19bd155e...] MJ/(m3/d)^2               dim=
+    [83598ec6...] hour/m3                   dim=
+    [fc5f66f9...] metric ton/ha             dim=
+    [f2aaa4ba...] m                         dim=
+    [86bbe475...] ha                        dim=
+    [848cdafe...] kWh/km                    dim=
+    [9dbdef14...] MW                        dim=
+    [9998c5fd...] kg/(head.d)               dim=
+    [08bd0c61...] km*year                   dim=
+    [41b2b2e3...] kcal/kWh                  dim=
+    [fdfdde25...] m3/d                      dim=
+    [2cf92850...] year                      dim=
+    [9d26a1d3...] MJ/m3                     dim=
+    [9feb13c9...] kW/TEU                    dim=
+    [8ee4b882...] m2/ha                     dim=
+    [3e2c67b8...] mm                        dim=
+    [92e2242b...] m3/(m3/d)^2               dim=
+    [a6e59a77...] MJ/Nm3                    dim=
+    [be283e24...] kcal                      dim=
+    [34e6691f...] MJ/kg                     dim=
+    [dd5201cd...] kJ/kmol                   dim=
+    [b3e99054...] t/day                     dim=
+    [5b972631...] unit                      dim=
+    [2d4eeca7...] unit/ha                   dim=
+    [bdecebdd...] CHF2011                   dim=
+    [40245049...] kg NOx/kg N2O             dim=
+    [24366c9d...] kg C                      dim=
+    [8eb185f8...] m2*K/W                    dim=
+    [0821f8d1...] kg/Sm3                    dim=
+    [241450a3...] kg*day                    dim=
+    [2707f8e2...] m2/year                   dim=
+    [2a448677...] kg/GJ                     dim=
+    [9584395d...] kg P2O5/ha                dim=
+    [06477fb5...] kg/unit                   dim=
+    [22dd5d20...] % (obsolete)              dim=
+    [b9c5482c...] kg/m2                     dim=
+    [c1b47c9a...] l/m2                      dim=
+    [7b75baf0...] EUR2005                   dim=
+    [edf5a356...] OLD_MJ/kg                 dim=
+    [481b9712...] m3*year                   dim=
+    [15a259d2...] m3/kg                     dim=
+    [bc240401...] l/hour                    dim=
+    [b215aa56...] mol/l                     dim=
+    [b51c1a19...] hour/kg                   dim=
+    [0914dcce...] MJ*mm/(ha*h*yr)           dim=
+    [a3a82f71...] kg/year                   dim=
+    [225da0bd...] Sm3                       dim=
+    [c650c950...] kg/kg vehicle             dim=
+    [e8c40f52...] kg N2O-N/kg N             dim=
+    [09e8c86e...] m³/ha                     dim=
+
+── GEOGRAPHIES ───────────────────────────────────────────────────────
+  Total geographies: 541
+
+  All shortnames (for region_catalog pre-seeding):
+  AD  AE  AF  AG  AI  AL  AM  AO  AQ  AR  AS  AT  AU  AU-AC  AU-ACT  AU-IOT  AU-JBT  AU-NSW  AU-NT  AU-QLD  AU-SA  AU-TAS  AU-VIC  AU-WA  AW  AX  AZ  Akrotiri  Asia without China  Australia, including overseas territorie  BA  BALTSO  BB  BD  BE  BF  BG  BH  BI  BJ  BL  BM  BN  BO  BQ  BR  BR-AC  BR-AL  BR-AM  BR-AP  BR-BA  BR-CE  BR-DF  BR-ES  BR-GO  BR-MA  BR-MG  BR-MS  BR-MT  BR-Mid-western grid  BR-North-eastern grid  BR-Northern grid  BR-PA  BR-PB  BR-PE  BR-PI  BR-PR  BR-RJ  BR-RN  BR-RO  BR-RR  BR-RS  BR-SC  BR-SE  BR-SP  BR-South-eastern grid  BR-South-eastern/Mid-western grid  BR-Southern grid  BR-TO  BS  BT  BV  BW  BY  BZ  Bajo Nuevo  CA  CA-AB  CA-BC  CA-MB  CA-NB  CA-NF  CA-NS  CA-NT  CA-NU  CA-ON  CA-PE  CA-QC  CA-SK  CA-YK  CC  CD  CENTREL  CF  CG  CH  CI  CK  CL  CM  CN  CN-AH  CN-BJ  CN-CCG  CN-CQ  CN-CSG  CN-ECGC  CN-FJ  CN-GD  CN-GS  CN-GX  CN-GZ  CN-HA  CN-HB  CN-HE  CN-HL  CN-HN  CN-HU  CN-JL  CN-JS  CN-JX  CN-LN  CN-NCGC  CN-NECG  CN-NM  CN-NWG  CN-NX  CN-QH  CN-SA  CN-SC  CN-SD  CN-SGCC  CN-SH  CN-SWG  CN-SX  CN-TJ  CN-XJ  CN-XZ  CN-YN  CN-ZJ  CO  CR  CS  CU  CV  CW  CX  CY  CZ  Canada without Alberta  Canada without Alberta and Quebec  Canada without Quebec  Canary Islands  Central Asia  China w/o Inner Mongol  Clipperton Island  Coral Sea Islands  Cyprus No Mans Area  DE  DJ  DK  DM  DO  DZ  Dhekelia Base  EC  EE  EG  EH  ENTSO-E  ER  ES  ET  Europe without Austria  Europe without NORDEL (NCPA)  Europe without Switzerland  Europe without Switzerland and Austria  Europe without Switzerland and France  Europe, without Russia and Türkiye  FI  FJ  FK  FM  FO  FR  FSU  France, including overseas territories  GA  GB  GD  GE  GF  GG  GH  GI  GL  GLO  GM  GN  GP  GQ  GR  GS  GT  GU  GW  GY  Guantanamo Bay  HK  HM  HN  HR  HT  HU  IAI Area, Africa  IAI Area, Asia, without China and GCC  IAI Area, Gulf Cooperation Council  IAI Area, North America  IAI Area, North America, without Quebec  IAI Area, Russia and Eastern Europe  IAI Area, South America  IAI Area, Western and Central Europe  ID  IE  IL  IM  IN  IN-AN  IN-AP  IN-AR  IN-AS  IN-BR  IN-CH  IN-CT  IN-DD  IN-DL  IN-DN  IN-Eastern grid  IN-GA  IN-GJ  IN-HP  IN-HR  IN-Islands  IN-JH  IN-JK  IN-KA  IN-KL  IN-LD  IN-MH  IN-ML  IN-MN  IN-MP  IN-MZ  IN-NL  IN-North-eastern grid  IN-Northern grid  IN-OR  IN-PB  IN-PY  IN-RJ  IN-SK  IN-Southern grid  IN-TN  IN-TR  IN-UP  IN-UT  IN-WB  IN-Western grid  IO  IQ  IR  IS  IT  JE  JM  JO  JP  KE  KG  KH  KI  KM  KN  KP  KR  KW  KY  KZ  LA  LB  LC  LI  LK  LR  LS  LT  LU  LV  LY  MA  MC  MD  ME  MF  MG  MH  MK  ML  MM  MN  MO  MP  MQ  MR  MRO  MS  MT  MU  MV  MW  MX  MY  MZ  NA  NAFTA  NC  NE  NF  NG  NI  NL  NO  NORDEL  NP  NPCC  NR  NU  NZ  North America without Quebec  Northern Cyprus  OM  PA  PE  PF  PG  PH  PK  PL  PM  PN  PS  PT  PW  PY  QA  Québec, HQ distribution network  RAF  RAS  RE  RER  RER w/o AT+BE+CH+DE+FR+IT  RER w/o CH+DE  RER w/o DE+NL+NO  RER w/o DE+NL+NO+RU  RER w/o DE+NL+RU  RER w/o RU  RLA  RME  RNA  RO  RS  RU  RW  RoE  RoW  Russia (Asia)  Russia (Europe)  SA  SAS  SB  SC  SD  SE  SG  SH  SI  SJ  SK  SL  SM  SN  SO  SR  SS  ST  SV  SX  SY  SZ  Scarborough Reef  Serranilla Bank  Siachen Glacier  Somaliland  Spratly Islands  TC  TD  TF  TG  TH  TJ  TK  TL  TM  TN  TO  TR  TT  TV  TW  TZ  UA  UCTE  UCTE without France  UCTE without Germany  UCTE without Germany and France  UG  UM  UN-AMERICAS  UN-ASIA  UN-AUSTRALIANZ  UN-CAMERICA  UN-CARIBBEAN  UN-EAFRICA  UN-EASIA  UN-EEUROPE  UN-EUROPE  UN-MAFRICA  UN-MELANESIA  UN-MICRONESIA  UN-NAFRICA  UN-NEUROPE  UN-OCEANIA  UN-POLYNESIA  UN-SAMERICA  UN-SASIA  UN-SEASIA  UN-SEUROPE  UN-WAFRICA  UN-WASIA  US  US-AK  US-AL  US-AR  US-ASCC  US-AZ  US-CA  US-CO  US-CT  US-DC  US-DE  US-FL  US-FRCC  US-GA  US-HI  US-HICC  US-IA  US-ID  US-IL  US-IN  US-KS  US-KY  US-LA  US-MA  US-MD  US-ME  US-MI  US-MN  US-MO  US-MRO  US-MS  US-MT  US-NC  US-ND  US-NE  US-NH  US-NJ  US-NM  US-NPCC  US-NV  US-NY  US-OH  US-OK  US-OR  US-PA  US-PR  US-RFC  US-RI  US-SC  US-SD  US-SERC  US-SPP  US-TN  US-TRE  US-TX  US-UT  US-VA  US-VT  US-WA  US-WECC  US-WI  US-WV  US-WY  UY  UZ  VA  VC  VE  VG  VI  VN  VU  WECC  WEU  WF  WS  XK  YE  YT  ZA  ZM  ZW
+
+  Sample entries:
+    RME        
+    TN         
+    BG         
+    UN-EASIA   
+    GI         
+    RS         
+    IN-LD      
+    US-AL      
+    TR         
+    US-RFC     
+    RoE        
+    IN-TN      
+    US-NY      
+    IN-NL      
+    TG         
+    TJ         
+    KP         
+    GM         
+    US-NH      
+    AU         
+
+── PROPERTIES ────────────────────────────────────────────────────────
+  Total properties: 972
+
+  All properties (UUID → name, unit):
+    [cc822f1f...] amount 1 of flow in kg                        unit=kg
+    [83d7ec8e...] EcoSpold01Allocation_other_78                 unit=dimensionless
+    [abc78955...] mass concentration, titanium                  unit=kg/m3
+    [d22b84cd...] EcoSpold01Allocation_undefined_28             unit=dimensionless
+    [271062b1...] molding efficiency                            unit=dimensionless
+    [7c33fa83...] ash content                                   unit=kg
+    [ebe8ff0d...] EcoSpold01Allocation_undefined_153            unit=dimensionless
+    [56f09738...] silver content                                unit=dimensionless
+    [e38c9209...] concentration, potassium                      unit=kg/kg
+    [86fe199e...] UVEK_absolute_amount_1                        unit=dimensionless
+    [6393c14b...] carbon content, non-fossil                    unit=dimensionless
+    [608190bf...] thallium content                              unit=dimensionless
+    [8930f8b6...] EcoSpold01Allocation_undefined_72             unit=dimensionless
+    [92b141b7...] concentration of amount 5                     unit=dimensionless
+    [a5e4ea62...] EcoSpold01Allocation_other_101                unit=dimensionless
+    [a2047b68...] EcoSpold01Allocation_undefined_169            unit=dimensionless
+    [01e07f2d...] EcoSpold01Allocation_other_51                 unit=dimensionless
+    [e5336a01...] EcoSpold01Allocation_undefined_32             unit=dimensionless
+    [9b811dd0...] EcoSpold01Allocation_undefined_105            unit=dimensionless
+    [c8ebc911...] mass concentration, dissolved nitrite NO2 as N unit=kg/m3
+    [beb07321...] EcoSpold01Allocation_physical_1               unit=dimensionless
+    [16f50929...] alloy additives                               unit=kg
+    [9909d836...] EcoSpold01Allocation_undefined_21             unit=dimensionless
+    [e70c55d1...] EcoSpold01Allocation_other_16                 unit=dimensionless
+    [98df467a...] nitrogen oxides emissions tier T2 for hp < 175 unit=kg/hp*h
+    [8b574e85...] mass concentration, nickel                    unit=kg/m3
+    [16bd8b23...] EcoSpold01Allocation_other_124                unit=dimensionless
+    [8daf1327...] radium content                                unit=dimensionless
+    [b838627a...] EcoSpold01Allocation_other_86                 unit=dimensionless
+    [ffcba73f...] carbon monoxide emissions tier T0 for hp < 100 unit=kg/hp*h
+    [3be25089...] nitrogen oxides emissions tier T3B-T4-T4A for hp < 100 unit=kg/hp*h
+    [42d12e16...] EcoSpold01Allocation_other_102                unit=dimensionless
+    [964f8b50...] lifetime                                      unit=year
+    [f3e31d48...] nitrogen oxides emissions tier T4A-T4B for hp < 11 unit=kg/hp*h
+    [ed0f7fbe...] EcoSpold01Allocation_other_106                unit=dimensionless
+    [d01683bd...] EcoSpold01Allocation_other_115                unit=dimensionless
+    [7f3410da...] mass concentration, sulfur                    unit=kg/m3
+    [af807f71...] nitrogen oxides emissions tier T1 for hp < 300 unit=kg/hp*h
+    [0d342ebd...] SAM_activityLink_9                            unit=dimensionless
+    [999af43a...] palladium content                             unit=dimensionless
+    [d95d853b...] EcoSpold01Allocation_other_36                 unit=dimensionless
+    [df4806ae...] carbon monoxide emissions tier T0-T1 for hp < 50 unit=kg/hp*h
+    [b6dc8a47...] fat (total lipid) content                     unit=kg
+    [84e59b0f...] EcoSpold01Allocation_undefined_91             unit=dimensionless
+    [fcc233d5...] concentration, magnesium                      unit=kg/kg
+    [fb2ccf7c...] neon content                                  unit=dimensionless
+    [98549452...] mass concentration, Kjeldahl Nitrogen as N    unit=kg/m3
+    [52b3af22...] fuel input in physical units, m3              unit=m3
+    [aaedfd5e...] krypton content                               unit=dimensionless
+    [77154d2e...] mass concentration, aluminium                 unit=kg/m3
+    [ada3f057...] EcoSpold01Allocation_undefined_62             unit=dimensionless
+    [b30a42e9...] MARKET_OVERWRITE_AMOUNT_APOS                  unit=dimensionless
+    [33f96fe7...] zinc content                                  unit=dimensionless
+    [995afb89...] EcoSpold01Allocation_other_85                 unit=dimensionless
+    [7027204d...] EcoSpold01Allocation_other_79                 unit=dimensionless
+    [fddd8dce...] amount of non-specified waste to recycling    unit=kg
+    [4e0d51e1...] mass concentration, krypton                   unit=kg/m3
+    [518585a8...] lower heating value                           unit=MJ/Nm3
+    [c3a9f78c...] EcoSpold01Allocation_undefined_49             unit=dimensionless
+    [7404741f...] non-process water, net                        unit=kg
+    [296d723d...] nitrogen oxides emissions tier T4A-T4B for hp < 25 unit=kg/hp*h
+    [3a0030f4...] mass concentration, tellurium                 unit=kg/m3
+    [3db02346...] EcoSpold01Allocation_undefined_7              unit=dimensionless
+    [38b5d17a...] amount of non-specified waste to landfill     unit=kg
+    [44454aa6...] ruthenium content                             unit=dimensionless
+    [a676fa01...] amount of flow 4 in kg                        unit=kg
+    [1222c4b8...] EcoSpold01Allocation_undefined_108            unit=dimensionless
+    [286bd819...] EcoSpold01Allocation_other_105                unit=dimensionless
+    [e2bffe98...] EcoSpold01Allocation_undefined_48             unit=dimensionless
+    [5f51ac3e...] UVEK_relative_amount_8                        unit=dimensionless
+    [8547e7fb...] height, external                              unit=m
+    [ae7467f9...] EcoSpold01Allocation_other_11                 unit=dimensionless
+    [303a1005...] EcoSpold01Allocation_undefined_33             unit=dimensionless
+    [8c823f28...] steel, fraction                               unit=dimensionless
+    [831cecb4...] apparent wood density                         unit=kg/m3
+    [30f65a30...] EcoSpold01Allocation_undefined_73             unit=dimensionless
+    [26ec2bdf...] concentration, silver                         unit=kg/kg
+    [0ac1017b...] carbon monoxide emissions tier T4A for hp < 50 unit=kg/hp*h
+    [b38d886d...] literFuel_Input                               unit=l
+    [79baac3d...] mass concentration, thallium                  unit=kg/m3
+    [42a2b932...] PERM                                          unit=MJ
+    [71a8b07c...] EcoSpold01Allocation_undefined_74             unit=dimensionless
+    [1a3f7490...] mass concentration, osmium                    unit=kg/m3
+    [8b49eeb7...] mass concentration, potassium                 unit=kg/m3
+    [560016f5...] EcoSpold01Allocation_other_52                 unit=dimensionless
+    [4594279a...] EcoSpold01Allocation_undefined_112            unit=dimensionless
+    [606b5765...] EcoSpold01Allocation_other_127                unit=dimensionless
+    [41a012c8...] basic density                                 unit=kg/m3
+    [114d7baf...] EcoSpold01Allocation_other_74                 unit=dimensionless
+    [e83fa8a9...] landfilled waste carbon                       unit=kg
+    [fff34673...] nitrogen oxides emissions tier T1 for hp < 100 unit=kg/hp*h
+    [23685f2b...] EcoSpold01Allocation_other_64                 unit=dimensionless
+    [d1af2cd4...] EcoSpold01Allocation_undefined_68             unit=dimensionless
+    [25adf84a...] concentration of amount 3                     unit=dimensionless
+    [bd750b75...] amount of exchange in kg 1                    unit=kg
+    [4e7fc39f...] fuel input, fraction                          unit=dimensionless
+    [4bae13cf...] gas density                                   unit=kg/l
+    [81209399...] EcoSpold01Allocation_other_130                unit=dimensionless
+    [a99e0167...] nitrogen oxides emissions tier T2 for hp < 300 unit=kg/hp*h
+    [2dd01d14...] mass concentration, zirconium                 unit=kg/m3
+    [db0b4bbf...] lithium content                               unit=dimensionless
+    [24ce2b3e...] yearly_distributed_amount                     unit=kg
+    [ff8ff2b1...] utilization rate                              unit=dimensionless
+    [e8e47ce2...] EcoSpold01Allocation_undefined_95             unit=dimensionless
+    [832bb926...] platinum content                              unit=dimensionless
+    [e9fa11a1...] titanium content                              unit=dimensionless
+    [615315e1...] EcoSpold01Allocation_other_117                unit=dimensionless
+    [aae1dcfc...] EcoSpold01Allocation_undefined_148            unit=dimensionless
+    [d856e58f...] heat of fuel used                             unit=MJ
+    [ee301bc4...] gold content                                  unit=dimensionless
+    [eb730caf...] EcoSpold01Allocation_physical_12              unit=dimensionless
+    [28841901...] mass concentration, xenon                     unit=kg/m3
+    [c092b78a...] EcoSpold01Allocation_other_14                 unit=dimensionless
+    [2520c12c...] basic wood density                            unit=dimensionless
+    [1325d7f9...] mass concentration, scandium                  unit=kg/m3
+    [f576f1a0...] gadolinium content                            unit=dimensionless
+    [6d915647...] dross sent to landfill                        unit=kg
+    [14ceb4c6...] amount from wellenstoff production in kg      unit=kg
+    [763a698f...] mass concentration, fluorine                  unit=kg/m3
+    [044617f2...] Organic Carbon content of soil                unit=dimensionless
+    [5b28943d...] amount of exchange 3                          unit=kg
+    [326f28c6...] EcoSpold01Allocation_undefined_109            unit=dimensionless
+    [6f0a8b10...] yield                                         unit=dimensionless
+    [db895d84...] amount of exchange in m³ 2                    unit=m3
+    [4e2f4e10...] EcoSpold01Allocation_undefined_128            unit=dimensionless
+    [67065577...] mass concentration, silicon                   unit=kg/m3
+    [f83aadf7...] EcoSpold01Allocation_other_33                 unit=dimensionless
+    [de5f7231...] EcoSpold01Allocation_other_69                 unit=dimensionless
+    [bdbf6a5a...] EcoSpold01Allocation_other_122                unit=dimensionless
+    [af7ef4cd...] EcoSpold01Allocation_other_88                 unit=dimensionless
+    [290526be...] EcoSpold01Allocation_physical_11              unit=dimensionless
+    [31326064...] EcoSpold01Allocation_other_32                 unit=dimensionless
+    [8db6e12a...] Slope length                                  unit=m
+    [0f205308...] mass concentration, particulate phophorus     unit=kg/m3
+    [de4b532b...] EcoSpold01Allocation_undefined_163            unit=dimensionless
+    [6c4ba845...] prop                                          unit=dimensionless
+    [db0e2ab7...] EcoSpold01Allocation_undefined_154            unit=dimensionless
+    [c0dd146d...] mass concentration, lithium                   unit=kg/m3
+    [abdfa6a8...] maximum gross weight                          unit=kg
+    [5bf7a913...] SAM_activityLink_8_scaling_factor             unit=dimensionless
+    [4e6ff13b...] capacity [MW]                                 unit=MW
+    [b275a25e...] UVEK_link_1                                   unit=dimensionless
+    [f53a5dbc...] nitrogen content                              unit=dimensionless
+    [a1d38f66...] UVEK_relative_amount_10                       unit=dimensionless
+    [24e28a50...] nitrogen oxides emissions tier T2-T4A-T4B for hp < 11 unit=kg/hp*h
+    [1370615c...] amount of exchange in liters 2                unit=l
+    [c1e362e9...] Soil organic carbon                           unit=kg
+    [514535fa...] amount 4 of flow in kg                        unit=kg
+    [8cc1f034...] EcoSpold01Allocation_other_7                  unit=dimensionless
+    [53c1ac85...] nitrogen oxides emissions tier T1 for hp < 600 unit=kg/hp*h
+    [28567adf...] EcoSpold01Allocation_undefined_136            unit=dimensionless
+    [40ca2c51...] EcoSpold01Allocation_undefined_2              unit=dimensionless
+    [21c609ec...] nitrogen oxides emissions tier T4 for hp >= 750 unit=kg/hp*h
+    [6f22673c...] Crop factor                                   unit=dimensionless
+    [2d73088a...] fuel input in m3                              unit=m3
+    [5476d104...] UVEK_link_8                                   unit=dimensionless
+    [229ac7df...] EcoSpold01Allocation_undefined_152            unit=dimensionless
+    [a860a6d7...] oriented strand board content                 unit=dimensionless
+    [bca4bb32...] mass concentration, chromium                  unit=kg/m3
+    [69394b67...] concentration, lead                           unit=kg/kg
+    [87188506...] processing_efficiency                         unit=dimensionless
+    [ad7781c7...] cadmium content                               unit=dimensionless
+    [22640fa6...] EcoSpold01Allocation_undefined_103            unit=dimensionless
+    [843b09ba...] EcoSpold01Allocation_other_118                unit=dimensionless
+    [9fa0b3d1...] nitrogen oxides emissions tier T2 for hp < 600 unit=kg/hp*h
+    [66f07cc8...] aluminium hydroxide content                   unit=dimensionless
+    [8f14b33c...] EcoSpold01Allocation_physical_10              unit=dimensionless
+    [e31fd33a...] EcoSpold01Allocation_undefined_167            unit=dimensionless
+    [5df87d0c...] amount from Québec dataset in kg              unit=kg
+    [1e4dda32...] EcoSpold01Allocation_undefined_41             unit=dimensionless
+    [35b99d19...] Corresponding fuel use, transport, freight train unit=kg
+    [b8c88fc1...] EcoSpold01Allocation_physical_5               unit=dimensionless
+    [2daa7f09...] carbon monoxide emissions tier T1-T2-T4 for hp >= 750 unit=kg/hp*h
+    [ff981578...] ratio of particulates greater than 10 microns unit=dimensionless
+    [4109b4cb...] amount of exchange 4                          unit=kg
+    [fc26822f...] suspended soilds, mass per volume             unit=kg/m3
+    [ee73451f...] Erosivity factor                              unit=metric ton/ha
+    [a689662b...] EcoSpold01Allocation_other_76                 unit=dimensionless
+    [6eb1f2f9...] EcoSpold01Allocation_other_138                unit=dimensionless
+    [f01d999e...] amount in multioutput activity_kBq            unit=kBq
+    [4304cee2...] EcoSpold01Allocation_physical_6               unit=dimensionless
+    [b181bebd...] thorium content                               unit=dimensionless
+    [a8aa250d...] EcoSpold01Allocation_undefined_13             unit=dimensionless
+    [3a0af1d6...] dry mass                                      unit=kg
+    [2c9df76e...] amount of refractory material sent to recycling unit=kg
+    [4e5c60f3...] EcoSpold01Allocation_undefined_1              unit=dimensionless
+    [8068cdb4...] EcoSpold01Allocation_other_81                 unit=dimensionless
+    [3ac16c15...] EcoSpold01Allocation_other_59                 unit=dimensionless
+    [bede81da...] amount in multioutput activity_kg             unit=kg
+    [a17f5864...] gallium content                               unit=dimensionless
+    [13706ab5...] EcoSpold01Allocation_undefined_16             unit=dimensionless
+    [2d23d1bb...] hydrogen content                              unit=dimensionless
+    [e330c0ab...] length, external                              unit=m
+    [a39db367...] PERE                                          unit=MJ
+    [19859900...] EcoSpold01Allocation_undefined_126            unit=dimensionless
+    [e54fd3af...] EcoSpold01Allocation_undefined_11             unit=dimensionless
+    [6b32e857...] polycyclic aromatic hydrocarbon content, total unit=dimensionless
+    [498924d9...] EcoSpold01Allocation_physical_13              unit=dimensionless
+    [e1d5fa9f...] Tillage factor                                unit=dimensionless
+    [ddbab0d1...] mass concentration, calcium                   unit=kg/m3
+    [6b8ec313...] percentage of associated gas                  unit=dimensionless
+    [d8e26d77...] filter dust to landfill                       unit=kg
+    [7506683f...] EcoSpold01Allocation_undefined_170            unit=dimensionless
+    [c6cc9416...] EcoSpold01Allocation_other_57                 unit=dimensionless
+    [19e1c0ab...] SAM_activityLink_3_scaling_factor             unit=dimensionless
+    [058d6d50...] mass concentration, tungsten                  unit=kg/m3
+    [09345cd3...] corresponding fuel use, propane, furnace >100kW unit=MJ
+    [92dbd49f...] rhodium content                               unit=dimensionless
+    [8f20e2c8...] fuel input in physical units, L               unit=l
+    [9ffcf8a4...] amount of exchange in kg 2                    unit=kg
+    [83426689...] promethium content                            unit=dimensionless
+    [e1d2c19b...] chromium content                              unit=dimensionless
+    [350b57a1...] lifetime capacity [unit]                      unit=unit
+    [4119c81d...] EcoSpold01Allocation_other_80                 unit=dimensionless
+    [a3cef394...] dry mass under bark                           unit=kg
+    [f6f393da...] EcoSpold01Allocation_undefined_23             unit=dimensionless
+    [cdd48e4f...] maximum payload                               unit=kg
+    [ee2d771f...] SAM_activityLink_10                           unit=dimensionless
+    [b1e23c16...] EcoSpold01Allocation_other_82                 unit=dimensionless
+    [afd66188...] SAM_activityLink_1_scaling_factor             unit=dimensionless
+    [395566da...] EcoSpold01Allocation_undefined_57             unit=dimensionless
+    [c4c79eeb...] EcoSpold01Allocation_undefined_160            unit=dimensionless
+    [ae171669...] EcoSpold01Allocation_undefined_164            unit=dimensionless
+    [71ff1af9...] mass concentration, ytterbium                 unit=kg/m3
+    [04f55b1f...] amount of flow 3 in kg                        unit=kg
+    [d21c7c5c...] mass concentration, beryllium                 unit=kg/m3
+    [4b0bcb7d...] EcoSpold01Allocation_undefined_60             unit=dimensionless
+    [cf6fc65c...] mass concentration, rhenium                   unit=kg/m3
+    [4bb300e0...] EcoSpold01Allocation_other_9                  unit=dimensionless
+    [a102e6f8...] mass concentration, mercury                   unit=kg/m3
+    [66e996b5...] cobalt content                                unit=dimensionless
+    [5ca5b0e5...] EcoSpold01Allocation_undefined_78             unit=dimensionless
+    [9210d4a4...] mass concentration, thulium                   unit=kg/m3
+    [70da437b...] concentration, nickel                         unit=kg/kg
+    [e247fef6...] UVEK_relative_amount_9                        unit=dimensionless
+    [f9c05486...] EcoSpold01Allocation_undefined_122            unit=dimensionless
+    [0ce1f856...] multiplicative factor                         unit=dimensionless
+    [53338e64...] weight                                        unit=kg
+    [6879600d...] EcoSpold01Allocation_undefined_137            unit=dimensionless
+    [9b12772d...] EcoSpold01Allocation_undefined_80             unit=dimensionless
+    [3677f68f...] EcoSpold01Allocation_undefined_150            unit=dimensionless
+    [2f258629...] EcoSpold01Allocation_undefined_59             unit=dimensionless
+    [af20a165...] EcoSpold01Allocation_other_42                 unit=dimensionless
+    [5a19a87d...] nitrogen oxides emissions tier T0-T1 for hp < 11 unit=kg/hp*h
+    [df06865b...] EcoSpold01Allocation_other_126                unit=dimensionless
+    [779537ad...] EcoSpold01Allocation_other_50                 unit=dimensionless
+    [f0e05731...] mass concentration, holmium                   unit=kg/m3
+    [7f891aba...] fraction > 10microns                          unit=dimensionless
+    [6d02b77d...] carbon monoxide emissions tier T2-T4A-T4B for hp < 25 unit=kg/hp*h
+    [3aef92a8...] EcoSpold01Allocation_undefined_14             unit=dimensionless
+    [83f67a9e...] molybdenum content                            unit=dimensionless
+    [2586abb3...] EcoSpold01Allocation_other_40                 unit=dimensionless
+    [249183f5...] EcoSpold01Allocation_other_1                  unit=dimensionless
+    [de9e34f7...] EcoSpold01Allocation_other_37                 unit=dimensionless
+    [39b9c712...] EcoSpold01Allocation_undefined_119            unit=dimensionless
+    [db33417a...] capacity [kg/s]                               unit=kg/s
+    [95dc31b3...] EcoSpold01Allocation_other_5                  unit=dimensionless
+    [1100f7b2...] EcoSpold01Allocation_undefined_70             unit=dimensionless
+    [a6270f3a...] input_kg                                      unit=kg
+    [63169b0e...] EcoSpold01Allocation_other_116                unit=dimensionless
+    [34e62ad8...] carbon monoxide emissions tier T4N for hp >= 750 unit=kg/hp*h
+    [8c3af736...] EcoSpold01Allocation_other_133                unit=dimensionless
+    [829cf41b...] EcoSpold01Allocation_other_89                 unit=dimensionless
+    [edb5885b...] mass concentration, ruthenium                 unit=kg/m3
+    [d388e0ab...] mass concentration, carbone dioxide           unit=kg/m3
+    [d1191f28...] EcoSpold01Allocation_other_70                 unit=dimensionless
+    [a20fcb4b...] carbon monoxide emissions tier T1-T2-T4A for hp < 50 unit=kg/hp*h
+    [7ed11387...] EcoSpold01Allocation_undefined_140            unit=dimensionless
+    [6151c9e8...] seeds per hectare                             unit=unit
+    [f2f106e4...] carbon monoxide emissions tier T4-T4N for hp < 175 unit=kg/hp*h
+    [e092deec...] erbium content                                unit=dimensionless
+    [76b0b954...] mass concentration, germanium                 unit=kg/m3
+    [9732cce6...] EcoSpold01Allocation_undefined_113            unit=dimensionless
+    [5b66c906...] lifetime capacity                             unit=guest night
+    [b3fdadf7...] lifetime capacity [kg*day]                    unit=kg*day
+    [7affb437...] sodium hydroxide-to-hydroxide mass ratio      unit=dimensionless
+    [33976f6b...] mass concentration, barium                    unit=kg/m3
+    [7ec3f14a...] EcoSpold01Allocation_undefined_166            unit=dimensionless
+    [cf406018...] density loose                                 unit=kg/m3
+    [59d14f7c...] xenon content                                 unit=dimensionless
+    [60dacb81...] EcoSpold01Allocation_undefined_37             unit=dimensionless
+    [e9884091...] distance                                      unit=km
+    [0f9f07be...] EcoSpold01Allocation_undefined_111            unit=dimensionless
+    [533fe33f...] input_kWh_silver                              unit=kWh
+    [4c5edc32...] amount of flow 2 in kg                        unit=kg
+    [16c618be...] SAM_activityLink_10_scaling_factor            unit=dimensionless
+    [7de227b7...] EcoSpold01Allocation_undefined_46             unit=dimensionless
+    [e67802d9...] EcoSpold01Allocation_undefined_134            unit=dimensionless
+    [b142feef...] mass concentration. lutetium                  unit=kg/m3
+    [4c4768a0...] weight with a refrigeration unit              unit=kg
+    [6d9e1462...] water in wet mass                             unit=kg
+    [ed198fe4...] EcoSpold01Allocation_other_3                  unit=dimensionless
+    [f0b0d5bd...] EcoSpold01Allocation_other_60                 unit=dimensionless
+    [7526573b...] nitrogen oxides emissions tier T1-T2 for hp < 50 unit=kg/hp*h
+    [f6c7ebbb...] sulfur content                                unit=dimensionless
+    [ed229b01...] concentration, chromium                       unit=kg/kg
+    [61205d13...] EcoSpold01Allocation_other_20                 unit=dimensionless
+    [35fad4b2...] carbon monoxide emissions tier T1-T2 for hp < 11 unit=kg/hp*h
+    [bb2f5120...] no. of deformation strokes                    unit=dimensionless
+    [dcc3ffa8...] EcoSpold01Allocation_undefined_102            unit=dimensionless
+    [0c45ba75...] EcoSpold01Allocation_undefined_40             unit=dimensionless
+    [3c7ae7d7...] UVEK_relative_amount_5                        unit=dimensionless
+    [aadaffec...] amount 3 of flow in kg                        unit=kg
+    [d717d3e6...] density argon                                 unit=kg/m3
+    [f661d089...] EcoSpold01Allocation_undefined_142            unit=dimensionless
+    [02927350...] EcoSpold01Allocation_undefined_50             unit=dimensionless
+    [60288f73...] amount of exchange in kg 3                    unit=kg
+    [4066a930...] EcoSpold01Allocation_other_98                 unit=dimensionless
+    [e213502c...] MARKET_OVERWRITE_AMOUNT_CONSEQUENTIAL         unit=dimensionless
+    [66664710...] EcoSpold01Allocation_undefined_135            unit=dimensionless
+    [47619ea5...] amount of exchange in liters 4                unit=l
+    [fc3ab440...] calculation property, unit                    unit=unit
+    [54caf78d...] UVEK_link_7                                   unit=dimensionless
+    [e9164ff3...] mass concentration, iodine                    unit=kg/m3
+    [89d6c9b8...] butanol input, volume                         unit=l
+    [7acb6b78...] EcoSpold01Allocation_undefined_141            unit=dimensionless
+    [a83c5198...] EcoSpold01Allocation_undefined_114            unit=dimensionless
+    [46d0892f...] nitrogen oxides emissions tier T2-T4-T4A for hp < 75 unit=kg/hp*h
+    [e9688cbc...] aluminium content                             unit=dimensionless
+    [a1f8e76d...] carbon monoxide emissions tier T4-T4N for hp < 100 unit=kg/hp*h
+    [51d4e726...] conversion factor m3 to MJ                    unit=dimensionless
+    [5e4a4841...] EcoSpold01Allocation_other_65                 unit=dimensionless
+    [2a256b0b...] mercury content                               unit=dimensionless
+    [dc7524e0...] external scrap                                unit=kg
+    [4da6c212...] carbon monoxide emissions tier T1-T2-T3B for hp < 100 unit=kg/hp*h
+    [5ffa64c0...] EcoSpold01Allocation_other_55                 unit=dimensionless
+    [1ae79861...] mass concentration, radium                    unit=kg/m3
+    [58dd6b6e...] EcoSpold01Allocation_undefined_51             unit=dimensionless
+    [3ef999eb...] mass concentration, hafnium                   unit=kg/m3
+    [3fda760d...] EcoSpold01Allocation_undefined_151            unit=dimensionless
+    [51965208...] amount from Québec dataset in m³              unit=m3
+    [43e30a6f...] tantalum content                              unit=dimensionless
+    [71f8f2c1...] EcoSpold01Allocation_other_91                 unit=dimensionless
+    [1dcfb203...] barium content                                unit=dimensionless
+    [82a79813...] EcoSpold01Allocation_undefined_15             unit=dimensionless
+    [b4d2d9e3...] EcoSpold01Allocation_undefined_56             unit=dimensionless
+    [19504644...] corresponding fuel use, in m3                 unit=m3
+    [8900f7ba...] recovery rate                                 unit=dimensionless
+    [d2c1650c...] EcoSpold01Allocation_physical_16              unit=dimensionless
+    [d2efbebc...] fraction, origin: fresh water                 unit=dimensionless
+    [c3037e52...] EcoSpold01Allocation_other_135                unit=dimensionless
+    [0a6b459a...] polonium content                              unit=dimensionless
+    [07e0a0da...] boiling point                                 unit=K
+    [97f3bbfe...] phosphorus content                            unit=dimensionless
+    [3b8cf819...] carbon monoxide emissions tier T0-T1 for hp >= 100 unit=kg/hp*h
+    [8a8eec3f...] EcoSpold01Allocation_other_100                unit=dimensionless
+    [0650a63d...] iridium content                               unit=dimensionless
+    [38f94dd1...] price                                         unit=EUR2005
+    [422bd602...] EcoSpold01Allocation_other_137                unit=dimensionless
+    [ff58ccde...] carbon monoxide emissions tier T0-T1 for hp < 100 unit=kg/hp*h
+    [0189a8b3...] annual production                             unit=kg
+    [d1f4b69b...] input_kWh_gold                                unit=kWh
+    [ab204d7a...] carbon monoxide emissions tier T1-T2 for hp < 100 unit=kg/hp*h
+    [e89aabea...] EcoSpold01Allocation_other_10                 unit=dimensionless
+    [1ddd3907...] EcoSpold01Allocation_other_53                 unit=dimensionless
+    [ebfe771a...] amount in multioutput activity_unit           unit=unit
+    [401351bc...] nitrogen oxides emissions tier T2-T4-T4A for hp < 50 unit=kg/hp*h
+    [91a6ec9a...] EcoSpold01Allocation_other_103                unit=dimensionless
+    [df8fa668...] actinium content                              unit=dimensionless
+    [ff888459...] mass concentration, tin                       unit=kg/m3
+    [22ca28a0...] helium content                                unit=dimensionless
+    [c8bd609b...] EcoSpold01Allocation_other_29                 unit=dimensionless
+    [34b5d0fc...] Quebec production volume in m³                unit=m3
+    [2c6054e2...] oil content                                   unit=dimensionless
+    [0d3538d1...] recycled spent pot liner carbon               unit=kg
+    [a9e5f4bc...] carbon monoxide emissions tier T2-T3 for hp < 600 unit=kg/hp*h
+    [e5287f92...] total PAH emission to air                     unit=kg
+    [7e83fd10...] selenium content                              unit=dimensionless
+    [a8f781cd...] oil/fat content                               unit=dimensionless
+    [e6a9a337...] fossil share of carbon                        unit=dimensionless
+    [9162ac19...] SAM_activityLink_5                            unit=dimensionless
+    [a0ec6973...] total length of network                       unit=km
+    [27a52505...] EcoSpold01Allocation_other_75                 unit=dimensionless
+    [259dce5e...] EcoSpold01Allocation_undefined_85             unit=dimensionless
+    [b84cee83...] EcoSpold01Allocation_other_26                 unit=dimensionless
+    [6090fa5e...] UVEK_absolute_amount_3                        unit=dimensionless
+    [db9e4f42...] EcoSpold01Allocation_other_48                 unit=dimensionless
+    [3f5495ed...] UVEK_link_9                                   unit=dimensionless
+    [fdafa860...] thulium content                               unit=dimensionless
+    [24a8bbce...] EcoSpold01Allocation_undefined_92             unit=dimensionless
+    [6014982c...] bulk density                                  unit=kg/m3
+    [2d2d6270...] EcoSpold01Allocation_undefined_146            unit=dimensionless
+    [a01597eb...] lifetime capacity in m3                       unit=m3
+    [8d67414b...] pH                                            unit=dimensionless
+    [19adc55b...] carbon monoxide emissions tier T4 for hp < 50 unit=kg/hp*h
+    [6c4a1198...] rubidium content                              unit=dimensionless
+    [313804be...] nitrogen oxides emissions tier T1 for hp < 750 unit=kg/hp*h
+    [48c987bb...] heating value, net                            unit=MJ
+    [72e34840...] EcoSpold01Allocation_undefined_29             unit=dimensionless
+    [d574cc22...] mass concentration, strontium                 unit=kg/m3
+    [4f8aa556...] Surface                                       unit=m2
+    [0850c7ed...] EcoSpold01Allocation_undefined_39             unit=dimensionless
+    [9877c28a...] nitrogen oxides emissions tier T1 for hp < 11 unit=kg/hp*h
+    [b433e928...] SAM_activityLink_3                            unit=dimensionless
+    [ad764b69...] capacity factor                               unit=dimensionless
+    [effa47e4...] concentration, iron                           unit=kg/kg
+    [07ee9fef...] lumber content                                unit=dimensionless
+    [e2bdc7a2...] EcoSpold01Allocation_undefined_19             unit=dimensionless
+    [8273c5ca...] plant average daily flow rate                 unit=m3/d
+    [90082cb2...] EcoSpold01Allocation_other_62                 unit=dimensionless
+    [b4373c8a...] EcoSpold01Allocation_other_119                unit=dimensionless
+    [a1305118...] chemical factory annual production            unit=kg/year
+    [da9aed81...] zirconium content                             unit=dimensionless
+    [6b7a7ccc...] hydraulic oil input                           unit=l
+    [6225e729...] EcoSpold01Allocation_physical_3               unit=dimensionless
+    [fce247fb...] phenol resorcinol formaldehyde resin content  unit=dimensionless
+    [4131adc0...] volume                                        unit=m3
+    [d8551abf...] tin content                                   unit=dimensionless
+    [f8a0423a...] chromium layer reference thickness            unit=m
+    [6b2e1ace...] capacity [kg]                                 unit=kg
+    [468e50e8...] mass concentration, chlorine                  unit=kg/m3
+    [2f7030b9...] mass concentration, cobalt                    unit=kg/m3
+    [82728b89...] samarium content                              unit=dimensionless
+    [f1521c85...] EcoSpold01Allocation_other_129                unit=dimensionless
+    [33c61b1f...] UVEK_link_4                                   unit=dimensionless
+    [c9d506f1...] EcoSpold01Allocation_physical_15              unit=dimensionless
+    [cd4e3d6c...] EcoSpold01Allocation_other_31                 unit=dimensionless
+    [3228318b...] EcoSpold01Allocation_other_112                unit=dimensionless
+    [53f505b2...] EcoSpold01Allocation_other_6                  unit=dimensionless
+    [de1bb1fa...] EcoSpold01Allocation_other_13                 unit=dimensionless
+    [d33e6732...] mass concentration. lanthanum                 unit=kg/m3
+    [11d072f8...] lifetime capacity [MJ]                        unit=MJ
+    [7380cc82...] nitrogen oxides emissions tier T4A for hp < 50 unit=kg/hp*h
+    [347a7539...] EcoSpold01Allocation_other_125                unit=dimensionless
+    [548bf5c9...] price CHF                                     unit=CHF2011
+    [3759d833...] mass concentration, antimony                  unit=kg/m3
+    [dcdc6c7b...] mass concentration, silver                    unit=kg/m3
+    [1ced5983...] mass concentration, praseodymium              unit=kg/m3
+    [cc72d858...] mass concentration, cerium                    unit=kg/m3
+    [004f9876...] EcoSpold01Allocation_other_109                unit=dimensionless
+    [88c9f622...] mass concentration, particulate nitrogen      unit=kg/m3
+    [0f129331...] BCCP                                          unit=kg C
+    [f077d584...] EcoSpold01Allocation_other_49                 unit=dimensionless
+    [c35265a9...] mass concentration, selenium                  unit=kg/m3
+    [d1299459...] EcoSpold01Allocation_undefined_174            unit=dimensionless
+    [b1771ea0...] fraction of diesel sulfur converted to direct PM (hydrated sulfuric acid) unit=dimensionless
+    [e5159f1c...] EcoSpold01Allocation_other_71                 unit=dimensionless
+    [4bcd332d...] carbon monoxide emissions tier T4A for hp < 75 unit=kg/hp*h
+    [3e002aac...] EcoSpold01Allocation_other_67                 unit=dimensionless
+    [7ce01fe9...] EcoSpold01Allocation_other_108                unit=dimensionless
+    [1a7e58fe...] EcoSpold01Allocation_undefined_172            unit=dimensionless
+    [ec1f2209...] lifetime capacity [kWh]                       unit=kWh
+    [810c1049...] carbon monoxide emissions tier T4A-T4B for hp < 25 unit=kg/hp*h
+    [b9f3db9b...] amount 5 of flow in kg                        unit=kg
+    [40a28310...] mass concentration, hydrogen                  unit=kg/m3
+    [06084f11...] consumption ratio                             unit=dimensionless
+    [ac040fce...] EcoSpold01Allocation_undefined_173            unit=dimensionless
+    [d271dd60...] mass concentration, samarium                  unit=kg/m3
+    [c9011148...] francium content                              unit=dimensionless
+    [68d5fb80...] length, internal                              unit=m
+    [725ed395...] EcoSpold01Allocation_undefined_107            unit=dimensionless
+    [f74d688f...] sand content                                  unit=kg
+    [b00066a1...] Corresponding fuel use                        unit=MJ
+    [1e51ca3c...] EcoSpold01Allocation_undefined_159            unit=dimensionless
+    [811ae1c4...] EcoSpold01Allocation_undefined_63             unit=dimensionless
+    [932d75c9...] EcoSpold01Allocation_undefined_3              unit=dimensionless
+    [048152de...] value per kg of bi-metal cable                unit=dimensionless
+    [e4d35ad5...] EcoSpold01Allocation_undefined_132            unit=dimensionless
+    [b89a34ce...] EcoSpold01Allocation_undefined_34             unit=dimensionless
+    [3b2fd7f9...] EcoSpold01Allocation_undefined_65             unit=dimensionless
+    [d3c0b420...] sodium content                                unit=dimensionless
+    [6b90d16b...] bromine content                               unit=dimensionless
+    [0b27405b...] europium content                              unit=dimensionless
+    [7066bede...] nitrogen oxides emissions tier T4N for hp >= 750 unit=kg/hp*h
+    [fafd4e54...] bark                                          unit=dimensionless
+    [7f341c54...] EcoSpold01Allocation_undefined_43             unit=dimensionless
+    [b7f03a47...] EcoSpold01Allocation_undefined_12             unit=dimensionless
+    [291c5be3...] mass concentration, terbium                   unit=kg/m3
+    [0ab0dbcd...] EcoSpold01Allocation_undefined_31             unit=dimensionless
+    [71661037...] EcoSpold01Allocation_undefined_38             unit=dimensionless
+    [6b7d0b77...] mass concentration, neon                      unit=kg/m3
+    [d4c9277c...] EcoSpold01Allocation_other_93                 unit=dimensionless
+    [3e1978a6...] mass concentration, gold                      unit=kg/m3
+    [60f67378...] carbohydrates content                         unit=kg
+    [35ae1cd5...] EcoSpold01Allocation_undefined_100            unit=dimensionless
+    [4f2b3b64...] nitrogen oxides emissions tier T3B for hp < 100 unit=kg/hp*h
+    [96b698b6...] EcoSpold01Allocation_undefined_17             unit=dimensionless
+    [30fd0072...] protactinium content                          unit=dimensionless
+    [10516dfc...] EcoSpold01Allocation_other_23                 unit=dimensionless
+    [d61f95b4...] SAM_activityLink_6_scaling_factor             unit=dimensionless
+    [dbbc1095...] production in l                               unit=l
+    [9a645b11...] EcoSpold01Allocation_undefined_104            unit=dimensionless
+    [e1b325f9...] carbon monoxide emissions tier T2-T3-T4-T4N for hp < 300 unit=kg/hp*h
+    [4a46fd19...] EcoSpold01Allocation_undefined_75             unit=dimensionless
+    [a3ca4324...] mass concentration, protactinium              unit=kg/m3
+    [58bf4a99...] paint volatile content                        unit=dimensionless
+    [dc740682...] fuel consumption tier T0-T1-T2-T4A-T4B for hp < 25 unit=kg/hp*h
+    [8e73d3fb...] mass concentration, phophorus                 unit=kg/m3
+    [fcf35248...] EcoSpold01Allocation_undefined_36             unit=dimensionless
+    [45980067...] amount from Québec dataset in MJ              unit=MJ
+    [b03c4941...] EcoSpold01Allocation_undefined_106            unit=dimensionless
+    [9b6a1396...] nitrogen oxides emissions tier T2-T3-T4-T4N for hp < 300 unit=kg/hp*h
+    [fd4a3f9c...] EcoSpold01Allocation_undefined_79             unit=dimensionless
+    [f9da385d...] calcium content                               unit=dimensionless
+    [769c39a4...] SAM_activityLink_6                            unit=dimensionless
+    [c774b985...] P to surface water                            unit=kg/ha
+    [330a5eb3...] EcoSpold01Allocation_undefined_71             unit=dimensionless
+    [2544bcdb...] EcoSpold01Allocation_physical_8               unit=dimensionless
+    [529b8a40...] carbon monoxide emissions tier T1-T2-T4A-T4B for hp <25 unit=kg/hp*h
+    [0ba7c468...] EcoSpold01Allocation_undefined_24             unit=dimensionless
+    [efe22a60...] mass concentration, DOC                       unit=kg/m3
+    [6b093a42...] uranium content                               unit=dimensionless
+    [67f102e2...] wet mass                                      unit=kg
+    [9fbbd119...] EcoSpold01Allocation_undefined_30             unit=dimensionless
+    [54947c59...] consumption in litre                          unit=l
+    [e54d7883...] ratio of particulates between 2.5 and 10 microns unit=dimensionless
+    [dbf41b1b...] oxygen content                                unit=dimensionless
+    [a31d9aea...] carbon monoxide emissions tier T2-T3-T4-T4N for hp < 175 unit=kg/hp*h
+    [7b6fda25...] mass of fuel used                             unit=kg
+    [e770581e...] nitrogen oxides emissions tier T4N for hp < 750 unit=kg/hp*h
+    [23135e1c...] EcoSpold01Allocation_undefined_99             unit=dimensionless
+    [810a2bc2...] mass concentration, chloride                  unit=kg/m3
+    [ed2901df...] nitrogen oxides emissions tier T2-T3-T4-T4N for hp < 175 unit=kg/hp*h
+    [6ae0b7dc...] water incorporated in dry mass                unit=kg
+    [2382a305...] concentration, cadmium                        unit=kg/kg
+    [c5254bc1...] amount of exchange in liters 3                unit=l
+    [9d8c0443...] amount of exchange in liters 1                unit=l
+    [fa091783...] EcoSpold01Allocation_other_15                 unit=dimensionless
+    [a2253bbc...] EcoSpold01Allocation_other_38                 unit=dimensionless
+    [49f298b4...] fuel input in physical units, kg              unit=kg
+    [7cfec3bb...] batch water                                   unit=kg
+    [8d27623b...] mass concentration, manganese                 unit=kg/m3
+    [e4f645c2...] EcoSpold01Allocation_undefined_88             unit=dimensionless
+    [a622d668...] input                                         unit=l
+    [6a0ca084...] EcoSpold01Allocation_physical_4               unit=dimensionless
+    [eb54c995...] chromium, fraction                            unit=dimensionless
+    [7b949c3e...] carbon monoxide emissions tier T4-T4N for hp < 750 unit=kg/hp*h
+    [4d06b121...] nitrogen oxides emissions tier T4 for hp < 750 unit=kg/hp*h
+    [decbd998...] mass concentration, oxygen                    unit=kg/m3
+    [c9d84209...] EcoSpold01Allocation_undefined_84             unit=dimensionless
+    [21fe24bc...] EcoSpold01Allocation_undefined_87             unit=dimensionless
+    [d938c38f...] EcoSpold01Allocation_undefined_144            unit=dimensionless
+    [b74a5743...] UVEK_relative_amount_6                        unit=dimensionless
+    [7a3978ea...] true value relation                           unit=dimensionless
+    [546af016...] carbon monoxide emissions tier T1-T2 for hp < 50 unit=kg/hp*h
+    [f767b36f...] nickel content                                unit=dimensionless
+    [62403f62...] EcoSpold01Allocation_undefined_61             unit=dimensionless
+    [6cc518c8...] mass concentration, zinc                      unit=kg/m3
+    [d8364dfc...] iron content                                  unit=dimensionless
+    [8cd87c78...] protein content                               unit=dimensionless
+    [7f205d52...] carbon monoxide emissions tier T1-T2-T3B-T4A for hp <100 unit=kg/hp*h
+    [4e4a3dfe...] radon content                                 unit=dimensionless
+    [0fdc85f3...] ratio of total particulates less than 2.5 microns unit=dimensionless
+    [4fa5130c...] dysprosium content                            unit=dimensionless
+    [1fbe4632...] mass concentration, bicarbonate               unit=kg/m3
+    [dc473aa5...] amount in multioutput activity_m              unit=m
+    [f555cb34...] EcoSpold01Allocation_other_18                 unit=dimensionless
+    [eedc98e4...] carbon monoxide emissions tier T2-T3-T4-T4N for hp < 600 unit=kg/hp*h
+    [0f5f7900...] polyurethane content                          unit=dimensionless
+    [9f7de17b...] EcoSpold01Allocation_undefined_26             unit=dimensionless
+    [991c0653...] EcoSpold01Allocation_other_45                 unit=dimensionless
+    [00f02f43...] concentration of amount 2                     unit=dimensionless
+    [80b802e4...] nitrogen oxides emissions tier T2 for hp < 11 unit=kg/hp*h
+    [0b686a86...] mass concentration, vanadium                  unit=kg/m3
+    [4e03eb8c...] width, internal                               unit=m
+    [f4c39daf...] EcoSpold01Allocation_other_90                 unit=dimensionless
+    [0d632a6f...] fuel input in physical units m3               unit=m3
+    [2fae93f0...] nitrogen oxides emissions tier T0 for hp < 11 unit=kg/hp*h
+    [9e2b3e28...] nitrogen oxides emissions tier T2-T3-T4-T4N for hp < 600 unit=kg/hp*h
+    [7de04612...] EcoSpold01Allocation_undefined_10             unit=dimensionless
+    [89132086...] nitrogen oxides emissions tier T0 for hp >= 100 unit=kg/hp*h
+    [995265a2...] strontium content                             unit=dimensionless
+    [9a08745d...] concentration, copper                         unit=kg/kg
+    [ad9d20d9...] dinitrogen monoxide factor                    unit=kg/GJ
+    [9dbeef2f...] carbon monoxide emissions tier T0 for hp < 25 unit=kg/hp*h
+    [67da83f9...] UVEK_link_3                                   unit=dimensionless
+    [20f028ac...] EcoSpold01Allocation_other_95                 unit=dimensionless
+    [3f469e9e...] COD, mass per volume                          unit=kg/m3
+    [61c2bb4e...] EcoSpold01Allocation_other_28                 unit=dimensionless
+    [6d4c39b3...] gross energy, feed per kg of dry mass         unit=MJ/kg
+    [e50220ad...] EcoSpold01Allocation_undefined_116            unit=dimensionless
+    [ed52f355...] EcoSpold01Allocation_undefined_157            unit=dimensionless
+    [6c393aad...] EcoSpold01Allocation_undefined_55             unit=dimensionless
+    [630eb01c...] mass concentration, erbium                    unit=kg/m3
+    [062724be...] mass concentration, carbonate                 unit=kg/m3
+    [52178bb1...] EcoSpold01Allocation_undefined_98             unit=dimensionless
+    [0ef3eed0...] calculation property, nacelle, kg             unit=kg
+    [16592e34...] mass concentration, carbonic acid             unit=kg/m3
+    [3cfb9179...] concentration                                 unit=dimensionless
+    [dd4b0dc9...] americium content                             unit=dimensionless
+    [98f985da...] mass concentration, palladium                 unit=kg/m3
+    [253644d1...] concentration, zinc                           unit=kg/kg
+    [0d24d7d1...] amount from semichemical fluting production in kg unit=kg
+    [e73d8b59...] plutonium content                             unit=dimensionless
+    [4bf06399...] amount 2 of flow in kg                        unit=kg
+    [706d9439...] used oil fraction emitted to soil             unit=dimensionless
+    [aa897226...] mass concentration, molybdenum                unit=kg/m3
+    [7fc0f949...] fluoranthene content                          unit=dimensionless
+    [cf3f0fc4...] carbon monoxide emissions tier T1-T2-T4A-T4B for hp < 11 unit=kg/hp*h
+    [2452d3a4...] EcoSpold01Allocation_other_35                 unit=dimensionless
+    [d6594289...] EcoSpold01Allocation_undefined_133            unit=dimensionless
+    [84916b80...] tungsten content                              unit=dimensionless
+    [bdfb2f07...] EcoSpold01Allocation_undefined_66             unit=dimensionless
+    [9c38ea07...] EcoSpold01Allocation_undefined_5              unit=dimensionless
+    [cd180116...] nitrogen oxides emissions tier T2-T4A-T4B for hp < 25 unit=kg/hp*h
+    [20c6f95d...] EcoSpold01Allocation_other_56                 unit=dimensionless
+    [883a9dc6...] organic carbon content                        unit=dimensionless
+    [7c69446b...] carbon monoxide emissions tier T2-T3B-T4-T4A-T4N for hp < 100 unit=kg/hp*h
+    [bfe72a17...] kgFuel_Input                                  unit=kg
+    [0c75f510...] UVEK_link_2                                   unit=dimensionless
+    [1e4ef691...] mass concentration, dissolved sulfate SO4 as S unit=kg/m3
+    [75e905a0...] EcoSpold01Allocation_other_132                unit=dimensionless
+    [4f461b9d...] mass concentration, dissolved nitrate NO3 as N unit=kg/m3
+    [99779f35...] EcoSpold01Allocation_undefined_161            unit=dimensionless
+    [f4818ed4...] carbon monoxide emissions tier T2-T4-T4N for hp >= 750 unit=kg/hp*h
+    [94b2be61...] lanthanum content                             unit=dimensionless
+    [be5dfbaa...] Slope Factor                                  unit=dimensionless
+    [15e75e26...] filter dust to recycling                      unit=kg
+    [434365cb...] EcoSpold01Allocation_undefined_138            unit=dimensionless
+    [38836621...] EcoSpold01Allocation_physical_14              unit=dimensionless
+    [aac3d6fa...] EcoSpold01Allocation_other_24                 unit=dimensionless
+    [9676ed7d...] EcoSpold01Allocation_undefined_8              unit=dimensionless
+    [30f0aa15...] arsenic content                               unit=dimensionless
+    [cbda3750...] SAM_activityLink_2                            unit=dimensionless
+    [d1fd6996...] width, external                               unit=m
+    [56a4a73c...] EcoSpold01Allocation_undefined_118            unit=dimensionless
+    [1111ac7e...] mass concentration, cadmium                   unit=kg/m3
+    [eb8b2ca3...] EcoSpold01Allocation_undefined_93             unit=dimensionless
+    [50f1fc5b...] EcoSpold01Allocation_undefined_117            unit=dimensionless
+    [bcd5fb37...] EcoSpold01Allocation_undefined_25             unit=dimensionless
+    [0d5e8e13...] regional dataset numerical value              unit=dimensionless
+    [7a555ebd...] EcoSpold01Allocation_other_113                unit=dimensionless
+    [235863fd...] curium content                                unit=dimensionless
+    [9b950fc7...] EcoSpold01Allocation_other_128                unit=dimensionless
+    [fea328b8...] EcoSpold01Allocation_undefined_115            unit=dimensionless
+    [c99b7922...] EcoSpold01Allocation_other_44                 unit=dimensionless
+    [65978016...] carbon monoxide emissions tier T1 for hp < 600 unit=kg/hp*h
+    [a72ff647...] amount of exchange in MJ 1                    unit=MJ
+    [9e2e8cd4...] carbon monoxide emissions tier T4-T4N for hp < 600 unit=kg/hp*h
+    [ffc1bcb9...] nitrogen oxides emissions tier T0 for hp < 100 unit=kg/hp*h
+    [b9318792...] global dataset numerical value                unit=dimensionless
+    [b15297c5...] EcoSpold01Allocation_undefined_54             unit=dimensionless
+    [807a3833...] mass concentration, caesium                   unit=kg/m3
+    [284c739e...] total polycyclic aromatic hydrocarbon content unit=dimensionless
+    [c87bbc61...] EcoSpold01Allocation_undefined_97             unit=dimensionless
+    [d23caec2...] EcoSpold01Allocation_other_92                 unit=dimensionless
+    [878b9555...] fibre (total dietary) content                 unit=kg
+    [95b6afca...] working time                                  unit=hour
+    [4fb17587...] praseodymium content                          unit=dimensionless
+    [d445b2d3...] EcoSpold01Allocation_other_46                 unit=dimensionless
+    [b321f120...] mass concentration, arsenic                   unit=kg/m3
+    [e4e1bfeb...] UVEK_relative_amount_4                        unit=dimensionless
+    [fde57f9e...] yearly output                                 unit=kg
+    [bc015cac...] UVEK_link_10                                  unit=dimensionless
+    [28a73d20...] EcoSpold01Allocation_undefined_64             unit=dimensionless
+    [35d16e49...] mass concentration, gallium                   unit=kg/m3
+    [9b14f020...] allocation factor                             unit=dimensionless
+    [6b443a06...] fraction between 2.5 and 10 microns           unit=dimensionless
+    [3f0217f2...] nitrogen oxides emissions tier T1 for hp >= 750 unit=kg/hp*h
+    [d8d0d9e1...] mass concentration, rhodium                   unit=kg/m3
+    [e7451d8a...] mass concentration, copper                    unit=kg/m3
+    [2bc683e4...] manganese content                             unit=dimensionless
+    [a087148d...] nitrogen oxides emissions tier T0 for hp < 25 unit=kg/hp*h
+    [8a03c256...] carbon monoxide emissions tier T0 for hp < 50 unit=kg/hp*h
+    [f6383e22...] SAM_activityLink_9_scaling_factor             unit=dimensionless
+    [7913a35d...] amount 7 of flow in kg                        unit=kg
+    [ed10c0cd...] EcoSpold01Allocation_other_22                 unit=dimensionless
+    [95b0aa67...] UVEK_absolute_amount_2                        unit=dimensionless
+    [4f98e802...] amount of flow 1 in kg                        unit=kg
+    [1e32cfb3...] SAM_activityLink_8                            unit=dimensionless
+    [da1ed753...] mass concentration, argon                     unit=kg/m3
+    [fbc58d8d...] lutetium content                              unit=dimensionless
+    [7d3c701a...] EcoSpold01Allocation_undefined_9              unit=dimensionless
+    [dba83ee6...] vanadium content                              unit=dimensionless
+    [e7d14d44...] amount in multioutput activity_km             unit=km
+    [3a99e603...] amount of exchange 1                          unit=kg
+    [d9bc2a4f...] Erodibility factor                            unit=dimensionless
+    [c2d8bd45...] EcoSpold01Allocation_other_2                  unit=dimensionless
+    [ed62dbf5...] mass concentration, gadolinium                unit=kg/m3
+    [e3c6bebb...] EcoSpold01Allocation_physical_9               unit=dimensionless
+    [6e8e2e10...] carbon monoxide emissions tier T2-T4-T4A for hp < 50 unit=kg/hp*h
+    [0593a28f...] SAM_activityLink_7_scaling_factor             unit=dimensionless
+    [ed9ccf89...] fraction, origin: salt water                  unit=dimensionless
+    [9f2ce7cd...] EcoSpold01Allocation_physical_7               unit=dimensionless
+    [081906a6...] EcoSpold01Allocation_undefined_139            unit=dimensionless
+    [405bdcc4...] nitrogen oxides emissions tier T1-T2 for hp < 25 unit=kg/hp*h
+    [864f80ba...] EcoSpold01Allocation_other_27                 unit=dimensionless
+    [a9358458...] water content                                 unit=dimensionless
+    [0132d97c...] copper content                                unit=dimensionless
+    [6e79b548...] EcoSpold01Allocation_other_99                 unit=dimensionless
+    [9adea776...] mass concentration, platinum                  unit=kg/m3
+    [4af77686...] EcoSpold01Allocation_undefined_52             unit=dimensionless
+    [a666085f...] chromium layer thickness                      unit=m
+    [e07a2fd9...] EcoSpold01Allocation_other_131                unit=dimensionless
+    [e8208ea6...] concentration of amount 4                     unit=dimensionless
+    [7050b4bb...] nitrogen oxides emissions tier T0-T1 for hp >= 100 unit=kg/hp*h
+    [7a6ab142...] EcoSpold01Allocation_undefined_90             unit=dimensionless
+    [9a89a755...] fuel consumption tier T0-T1-T2-T3-T4-T4N for hp >= 100 unit=kg/hp*h
+    [20a573bd...] EcoSpold01Allocation_undefined_147            unit=dimensionless
+    [73f50e9b...] mass concentration, francium                  unit=kg/m3
+    [109c5b60...] corresponding fuel use, natural gas           unit=MJ
+    [d7e67353...] EcoSpold01Allocation_undefined_42             unit=dimensionless
+    [f463eabb...] active membrane surface per module unit       unit=m2
+    [64d9c14d...] EcoSpold01Allocation_other_47                 unit=dimensionless
+    [c74c3729...] carbon content, fossil                        unit=dimensionless
+    [0a764569...] PENRE                                         unit=MJ
+    [f8bff3e1...] EcoSpold01Allocation_undefined_123            unit=dimensionless
+    [6c113912...] mass concentration, tantalum                  unit=kg/m3
+    [959b298e...] MARKET_OVERWRITE_PV_CUTOFF                    unit=dimensionless
+    [4d205f54...] capacity                                      unit=kWp
+    [4cf2bf35...] carbon monoxide emissions tier T2-T3-T4-T4N for hp < 750 unit=kg/hp*h
+    [f863a012...] EcoSpold01Allocation_other_84                 unit=dimensionless
+    [e8851fdc...] EcoSpold01Allocation_undefined_44             unit=dimensionless
+    [adc73a30...] carbon monoxide emissions tier T2-T4A-T4B for hp < 11 unit=kg/hp*h
+    [db2e27d1...] EcoSpold01Allocation_undefined_6              unit=dimensionless
+    [fb981a3e...] value per m of bi-metal cable                 unit=dimensionless
+    [7f9ab53b...] mass of a straw bale                          unit=kg
+    [2f38f10d...] EcoSpold01Allocation_undefined_96             unit=dimensionless
+    [bf6f662d...] MARKET_OVERWRITE_PV_APOS                      unit=dimensionless
+    [2903bca6...] consequential                                 unit=dimensionless
+    [168cb9d2...] concentration of solution                     unit=dimensionless
+    [dd13a45c...] BOD5, mass per volume                         unit=kg/m3
+    [d8074a22...] EcoSpold01Allocation_other_34                 unit=dimensionless
+    [fe9f0d92...] germanium content                             unit=dimensionless
+    [1a6c78a7...] EcoSpold01Allocation_undefined_165            unit=dimensionless
+    [6a158827...] mass concentration, niobium                   unit=kg/m3
+    [65c24baa...] EcoSpold01Allocation_undefined_156            unit=dimensionless
+    [7d0f119e...] EcoSpold01Allocation_other_114                unit=dimensionless
+    [5dfc918a...] transport distance                            unit=km
+    [6e55762f...] concentration of amount 6                     unit=dimensionless
+    [c50751b6...] conversion factor kg to MJ                    unit=dimensionless
+    [93bfda45...] lifetime capacity [h]                         unit=hour
+    [b0a4d18f...] exergy                                        unit=MJ
+    [0e73547d...] EcoSpold01Allocation_undefined_20             unit=dimensionless
+    [33c8d745...] fuel consumption tier T0-T1-T2-T3B-T4-T4A-T4N for hp < 100 unit=kg/hp*h
+    [a301a838...] carbon content                                unit=dimensionless
+    [ff7e0d7f...] methane factor                                unit=kg/GJ
+    [dd7e15dc...] silicon content                               unit=dimensionless
+    [b1533882...] total surface                                 unit=m2
+    [7e13079e...] Quebec production volume                      unit=kg
+    [7feedb5e...] humus equivalent                              unit=kg
+    [b62bf4de...] EcoSpold01Allocation_other_83                 unit=dimensionless
+    [f446fb66...] neptunium content                             unit=dimensionless
+    [246d7910...] EcoSpold01Allocation_undefined_22             unit=dimensionless
+    [5e38b3ed...] total particulates                            unit=kg
+    [85022ccb...] fuel input in physical units, m3, natural gas unit=m3
+    [e59c55b1...] EcoSpold01Allocation_other_97                 unit=dimensionless
+    [d4eb6078...] EcoSpold01Allocation_undefined_143            unit=dimensionless
+    [1eee9a63...] tcdd equivalents                              unit=dimensionless
+    [539447de...] EcoSpold01Allocation_other_66                 unit=dimensionless
+    [f69a7705...] EcoSpold01Allocation_other_121                unit=dimensionless
+    [c17faa2d...] mass per seed                                 unit=kg
+    [a7e81e5c...] mass concentration, europium                  unit=kg/m3
+    [ff13a5f2...] EcoSpold01Allocation_other_110                unit=dimensionless
+    [01232ebc...] EcoSpold01Allocation_other_104                unit=dimensionless
+    [5b7203d0...] mass concentration, yttrium                   unit=kg/m3
+    [bca5eb23...] volume of fuel used                           unit=l
+    [0bdc13c6...] length                                        unit=km
+    [e4504511...] mass concentration, bromine                   unit=kg/m3
+    [6bc8ac5e...] energy content                                unit=MJ
+    [b9bf7cb7...] UVEK_absolute_amount2                         unit=dimensionless
+    [ad626ff0...] EcoSpold01Allocation_other_68                 unit=dimensionless
+    [0ccb96ff...] EcoSpold01Allocation_undefined_53             unit=dimensionless
+    [e06ea4a9...] N content                                     unit=dimensionless
+    [a4607feb...] EcoSpold01Allocation_other_54                 unit=dimensionless
+    [59d2bb6c...] amount of refractory material sent to landfill unit=kg
+    [b41681b0...] mass concentration, thorium                   unit=kg/m3
+    [a547f885...] mass concentration, TOC                       unit=kg/m3
+    [2ae5ee8a...] occupation period                             unit=year
+    [cbffa34c...] mass concentration, indium                    unit=kg/m3
+    [dbede65d...] mass concentration, rubidium                  unit=kg/m3
+    [406ac421...] EcoSpold01Allocation_undefined_86             unit=dimensionless
+    [511ae34f...] EcoSpold01Allocation_other_120                unit=dimensionless
+    [4ca9b2ce...] lower heating value MJ per kg                 unit=MJ/kg
+    [aefe9fab...] lifetime capacity [l]                         unit=l
+    [dc86ba5b...] nitrogen oxides emissions tier T0-T1 for hp < 100 unit=kg/hp*h
+    [ca949a93...] potassium content                             unit=dimensionless
+    [06b0c4fd...] nitrogen oxides emissions tier T1-T2-T4A for hp <50 unit=kg/hp*h
+    [d7ba3e4c...] EcoSpold01Allocation_other_136                unit=dimensionless
+    [c0447419...] mass concentration, boron                     unit=kg/m3
+    [b090c679...] nitrogen oxides emissions tier T4-T4A for hp < 100 unit=kg/hp*h
+    [f404e699...] EcoSpold01Allocation_other_25                 unit=dimensionless
+    [d602c01c...] carbon monoxide emissions tier T1-T2 for hp < 25 unit=kg/hp*h
+    [c62a1ea1...] nitrogen oxides emissions tier T4-T4N for hp >= 750 unit=kg/hp*h
+    [4188c979...] gravel content                                unit=kg
+    [43c83d61...] mass concentration, dysprosium                unit=kg/m3
+    [953c9d29...] EcoSpold01Allocation_undefined_27             unit=dimensionless
+    [0d873051...] EcoSpold01Allocation_undefined_82             unit=dimensionless
+    [ea0dd556...] cerium content                                unit=dimensionless
+    [4688b15a...] nitrogen oxides emissions tier T2-T3-T4-T4N for hp >= 600 unit=kg/hp*h
+    [4054bfa7...] antimony content                              unit=dimensionless
+    [26e0e131...] mass concentration, bismuth                   unit=kg/m3
+    [42a081fd...] EcoSpold01Allocation_physical_17              unit=dimensionless
+    [bf4d71d9...] beryllium content                             unit=dimensionless
+    [7919c1a2...] nitrogen oxides emissions tier T4N for hp < 100 unit=kg/hp*h
+    [5ec6019b...] mass concentration, neodymium                 unit=kg/m3
+    [467149c7...] molecular weight                              unit=g/mol
+    [3585f881...] percentage of non associated gas              unit=dimensionless
+    [72234199...] EcoSpold01Allocation_other_30                 unit=dimensionless
+    [3a09cd24...] EcoSpold01Allocation_other_63                 unit=dimensionless
+    [aafefdf9...] capacity [l/hour]                             unit=l/hour
+    [837d4c36...] EcoSpold01Allocation_other_139                unit=dimensionless
+    [e11d1534...] thermal efficiency                            unit=dimensionless
+    [15c2d120...] EcoSpold01Allocation_undefined_83             unit=dimensionless
+    [a82977cb...] dross sent to recycling                       unit=kg
+    [65262335...] concentration of amount 1                     unit=dimensionless
+    [8175120e...] mass concentration, particulate sulfur        unit=kg/m3
+    [48b2521b...] rhenium content                               unit=dimensionless
+    [17b88d93...] capacity, cargo                               unit=TEU
+    [985e782a...] nitrogen oxides emissions tier T0-T1 for hp < 25 unit=kg/hp*h
+    [80230db9...] total particulates > 2.5microns               unit=kg
+    [f9ee3fab...] input_kg_recycled                             unit=kg
+    [7b656e1b...] mass concentration, sodium                    unit=kg/m3
+    [cc1ba8c4...] UVEK_relative_amount_1                        unit=dimensionless
+    [88c4f0b7...] BCCAP                                         unit=kg C
+    [35d2e0b2...] scandium content                              unit=dimensionless
+    [57f4dc39...] benzofluoranthene content                     unit=dimensionless
+    [138392d1...] weight per length                             unit=kg/m
+    [65387d28...] ytterbium content                             unit=dimensionless
+    [22c3e383...] amount in mass units                          unit=dimensionless
+    [05576542...] EcoSpold01Allocation_other_8                  unit=dimensionless
+    [7fe01cf6...] mass concentration, dissolved phosphate PO4 as P unit=kg/m3
+    [f04a971d...] mass concentration, nitrogen                  unit=kg/m3
+    [eefd9359...] EcoSpold01Allocation_undefined_101            unit=dimensionless
+    [72ca3df5...] yttrium content                               unit=dimensionless
+    [658fd514...] nitrogen oxides emissions tier T1 for hp < 175 unit=kg/hp*h
+    [8fb0d413...] clay content                                  unit=dimensionless
+    [3ca17519...] EcoSpold01Allocation_other_77                 unit=dimensionless
+    [38583c32...] lifetime capacity [kg]                        unit=kg
+    [26da0224...] EcoSpold01Allocation_undefined_121            unit=dimensionless
+    [cf66b969...] concentration, nitrogen                       unit=kg/kg
+    [94179908...] calculation property, blade, kg               unit=kg
+    [d09fc0a7...] EcoSpold01Allocation_other_123                unit=dimensionless
+    [0118cc72...] SAM_activityLink_7                            unit=dimensionless
+    [d833299f...] EcoSpold01Allocation_undefined_35             unit=dimensionless
+    [7980069a...] Organic Nitrogen content of soil              unit=kg/ha
+    [ec643dfa...] amount of exchange 6                          unit=kg
+    [6566d7d0...] nitrogen oxides emissions tier T1-T2-T4A-T4B for hp < 25 unit=kg/hp*h
+    [a065b4fb...] EcoSpold01Allocation_undefined_67             unit=dimensionless
+    [121bf55b...] solution concentration                        unit=dimensionless
+    [60c3b8b2...] SAM_activityLink_4_scaling_factor             unit=dimensionless
+    [79662bf3...] amount of exchange in m³ 1                    unit=m3
+    [51dcf8a2...] EcoSpold01Allocation_undefined_76             unit=dimensionless
+    [42cc9ae9...] fat content                                   unit=dimensionless
+    [d52653e8...] kgFuel_input_in_process                       unit=kg
+    [a4d1b0a4...] mass concentration, uranium                   unit=kg/m3
+    [17b34a51...] EcoSpold01Allocation_other_12                 unit=dimensionless
+    [46971dec...] lifetime capacity [metric ton*km]             unit=metric ton*km
+    [96ed1584...] height, internal                              unit=m
+    [c2c8d7c5...] Practice factor                               unit=dimensionless
+    [1ffacfb6...] share of methane in biogas                    unit=dimensionless
+    [335fb25a...] calculation property, kg                      unit=kg
+    [cd5814c6...] argon content                                 unit=dimensionless
+    [e4fc784a...] EcoSpold01Allocation_other_21                 unit=dimensionless
+    [71bc04b9...] mass concentration, lead                      unit=kg/m3
+    [4d60d7ca...] mass concentration, dissolved Kjeldahl Nitrogen as N unit=kg/m3
+    [1b839039...] EcoSpold01Allocation_undefined_45             unit=dimensionless
+    [78b47051...] carbon monoxide emissions tier T4-T4N for hp < 300 unit=kg/hp*h
+    [204646c0...] MARKET_OVERWRITE_PV_CONSEQUENTIAL             unit=dimensionless
+    [86937b4e...] holmium content                               unit=dimensionless
+    [89f2bcc0...] SAM_activityLink_4                            unit=dimensionless
+    [e5b24656...] amount 6 of flow in kg                        unit=kg
+    [f0606516...] EcoSpold01Allocation_other_17                 unit=dimensionless
+    [f2283db2...] carbon allocation                             unit=kg
+    [6d7b06d2...] EcoSpold01Allocation_other_58                 unit=dimensionless
+    [e0f51918...] EcoSpold01Allocation_undefined_58             unit=dimensionless
+    [2bf51b11...] EcoSpold01Allocation_undefined_4              unit=dimensionless
+    [f08f0bdf...] EcoSpold01Allocation_undefined_18             unit=dimensionless
+    [c28e1c5d...] amount in multioutput activity_m3             unit=m3
+    [5f7dde76...] EcoSpold01Allocation_undefined_120            unit=dimensionless
+    [4f60c7ef...] carbon monoxide emissions tier T0-T1 for hp < 25 unit=kg/hp*h
+    [bd75bdc0...] EcoSpold01Allocation_undefined_89             unit=dimensionless
+    [104e722b...] EcoSpold01Allocation_undefined_94             unit=dimensionless
+    [d0772b6b...] EcoSpold01Allocation_undefined_155            unit=dimensionless
+    [e5507d89...] lead content                                  unit=dimensionless
+    [ff25f3c3...] terbium content                               unit=dimensionless
+    [84b2179e...] EcoSpold01Allocation_undefined_125            unit=dimensionless
+    [0e8e0438...] nitrogen oxides emissions tier T2 for hp < 100 unit=kg/hp*h
+    [a22e0fcb...] EcoSpold01Allocation_undefined_124            unit=dimensionless
+    [4872685d...] EcoSpold01Allocation_undefined_129            unit=dimensionless
+    [a2ce22cd...] Slope                                         unit=dimensionless
+    [dbc99b58...] amount of exchange 2                          unit=kg
+    [5858159f...] carbon monoxide emissions tier T1-T2-T3 for hp < 750 unit=kg/hp*h
+    [8aaa7771...] tellurium content                             unit=dimensionless
+    [8dedb554...] amount in multioutput activity_kWh            unit=kWh
+    [2e73af1a...] silica dioxide                                unit=dimensionless
+    [a264a1a8...] dry wood density                              unit=kg/m3
+    [10f1ba60...] EcoSpold01Allocation_undefined_110            unit=dimensionless
+    [d0a2c761...] indium content                                unit=dimensionless
+    [66d4c921...] chlorine content                              unit=dimensionless
+    [f44abd93...] carbon monoxide emissions tier T1-T2-T3 for hp < 175 unit=kg/hp*h
+    [29ec76bd...] SAM_activityLink_2_scaling_factor             unit=dimensionless
+    [7177ac92...] EcoSpold01Allocation_undefined_145            unit=dimensionless
+    [e66d61f6...] bismuth content                               unit=dimensionless
+    [b86d456d...] boron content                                 unit=dimensionless
+    [d2f0e9ef...] ammonium fraction of total nitrogen           unit=dimensionless
+    [5bb5c59e...] EcoSpold01Allocation_other_134                unit=dimensionless
+    [a91695f7...] neodymium content                             unit=dimensionless
+    [da65cd51...] EcoSpold01Allocation_undefined_47             unit=dimensionless
+    [e0226a6a...] EcoSpold01Allocation_undefined_131            unit=dimensionless
+    [a88e1c23...] EcoSpold01Allocation_undefined_127            unit=dimensionless
+    [cea619b8...] concentration, calcium                        unit=kg/kg
+    [cbc4a2c2...] mass concentration, dissolved organic nitrogen as N unit=kg/m3
+    [39207e5f...] nitrogen oxides emissions tier T3 for hp < 750 unit=kg/hp*h
+    [c88931f1...] EcoSpold01Allocation_other_87                 unit=dimensionless
+    [27fb8fa1...] EcoSpold01Allocation_undefined_158            unit=dimensionless
+    [e5235f58...] EcoSpold01Allocation_other_94                 unit=dimensionless
+    [1f3c2d02...] fluorine content                              unit=dimensionless
+    [90f2e899...] amount in multioutput activity_MJ             unit=MJ
+    [d287cf13...] calculation property, kBq                     unit=kBq
+    [bcc69ece...] nitrogen oxides emissions tier T3-T4 for hp < 750 unit=kg/hp*h
+    [c9432a3d...] astatine content                              unit=dimensionless
+    [4f3b2a38...] EcoSpold01Allocation_undefined_77             unit=dimensionless
+    [3cf40fcd...] EcoSpold01Allocation_other_19                 unit=dimensionless
+    [d26c0a60...] mass concentration, magnesium                 unit=kg/m3
+    [7c498a4f...] nitrogen oxides emissions tier T2 for hp >= 600 unit=kg/hp*h
+    [0c9b0570...] EcoSpold01Allocation_other_4                  unit=dimensionless
+    [adafb091...] concentration, mercury                        unit=kg/kg
+    [db390f56...] fly ash content                               unit=kg
+    [135d3658...] m3Fuel_input                                  unit=m3
+    [deba4909...] EcoSpold01Allocation_other_96                 unit=dimensionless
+    [ebf21bca...] mass concentration, iron                      unit=kg/m3
+    [ab96be65...] carbon dioxide factor                         unit=kg/GJ
+    [bbf35356...] osmium content                                unit=dimensionless
+    [e40445b1...] density                                       unit=kg/l
+    [2d99e421...] concentration, sulfur                         unit=kg/kg
+    [e29efcf1...] technetium content                            unit=dimensionless
+    [449f4414...] concentration, phosphorus                     unit=kg/kg
+    [3b556882...] PENRM                                         unit=MJ
+    [bb1cec35...] laminated veneer lumber content               unit=dimensionless
+    [7b2f5f06...] benzopyrene content                           unit=dimensionless
+    [5fbe72b3...] SAM_activityLink_1                            unit=dimensionless
+    [0704ad55...] EcoSpold01Allocation_undefined_81             unit=dimensionless
+    [02b086c7...] EcoSpold01Allocation_other_39                 unit=dimensionless
+    [2dec5fcb...] true value                                    unit=dimensionless
+    [d9e61a10...] hafnium content                               unit=dimensionless
+    [dfe0e5ee...] concentration, indium                         unit=kg/kg
+    [f7fa53fa...] mass concentration, dissolved ammonia NH4 as N unit=kg/m3
+    [83c8941a...] EcoSpold01Allocation_other_72                 unit=dimensionless
+    [44bdf1b0...] fibre content                                 unit=kg
+    [38e047b7...] SAM_activityLink_5_scaling_factor             unit=dimensionless
+    [65d960dc...] EcoSpold01Allocation_undefined_168            unit=dimensionless
+    [bb17d427...] UVEK_relative_amount_7                        unit=dimensionless
+    [d0f77c24...] mass concentration, fluoride                  unit=kg/m3
+    [bd09b2d6...] UVEK_link_6                                   unit=dimensionless
+    [144b7189...] EcoSpold01Allocation_undefined_171            unit=dimensionless
+    [32e869d7...] EcoSpold01Allocation_undefined_69             unit=dimensionless
+    [e37853ea...] digestable energy content                     unit=MJ/kg
+    [8d459bb4...] EcoSpold01Allocation_undefined_162            unit=dimensionless
+    [f24cce94...] amount of exchange 5                          unit=kg
+    [1f45c101...] fraction, origin: unspecified                 unit=dimensionless
+    [8aedc313...] magnesium content                             unit=dimensionless
+    [beb4ff33...] P to groundwater                              unit=kg/ha
+    [01a85263...] amount of exchange in liters 5                unit=l
+    [e040fda6...] carbon monoxide emissions tier T4A-T4B for hp < 11 unit=kg/hp*h
+    [6b14b0c0...] EcoSpold01Allocation_physical_2               unit=dimensionless
+    [b7876aa9...] EcoSpold01Allocation_other_111                unit=dimensionless
+    [90493e21...] emitted fraction                              unit=dimensionless
+    [bb9a3b0c...] protein feed, 100% crude per kg of dry mass   unit=kg/kg
+    [4583f86d...] caesium content                               unit=dimensionless
+    [a76b7e12...] emission ratio                                unit=kg/kg
+    [f940250a...] percentage of sour gas                        unit=dimensionless
+    [593e94f2...] EcoSpold01Allocation_other_41                 unit=dimensionless
+    [1ca889cd...] EcoSpold01Allocation_other_61                 unit=dimensionless
+    [e629f248...] mass concentration, iridium                   unit=kg/m3
+    [f6e8dc68...] cement content                                unit=kg
+    [41ca3038...] EcoSpold01Allocation_undefined_149            unit=dimensionless
+    [9146a06e...] EcoSpold01Allocation_other_107                unit=dimensionless
+    [d61b8768...] heating value, gross                          unit=MJ
+    [b3026066...] iodine content                                unit=dimensionless
+    [019e98f2...] carbon monoxide emissions tier T1-T2-T3 for hp < 300 unit=kg/hp*h
+    [d8135201...] niobium content                               unit=dimensionless
+    [ac7d9506...] carbon monoxide emissions tier T0 for hp >= 100 unit=kg/hp*h
+    [5fc6d1c5...] EcoSpold01Allocation_other_73                 unit=dimensionless
+    [73a0f9dc...] UVEK_relative_amount_2                        unit=dimensionless
+    [226fb945...] UVEK_link_5                                   unit=dimensionless
+    [2584546f...] mass concentration, helium                    unit=kg/m3
+    [4dc56c79...] EcoSpold01Allocation_other_43                 unit=dimensionless
+    [440b6d1d...] UVEK_relative_amount_3                        unit=dimensionless
+    [c1c24c34...] primary aluminium                             unit=kg
+    [5d5ee305...] EcoSpold01Allocation_undefined_130            unit=dimensionless
+    [28ae4f88...] MARKET_OVERWRITE_AMOUNT_CUTOFF                unit=dimensionless
+
+── SYSTEM MODELS ─────────────────────────────────────────────────────
+  Total: 11
+    [ba1ff5c1...] Allocation, manually linked
+    [a253b4b8...] Allocation by dry mass
+    [06590a66...] Allocation at the point of substitution
+    [4352935f...] Allocation, legacy
+    [290c1f85...] Allocation, cut-off by classification
+    [dd7f13f5...] Substitution, consequential, long-term
+    [8b738ea0...] Undefined
+    [3e629972...] Allocation by carbon
+    [91800971...] Substitution, constrained by-products
+    [aa1e8ac2...] Allocation, cut-off, EN15804
+    [709a9344...] Allocation by revenue
+
+── CLASSIFICATIONS ───────────────────────────────────────────────────
+  ?: 6 entries
+    e.g. ?
+    e.g. 
+      
+    e.g. 
+      
+    e.g. 
+      
+    e.g. 
+      
+
+── PARAMETERS ────────────────────────────────────────────────────────
+  Total global parameters: 1,783
+
+  Unit distribution:
+    dimensionless              570
+    kg                         334
+    kg/hp*h                     90
+    m3                          63
+    kg/MJ                       44
+    kg/m3                       41
+    MJ/kg                       38
+    kWh                         37
+    kg/kg                       35
+    m2                          29
+    year                        28
+    m3/kWh                      24
+    kg/(head.d)                 24
+    kg/ha                       23
+    g/mol                       21
+    kg/(m3/d)^2                 20
+    unit                        19
+    ha                          16
+    kg/l                        15
+    kg/ha.yr                    15
+    (dimensionless)             14
+    m3/kg                       13
+    l                           12
+    kW                          12
+    mm                          11
+    % (obsolete)                10
+    km                          10
+    m2/kg                       10
+    kg N/ha                      9
+    MJ                           8
+    kg/kg vehicle                8
+    hour/kg                      8
+    PMH/m3                       8
+    K                            8
+    m2/unit                      7
+    hour/m3                      7
+    kg/unit                      7
+    kJ/(kmol*K)                  7
+    km/hour                      6
+    m3/head/yr                   6
+    m3/PMH                       6
+    hour                         6
+    kg/hour                      5
+    m³/ha                        5
+    m                            4
+    kWh/year                     4
+    kg/m2                        4
+    MW                           3
+    kg/(m2*year)                 3
+    kg P2O5/ha                   3
+    kg/(kg vehicle*km)           3
+    MJ/m3                        3
+    m2/year                      2
+    metric ton/ha                2
+    kg/m                         2
+    unit/kWh                     2
+    MJ/kWh                       2
+    hour/year                    2
+    m2/m3                        2
+    metric ton/(ha*year)         2
+    mm/year                      2
+    kWh/kWp                      2
+    USD(2011)                    2
+    l/m3                         2
+    m2/ha                        2
+    kg N2O-N/kg N                1
+    hour/ha                      1
+    m3/hour                      1
+    kg NOx/kg N2O                1
+    l/kg                         1
+    m2/(m3/d)^2                  1
+    m3/(m3/d)^2                  1
+    kg/kWh                       1
+    kg N2O-N/kg NO3-N            1
+    m3/d                         1
+    kW/TEU                       1
+    kWh/km                       1
+    kg N2O-N/kg NH3-N            1
+    l/m2                         1
+    units/m²                     1
+    MJ/kcal                      1
+    day                          1
+    kg/year                      1
+    kg NO3-N/ha.year             1
+    t*h/(MJ*mm)                  1
+    l/hour                       1
+    m3/ha/year                   1
+    d/year                       1
+    MJ/(m3/d)^2                  1
+    mol/l                        1
+    kg P/ha.year                 1
+    kg PO4/ha                    1
+    kcal                         1
+    kJ/kmol                      1
+    BTU/kg                       1
+    kg TAN/kg TAN                1
+    t/day                        1
+    month                        1
+    kcal/kWh                     1
+    unit/MJ                      1
+    MJ*mm/(ha*h*yr)              1
+    kg NH3-N                     1
+    kJ/kg                        1
+    kg/seedling                  1
+    l/(h.m2)                     1
+    unit/ha                      1
+
+  Sample parameters (first 20):
+    molecular weight, H2                     unit=g/mol
+    fraction, irrigation water to surface water unit=dimensionless
+    reference soil organic carbon: arable land unit=kg/ha
+    emission factor ethene                   unit=dimensionless
+    mineral oil, density                     unit=kg/l
+    factor A_bronze                          unit=kg/(m3/d)^2
+    Forest road, regenerative felling area, pine unit=m2
+    efficiency coefficient of potassium in sludge unit=dimensionless
+    emission factor dinitrogen monoxide as N unit=kg N2O-N/kg N
+    methane emission factor, pig slurry, open-pit storage unit=kg/m3
+    fraction of peat bog abandoned at closure unit=dimensionless
+    factor A_polyurethane                    unit=kg/(m3/d)^2
+    carbon dioxide fossil from GB            unit=kg
+    water consumption, electricity production from NG, recirculating CS unit=m3/kWh
+    below ground biomass, dm                 unit=kg/ha
+    average_weight_ trawler                  unit=kg
+    utilisation rate                         unit=dimensionless
+    sodium hydroxide commercial concentration unit=kg/kg
+    sodium dithionite solution 30%           unit=kg
+    SOCdif                                   unit=dimensionless
+
+======================================================================
+TOOL DESIGN IMPLICATIONS SUMMARY
+======================================================================
+
+unit_catalog pre-seeding:
+  Seed from Units.xml if available; otherwise use the unit set extracted
+  from ElementaryExchanges.xml (9 units: kg, MJ, m3, m2, kBq, Sm3,
+  m2*year, m3*year, EUR2005).
+
+region_catalog pre-seeding:
+  Seed all shortnames from Geographies.xml. Includes GLO, RoW, RER,
+  country ISO codes, and ecoinvent custom regions (IAI areas etc.).
+
+BW mapping index construction:
+  Index = ActivityIndex (22,993 rows) + ActivityNames (for TF-IDF text).
+  Each entry: dataset_id, activityNameId, geography_shortname, system_model,
+  start_date, end_date, specialActivityType.
+  Filter to specialActivityType=0 (transforming) for primary matching.
+  Keep type=1 (market) as secondary candidates.
+
+Elementary flow matching:
+  Match on (name + compartment + subcompartment) tuple.
+  9,850 unique elementary flows across 25 compartment/subcompartment pairs.
+  CAS number available for 9,183 flows — useful as secondary match key.
+
+flow_catalog canonical names:
+  Use IntermediateExchanges.xml names as canonical_name values where
+  available. Prevents duplicate flow creation across manufacturer imports.
+
+======================================================================
+END OF REPORT — upload xml_report.txt to Claude
+======================================================================
