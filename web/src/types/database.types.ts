@@ -695,6 +695,7 @@ export type Database = {
       process_exchange: {
         Row: {
           amount_is_ecoinvent_signed: boolean
+          comment: string | null
           created_at: string
           exchange_direction: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id: string
@@ -711,6 +712,7 @@ export type Database = {
         }
         Insert: {
           amount_is_ecoinvent_signed?: boolean
+          comment?: string | null
           created_at?: string
           exchange_direction: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id?: string
@@ -727,6 +729,7 @@ export type Database = {
         }
         Update: {
           amount_is_ecoinvent_signed?: boolean
+          comment?: string | null
           created_at?: string
           exchange_direction?: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id?: string

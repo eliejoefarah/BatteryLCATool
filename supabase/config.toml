@@ -83,3 +83,27 @@ vector_port = 54328
 gcp_project_id = ""
 gcp_project_number = ""
 gcp_jwt_path = "supabase/gcloud.json"
+
+# ---------------------------------------------------------------------------
+# Edge Functions — disable JWT verification at the runtime level for all
+# functions. Each function performs its own auth check via auth.getUser().
+# ES256 JWT verification in supabase-edge-runtime-1.70.0 is broken for the
+# new asymmetric key format; this bypasses it locally.
+# ---------------------------------------------------------------------------
+[functions.invite_user]
+verify_jwt = false
+
+[functions.create_project]
+verify_jwt = false
+
+[functions.create_flow]
+verify_jwt = false
+
+[functions.trigger_validation]
+verify_jwt = false
+
+[functions.unfreeze_version]
+verify_jwt = false
+
+[functions.on_user_created]
+verify_jwt = false
