@@ -55,12 +55,4 @@ Thumbs.db
 /MasterData
 
 # ─── Large root-level reference & generated data files ──────────────────────
-/*.pdf
-/*.xlsx
-/*.pptx
-/*.csv
-/spold_report.json
-/spold_report.txt
-/xml_report.json
-/xml_report.txt
-/Geographies.xml
+/MoreData
