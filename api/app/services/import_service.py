@@ -543,12 +543,18 @@ def _parse_vub_template(
 
         # ── Build activity row ─────────────────────────────────────────────
         final_act_name = act_name or sheet_name
+        if not ref_amount:
+            errors.append(
+                f"Sheet '{sheet_name}': reference product has zero or missing "
+                f"production amount; sheet skipped."
+            )
+            continue
         try:
             act = XlsxActivityRow(
                 name=final_act_name,
                 location=None,
                 unit=ref_unit,
-                production_amount=ref_amount or Decimal("1.0"),
+                production_amount=ref_amount,
                 stage=None,
                 comment=None,
             )
@@ -646,14 +652,24 @@ async def run_import(
     catalog_set_id: UUID,
     imported_by: UUID,
     filename: str,
+    force: bool = False,
 ) -> BatchImportResult:
     """
     Parse *content* (raw xlsx bytes) and persist results to the database.
 
+    Double-import guard
+    ───────────────────
+    If the revision already has process_instance rows and *force* is False,
+    returns immediately with ``already_has_data=True`` and
+    ``existing_activities_count`` set. No import_job row is created and
+    nothing is written to the DB. The caller should warn the user and
+    re-invoke with ``force=True`` to delete the old data and re-import.
+
     Idempotency
     ───────────
-    Any existing process_instance, process_exchange, and model_parameter rows
-    for *revision_id* are deleted before re-inserting. All inserts run inside
+    When *force* is True (or no prior data exists), any existing
+    process_instance, process_exchange, and model_parameter rows for
+    *revision_id* are deleted before re-inserting. All inserts run inside
     a single transaction; a mid-import error triggers a full rollback.
 
     Negative quantities
@@ -662,6 +678,19 @@ async def run_import(
     value logs a warning, uses abs(), and continues — it does NOT abort the import.
     """
     result = BatchImportResult()
+
+    # ── 0. Double-import guard ────────────────────────────────────────────
+    existing_row = (await db.execute(
+        text("SELECT COUNT(*) FROM process_instance WHERE revision_id = :rid"),
+        {"rid": str(revision_id)},
+    )).fetchone()
+    existing_count = int(existing_row[0]) if existing_row else 0
+
+    if existing_count > 0 and not force:
+        result.already_has_data = True
+        result.existing_activities_count = existing_count
+        return result
+
     import_job_id = uuid.uuid4()
 
     # ── 1. Create import_job row immediately (outside main transaction) ───
@@ -682,7 +711,11 @@ async def run_import(
     await db.commit()
 
     try:
-        # ── 2. Open xlsx twice: computed values + raw formulas ────────────
+        # ── 2. Load valid region codes for location validation ────────────
+        region_rows = (await db.execute(text("SELECT code FROM region_catalog"))).fetchall()
+        valid_region_codes: set[str] = {r[0] for r in region_rows}
+
+        # ── 3. Open xlsx twice: computed values + raw formulas ────────────
         wb_vals = openpyxl.load_workbook(
             io.BytesIO(content), read_only=True, data_only=True
         )
@@ -730,6 +763,15 @@ async def run_import(
         act_name_to_id: dict[str, UUID] = {}
 
         for act in acts:
+            # Validate location against region_catalog; unknown codes → RoW
+            loc = act.location
+            if loc is not None and loc not in valid_region_codes:
+                result.add_warning(
+                    f"Activity '{act.name}': location '{loc}' not found in "
+                    f"region_catalog; mapped to 'RoW'."
+                )
+                loc = "RoW"
+
             proc_id = uuid.uuid4()
             await db.execute(
                 text("""
@@ -746,7 +788,7 @@ async def run_import(
                     "pid":    str(proc_id),
                     "rid":    str(revision_id),
                     "name":   act.name,
-                    "loc":    act.location,
+                    "loc":    loc,
                     "unit":   act.unit,
                     "prod":   str(act.production_amount),
                     "punit":  act.unit,   # production_unit mirrors unit from xlsx

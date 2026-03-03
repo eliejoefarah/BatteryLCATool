@@ -248,6 +248,11 @@ class BatchImportResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
 
+    # Set when the revision already has data and force=False was passed.
+    # The caller should prompt the user and re-call with force=True to override.
+    already_has_data: bool = False
+    existing_activities_count: int = 0
+
     @property
     def ok(self) -> bool:
         """True when the import completed with no errors (warnings are allowed)."""

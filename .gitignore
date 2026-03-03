@@ -56,3 +56,5 @@ Thumbs.db
 
 # ─── Large root-level reference & generated data files ──────────────────────
 /MoreData
+/docs
+api/tests

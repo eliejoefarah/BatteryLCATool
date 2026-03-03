@@ -38,7 +38,13 @@ load_dotenv()
 from app.services.import_service import run_import  # noqa: E402
 
 
-async def main(xlsx_path: Path, revision_id: UUID, catalog_set_id: UUID, user_id: UUID) -> None:
+async def main(
+    xlsx_path: Path,
+    revision_id: UUID,
+    catalog_set_id: UUID,
+    user_id: UUID,
+    force: bool = False,
+) -> None:
     database_url = os.environ["DATABASE_URL"]
     engine = create_async_engine(database_url, echo=False)
     Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -46,7 +52,7 @@ async def main(xlsx_path: Path, revision_id: UUID, catalog_set_id: UUID, user_id
     content = xlsx_path.read_bytes()
 
     async with Session() as db:
-        print(f"\n>>> Running import for {xlsx_path.name} …")
+        print(f"\n>>> Running import for {xlsx_path.name} (force={force}) …")
         result = await run_import(
             db=db,
             content=content,
@@ -54,9 +60,14 @@ async def main(xlsx_path: Path, revision_id: UUID, catalog_set_id: UUID, user_id
             catalog_set_id=catalog_set_id,
             imported_by=user_id,
             filename=xlsx_path.name,
+            force=force,
         )
 
     print("\n=== Import result ===")
+    if result.already_has_data:
+        print(f"  [CONFLICT] Revision already has {result.existing_activities_count} "
+              f"activities. Re-run with --force to override.")
+        return
     print(f"  activities_created : {result.activities_created}")
     print(f"  exchanges_created  : {result.exchanges_created}")
     print(f"  parameters_created : {result.parameters_created}")
@@ -143,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("--rev",     required=True, type=UUID)
     parser.add_argument("--catalog", required=True, type=UUID)
     parser.add_argument("--user",    required=True, type=UUID)
+    parser.add_argument("--force",   action="store_true", default=False)
     args = parser.parse_args()
 
-    asyncio.run(main(args.file, args.rev, args.catalog, args.user))
+    asyncio.run(main(args.file, args.rev, args.catalog, args.user, force=args.force))
