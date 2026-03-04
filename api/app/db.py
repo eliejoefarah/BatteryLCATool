@@ -42,14 +42,19 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 # ---------------------------------------------------------------------------
 # Supabase Python client — service-role (bypasses RLS)
 # ---------------------------------------------------------------------------
-SUPABASE_URL: str = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_ROLE_KEY: str = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 
 
 def get_service_role_client() -> Client:
     """Return a Supabase client initialised with the service-role key.
 
+    Reads env vars lazily (at call time, not import time) so that importing
+    this module never fails in environments where Supabase vars are absent
+    (e.g. the CI test runner that only sets DATABASE_URL).
+
     Use this only after performing your own auth/authz checks, since it
     bypasses Row-Level Security entirely.
     """
-    return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    return create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SERVICE_ROLE_KEY"],
+    )
