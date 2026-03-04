@@ -253,6 +253,9 @@ class BatchImportResult(BaseModel):
     already_has_data: bool = False
     existing_activities_count: int = 0
 
+    # UUID of the import_job row created by run_import (None when already_has_data=True).
+    import_job_id: UUID | None = None
+
     @property
     def ok(self) -> bool:
         """True when the import completed with no errors (warnings are allowed)."""

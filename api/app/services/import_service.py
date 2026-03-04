@@ -82,17 +82,6 @@ _BW_TYPE_MAP: dict[str, tuple[str, str | None]] = {
     "substitution": ("output", "coproduct"),
 }
 
-# Brightway exchange type → flow_catalog.kind
-_BW_TYPE_TO_FLOW_KIND: dict[str, str] = {
-    "production":   "material",
-    "technosphere": "material",
-    "biosphere":    "emission",
-    "air":          "emission",
-    "waste":        "waste",
-    "coproduct":    "material",
-    "substitution": "material",
-}
-
 _DEFAULT_FLOW_KIND = "material"
 
 # ---------------------------------------------------------------------------
@@ -692,6 +681,7 @@ async def run_import(
         return result
 
     import_job_id = uuid.uuid4()
+    result.import_job_id = import_job_id
 
     # ── 1. Create import_job row immediately (outside main transaction) ───
     await db.execute(
