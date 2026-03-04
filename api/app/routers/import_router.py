@@ -24,8 +24,13 @@ from __future__ import annotations
 #
 # Auth
 # ────
-# Bearer JWT is decoded with SUPABASE_JWT_SECRET (HS256). The local Supabase
-# CLI default secret is used as the fallback for local development.
+# Verification strategy (tried in order):
+#   1. JWKS — fetched from {SUPABASE_URL}/auth/v1/.well-known/jwks.json and
+#      cached per process. Handles ES256 (P-256) keys used by production
+#      Supabase projects that have migrated off the legacy shared secret.
+#   2. HS256 fallback — uses SUPABASE_JWT_SECRET env var (or the Supabase CLI
+#      local-dev default). Covers local development and the transition window
+#      while old HS256 tokens are still valid.
 # =============================================================================
 
 import hashlib
@@ -37,6 +42,8 @@ from typing import Annotated
 from uuid import UUID
 
 import jwt
+from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -54,11 +61,29 @@ router = APIRouter(prefix="/import", tags=["import"])
 # Config
 # ---------------------------------------------------------------------------
 
-# Local Supabase CLI default; override via SUPABASE_JWT_SECRET in production.
-_JWT_SECRET: str = os.environ.get(
+# HS256 fallback secret — used when JWKS verification fails (local dev / legacy tokens).
+# Local Supabase CLI default is used when the env var is absent.
+_HS256_SECRET: str = os.environ.get(
     "SUPABASE_JWT_SECRET",
     "super-secret-jwt-token-with-at-least-32-characters-long",
 )
+
+# JWKS client — lazily initialised, cached for the process lifetime.
+# Handles ES256 (P-256) keys used by production Supabase since the HS256 legacy
+# secret was deprecated. Cache means the JWKS endpoint is only hit once per start.
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        supabase_url = os.environ.get("SUPABASE_URL", "http://127.0.0.1:54321")
+        _jwks_client = PyJWKClient(
+            f"{supabase_url}/auth/v1/.well-known/jwks.json",
+            cache_keys=True,
+        )
+    return _jwks_client
+
 
 _STORAGE_BUCKET = "lca-files"
 _MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
@@ -76,7 +101,12 @@ _XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 async def get_current_user_id(
     authorization: Annotated[str | None, Header()] = None,
 ) -> UUID:
-    """Decode the Supabase Bearer JWT and return the caller's user_id (sub)."""
+    """Decode the Supabase Bearer JWT and return the caller's user_id (sub).
+
+    Tries JWKS (ES256/RS256) first — required for production Supabase projects
+    that have migrated to the new ECC signing keys. Falls back to the legacy
+    HS256 shared secret for local development and the transition window.
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
@@ -84,12 +114,24 @@ async def get_current_user_id(
         )
     token = authorization.removeprefix("Bearer ")
     try:
-        payload = jwt.decode(
-            token,
-            _JWT_SECRET,
-            algorithms=["HS256"],
-            options={"verify_aud": False},
-        )
+        # 1. Try JWKS — production ES256 / RS256 tokens
+        try:
+            client = _get_jwks_client()
+            signing_key = client.get_signing_key_from_jwt(token)
+            payload = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256", "RS256"],
+                options={"verify_aud": False},
+            )
+        except (PyJWKClientError, Exception):
+            # 2. Fall back to HS256 — local dev / legacy tokens still in circulation
+            payload = jwt.decode(
+                token,
+                _HS256_SECRET,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
         return UUID(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError) as exc:
         raise HTTPException(status_code=401, detail=f"Invalid JWT: {exc}") from exc
