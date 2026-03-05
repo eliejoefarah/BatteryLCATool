@@ -39,7 +39,7 @@ function ParamForm({ revisionId, existing, onDone }: ParamFormProps) {
   const [name, setName] = useState(existing?.name ?? '')
   const [description, setDescription] = useState(existing?.description ?? '')
   const [value, setValue] = useState(existing?.value != null ? String(existing.value) : '')
-  const [distribution, setDistribution] = useState(existing?.distribution_type ?? '')
+  const [distribution, setDistribution] = useState(existing?.distribution_type ?? 'none')
   const [minVal, setMinVal] = useState(existing?.min_value != null ? String(existing.min_value) : '')
   const [maxVal, setMaxVal] = useState(existing?.max_value != null ? String(existing.max_value) : '')
   const [modeVal, setModeVal] = useState(existing?.mode_value != null ? String(existing.mode_value) : '')
@@ -59,7 +59,7 @@ function ParamForm({ revisionId, existing, onDone }: ParamFormProps) {
         description: description.trim() || null,
         value: numVal,
         param_type: 'scalar',
-        distribution_type: distribution || null,
+        distribution_type: distribution === 'none' ? null : distribution,
         min_value: minVal !== '' ? parseFloat(minVal) : null,
         max_value: maxVal !== '' ? parseFloat(maxVal) : null,
         mode_value: modeVal !== '' ? parseFloat(modeVal) : null,
@@ -89,7 +89,7 @@ function ParamForm({ revisionId, existing, onDone }: ParamFormProps) {
     }
   }
 
-  const showDistributionFields = !!distribution
+  const showDistributionFields = distribution !== 'none'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -145,7 +145,7 @@ function ParamForm({ revisionId, existing, onDone }: ParamFormProps) {
             <SelectValue placeholder="None (deterministic)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None (deterministic)</SelectItem>
+            <SelectItem value="none">None (deterministic)</SelectItem>
             <SelectItem value="uniform">Uniform</SelectItem>
             <SelectItem value="triangular">Triangular</SelectItem>
             <SelectItem value="normal">Normal</SelectItem>

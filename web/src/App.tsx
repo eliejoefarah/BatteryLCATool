@@ -13,7 +13,7 @@ import ProcessPage from './pages/manufacturer/ProcessPage'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/" element={<ProjectListPage />} />
         <Route path="/login" element={<Login />} />

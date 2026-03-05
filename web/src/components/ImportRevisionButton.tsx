@@ -93,6 +93,7 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
       queryClient.invalidateQueries({ queryKey: ['exchanges'] })
       queryClient.invalidateQueries({ queryKey: ['exchange-count', revisionId] })
       queryClient.invalidateQueries({ queryKey: ['parameter-count', revisionId] })
+      queryClient.invalidateQueries({ queryKey: ['parameters', revisionId] })
 
       onImported?.(body)
     } catch (err) {

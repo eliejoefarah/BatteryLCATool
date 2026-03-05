@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import type { Exchange } from '../hooks/useExchanges'
+import { useParameterNames } from '../hooks/useParameters'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -29,15 +30,17 @@ interface FlowResult {
 
 interface Props {
   processId: string
+  revisionId: string
   unitSymbols: string[]
   onAdded: (exchange: Exchange) => void
 }
 
 const OUTPUT_TYPES = ['reference', 'coproduct', 'waste_output', 'stock'] as const
 
-export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: Props) {
+export default function AddExchangeDialog({ processId, revisionId, unitSymbols, onAdded }: Props) {
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const paramNames = useParameterNames(revisionId)
 
   // Flow name typeahead state
   const [rawName, setRawName] = useState('')
@@ -47,6 +50,7 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
 
   // Other fields
   const [quantity, setQuantity] = useState('')
+  const [formulaUser, setFormulaUser] = useState('')
   const [userUnit, setUserUnit] = useState('')
   const [direction, setDirection] = useState<'input' | 'output'>('input')
   const [outputType, setOutputType] = useState('')
@@ -58,10 +62,11 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
     const trimmed = rawName.trim()
     if (!trimmed) { setFlowResults([]); return }
     const timer = setTimeout(async () => {
+      const escaped = trimmed.replace(/"/g, '""')
       const { data } = await supabase
         .from('flow_catalog')
         .select('flow_id, canonical_name, display_name')
-        .or(`canonical_name.ilike.%${trimmed}%,display_name.ilike.%${trimmed}%`)
+        .or(`canonical_name.ilike."%${escaped}%",display_name.ilike."%${escaped}%"`)
         .limit(10)
       setFlowResults(
         (data ?? []).map((f) => ({
@@ -78,6 +83,7 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
     setSelectedFlowId(null)
     setFlowResults([])
     setQuantity('')
+    setFormulaUser('')
     setUserUnit('')
     setDirection('input')
     setOutputType('')
@@ -90,10 +96,11 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
     const trimmed = name.trim()
     if (!trimmed) return null
 
+    const escaped = trimmed.replace(/"/g, '""')
     const { data: match } = await supabase
       .from('flow_catalog')
       .select('flow_id')
-      .or(`canonical_name.ilike.${trimmed},display_name.ilike.${trimmed}`)
+      .or(`canonical_name.ilike."${escaped}",display_name.ilike."${escaped}"`)
       .limit(1)
       .maybeSingle()
     if (match) return match.flow_id
@@ -133,7 +140,8 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
         raw_name: rawName.trim(),
         flow_id: flowId,
       }
-      if (quantity !== '') payload.quantity_user = parseFloat(quantity)
+      if (formulaUser.trim()) payload.formula_user = formulaUser.trim()
+      else if (quantity !== '') payload.quantity_user = parseFloat(quantity)
       if (userUnit) payload.user_unit = userUnit
       if (direction === 'output' && outputType) payload.output_type = outputType
       if (sourceDb.trim()) payload.source_database = sourceDb.trim()
@@ -173,7 +181,7 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Add Exchange</DialogTitle>
         </DialogHeader>
@@ -219,31 +227,70 @@ export default function AddExchangeDialog({ processId, unitSymbols, onAdded }: P
             )}
           </div>
 
-          {/* Quantity + Unit */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                step="any"
-                placeholder="e.g. 1.5"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-              />
+          {/* Quantity / Formula + Unit */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="quantity">
+                  Quantity{formulaUser.trim() && (
+                    <span className="ml-1.5 text-xs text-slate-400">(overridden by formula)</span>
+                  )}
+                </Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 1.5"
+                  value={quantity}
+                  disabled={!!formulaUser.trim()}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unit</Label>
+                <Select value={userUnit} onValueChange={setUserUnit}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitSymbols.map((u) => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Formula field */}
             <div className="space-y-1.5">
-              <Label>Unit</Label>
-              <Select value={userUnit} onValueChange={setUserUnit}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unitSymbols.map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+              <Label htmlFor="formula">
+                Formula{' '}
+                <span className="font-normal text-slate-400">(optional — overrides quantity)</span>
+              </Label>
+              <Input
+                id="formula"
+                placeholder="e.g. capacity_Ah * 0.5"
+                value={formulaUser}
+                onChange={(e) => setFormulaUser(e.target.value)}
+                className={formulaUser.trim() ? 'border-violet-300 font-mono text-violet-700' : ''}
+              />
+              {paramNames.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  <span className="text-xs text-slate-400">Available:</span>
+                  {paramNames.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className="rounded bg-violet-50 px-1.5 py-0.5 font-mono text-xs text-violet-700 hover:bg-violet-100"
+                      onClick={() =>
+                        setFormulaUser((f) => (f ? `${f} * ${n}` : n))
+                      }
+                    >
+                      {n}
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
           </div>
 

@@ -15,7 +15,12 @@ export const queryClient = new QueryClient({
   },
 })
 
-// Global query error handler — fires for every failed useQuery
+// Global query error handler — only fires once auth is established.
+// Pre-auth failures (race on login) are expected and resolve on their own.
 queryClient.getQueryCache().config.onError = (error) => {
-  toast.error(error instanceof Error ? error.message : 'Failed to load data')
+  // Lazy import to avoid circular dep; getState() is synchronous
+  import('../store/auth').then(({ useAuthStore }) => {
+    if (!useAuthStore.getState().user) return
+    toast.error(error instanceof Error ? error.message : 'Failed to load data')
+  })
 }

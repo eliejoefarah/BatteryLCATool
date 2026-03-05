@@ -27,7 +27,7 @@ export function useRevisionParameterCount(revisionId: string | undefined) {
     queryFn: async () => {
       const { count, error } = await supabase
         .from('model_parameter')
-        .select('parameter_id', { count: 'exact', head: true })
+        .select('param_id', { count: 'exact', head: true })
         .eq('revision_id', revisionId!)
       if (error) throw error
       return count ?? 0

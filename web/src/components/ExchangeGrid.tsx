@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react'
 import { AgGridReact } from 'ag-grid-react'
+import { themeQuartz } from 'ag-grid-community'
 import type {
   CellValueChangedEvent,
   ColDef,
@@ -17,8 +18,7 @@ import type {
   ICellRendererParams,
   RowClassParams,
 } from 'ag-grid-community'
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
+import { useLocation } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
@@ -26,6 +26,7 @@ import { queryClient } from '../lib/queryClient'
 import { useExchanges, type Exchange } from '../hooks/useExchanges'
 import { useUnitCatalog } from '../hooks/useUnitCatalog'
 import { useValidationIssues } from '../hooks/useValidationIssues'
+import { useParameterNames } from '../hooks/useParameters'
 import AddExchangeDialog from './AddExchangeDialog'
 import { Button } from './ui/button'
 import {
@@ -81,11 +82,12 @@ const FlowNameEditor = forwardRef<ICellEditor, ICellEditorParams>(
         return
       }
       const timer = setTimeout(async () => {
+        const escaped = trimmed.replace(/"/g, '""')
         const { data } = await supabase
           .from('flow_catalog')
           .select('flow_id, canonical_name, display_name')
           .or(
-            `canonical_name.ilike.%${trimmed}%,display_name.ilike.%${trimmed}%`,
+            `canonical_name.ilike."%${escaped}%",display_name.ilike."%${escaped}%"`,
           )
           .limit(12)
         setResults(
@@ -209,11 +211,12 @@ interface Props {
 
 export default function ExchangeGrid({ processId, revisionId }: Props) {
   const gridRef = useRef<AgGridReact>(null)
-  const validationTimer = useRef<ReturnType<typeof setTimeout>>()
   const [pendingDeleteRow, setPendingDeleteRow] = useState<Exchange | null>(null)
+  const location = useLocation()
 
   const { data: exchanges, isLoading } = useExchanges(processId)
   const { data: units = [] } = useUnitCatalog()
+  const paramNames = useParameterNames(revisionId)
   const { data: validationIssues = [] } = useValidationIssues(
     revisionId,
     processId,
@@ -237,22 +240,21 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
 
   const unitSymbols = useMemo(() => units.map((u) => u.symbol), [units])
 
-  // Debounced validation trigger
-  const scheduleValidation = useCallback(() => {
-    clearTimeout(validationTimer.current)
-    validationTimer.current = setTimeout(async () => {
-      try {
-        await supabase.functions.invoke('trigger_validation', {
-          body: { revision_id: revisionId },
-        })
-        queryClient.invalidateQueries({
-          queryKey: ['validation-issues', revisionId, processId],
-        })
-      } catch {
-        // Validation errors are non-fatal; ValidationBadge will reflect status
-      }
-    }, 3000)
-  }, [revisionId, processId])
+  // Flash a row when navigated here with a highlightExchangeId in router state
+  const highlightExchangeId = (location.state as { highlightExchangeId?: string } | null)
+    ?.highlightExchangeId
+  useEffect(() => {
+    if (!highlightExchangeId || isLoading) return
+    const timer = setTimeout(() => {
+      const api = gridRef.current?.api
+      if (!api) return
+      const node = api.getRowNode(highlightExchangeId)
+      if (!node) return
+      api.ensureNodeVisible(node, 'middle')
+      api.flashCells({ rowNodes: [node], flashDuration: 2000, fadeDuration: 500 })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [highlightExchangeId, isLoading])
 
   // Lookup or create a flow by name, returns flow_id
   async function resolveFlow(
@@ -264,12 +266,11 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
     if (!trimmed) return null
 
     // Exact match search first
+    const esc = trimmed.replace(/"/g, '""')
     const { data: match } = await supabase
       .from('flow_catalog')
       .select('flow_id')
-      .or(
-        `canonical_name.ilike.${trimmed},display_name.ilike.${trimmed}`,
-      )
+      .or(`canonical_name.ilike."${esc}",display_name.ilike."${esc}"`)
       .limit(1)
       .maybeSingle()
 
@@ -352,7 +353,6 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         if (error) throw error
       }
 
-      scheduleValidation()
     } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : 'Failed to save change',
@@ -364,7 +364,6 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
   function handleExchangeAdded(exchange: Exchange) {
     gridRef.current?.api.applyTransaction({ add: [exchange] })
     queryClient.invalidateQueries({ queryKey: ['exchanges', processId] })
-    scheduleValidation()
   }
 
   // Delete a row from DB and remove it from the grid
@@ -382,10 +381,9 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
 
       gridRef.current?.api.applyTransaction({ remove: [row] })
       queryClient.invalidateQueries({ queryKey: ['exchanges', processId] })
-      scheduleValidation()
       toast.success('Exchange deleted')
     },
-    [processId, scheduleValidation],
+    [processId],
   )
 
   // Row colouring — validation takes priority, then zebra stripe
@@ -436,13 +434,34 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
       {
         field: 'quantity_user',
         headerName: 'Quantity',
-        width: 110,
-        editable: true,
+        width: 100,
+        editable: (p) => !(p.data as Exchange).formula_user,
         cellEditor: 'agNumberCellEditor',
-        valueFormatter: (p) =>
-          p.value != null ? String(p.value) : '',
+        valueFormatter: (p) => (p.value != null ? String(p.value) : ''),
+        // Dim the quantity cell when a formula is overriding it
+        cellStyle: (p) =>
+          (p.data as Exchange).formula_user
+            ? { color: '#94a3b8', fontStyle: 'italic' }
+            : null,
         tooltipValueGetter: (p) =>
-          (p.data as Exchange).formula_user ?? undefined,
+          (p.data as Exchange).formula_user
+            ? 'Overridden by formula'
+            : undefined,
+      },
+      {
+        field: 'formula_user',
+        headerName: 'Formula',
+        width: 160,
+        editable: true,
+        cellEditor: 'agTextCellEditor',
+        headerTooltip: paramNames.length
+          ? `Available: ${paramNames.join(', ')}`
+          : 'Enter an expression using parameter names (e.g. capacity_Ah * 2)',
+        // Show ƒ prefix + violet text when a formula is set
+        cellStyle: (p) =>
+          p.value ? { color: '#7c3aed', fontWeight: 500 } : null,
+        valueFormatter: (p) =>
+          p.value ? `ƒ  ${p.value}` : '',
       },
       {
         field: 'user_unit',
@@ -504,7 +523,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         cellRendererParams: { onDelete: setPendingDeleteRow },
       },
     ],
-    [unitSymbols],
+    [unitSymbols, paramNames],
   )
 
   const defaultColDef = useMemo<ColDef>(
@@ -526,6 +545,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
       <div className="flex items-center gap-2">
         <AddExchangeDialog
           processId={processId}
+          revisionId={revisionId}
           unitSymbols={unitSymbols}
           onAdded={handleExchangeAdded}
         />
@@ -536,12 +556,10 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
       </div>
 
       {/* Grid */}
-      <div
-        className="ag-theme-alpine"
-        style={{ height: 420, width: '100%' }}
-      >
+      <div style={{ height: 420, width: '100%' }}>
         <AgGridReact<Exchange>
           ref={gridRef}
+          theme={themeQuartz}
           rowData={isLoading ? null : (exchanges ?? [])}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
@@ -581,7 +599,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         open={!!pendingDeleteRow}
         onOpenChange={(v) => { if (!v) setPendingDeleteRow(null) }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Delete exchange?</DialogTitle>
           </DialogHeader>

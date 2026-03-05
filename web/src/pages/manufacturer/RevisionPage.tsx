@@ -7,6 +7,8 @@ import { useRevisions } from '../../hooks/useRevision'
 import { useBatteryModels } from '../../hooks/useBatteryModels'
 import { useProcesses, type Process } from '../../hooks/useProcesses'
 import { useRevisionExchangeCount, useRevisionParameterCount } from '../../hooks/useRevisionCounts'
+import ParameterEditor from '../../components/ParameterEditor'
+import ValidationPanel from '../../components/ValidationPanel'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
 
@@ -174,6 +176,29 @@ export default function RevisionPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Parameters section */}
+      <div className="mt-10">
+        <div className="mb-1 h-px bg-slate-100" />
+        <div className="mt-6">
+          {revisionId && <ParameterEditor revisionId={revisionId} />}
+        </div>
+      </div>
+
+      {/* Validation section */}
+      <div className="mt-10">
+        <div className="mb-1 h-px bg-slate-100" />
+        <div className="mt-6">
+          {revisionId && projectId && modelId && (
+            <ValidationPanel
+              revisionId={revisionId}
+              projectId={projectId}
+              modelId={modelId}
+              processes={processes ?? []}
+            />
+          )}
+        </div>
       </div>
     </AppLayout>
   )
