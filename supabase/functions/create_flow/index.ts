@@ -45,7 +45,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
   // ── Auth (any authenticated user) ─────────────────────────────────────────
-  const authResult = requireAuth(req.headers.get("Authorization"));
+  const authResult = await requireAuth(req.headers.get("Authorization"));
   if (authResult instanceof Response) return authResult;
 
   // ── Parse body ────────────────────────────────────────────────────────────

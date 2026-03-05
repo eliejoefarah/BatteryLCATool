@@ -19,7 +19,7 @@ export const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY
 export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type, apikey, x-client-info",
 };
 
 /**
@@ -59,43 +59,30 @@ export function adminClient(): SupabaseClient {
 // ---------------------------------------------------------------------------
 
 /**
- * Decode a JWT payload without verifying the signature.
- * Safe because:
- *   - In production: the Supabase API gateway verifies the signature before
- *     the Edge Function is invoked (verify_jwt = true by default).
- *   - In local dev: verify_jwt = false in config.toml; signature checking is
- *     skipped at the runtime level, so we just need the sub claim.
- *
- * Returns the user_id (sub claim) or null if the token is malformed / expired.
+ * Verify a bearer token via Supabase Auth (server-side, works with ES256 and
+ * HS256). Uses an anon client so it goes through the normal auth verification
+ * path and returns the verified user object.
  */
-function _decodeJwtSub(jwt: string): string | null {
-  try {
-    const parts = jwt.split(".");
-    if (parts.length !== 3) return null;
-
-    // Base64url → base64 → decode
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64));
-
-    // Reject expired tokens
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-
-    return (payload.sub as string) ?? null;
-  } catch {
-    return null;
-  }
+async function _verifyToken(jwt: string): Promise<string | null> {
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) return null;
+  return data.user.id;
 }
 
 /**
  * Extract the bearer token from an Authorization header and return the
- * caller's user_id (JWT sub claim).
- * Returns null when the token is absent, malformed, or expired.
+ * verified caller's user_id. Uses auth.getUser() for full server-side
+ * signature verification (ES256 + HS256 compatible).
  */
-export function resolveCallerId(authHeader: string | null): string | null {
+export async function resolveCallerId(authHeader: string | null): Promise<string | null> {
   if (!authHeader) return null;
   const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
   if (!jwt) return null;
-  return _decodeJwtSub(jwt);
+  return await _verifyToken(jwt);
 }
 
 /**
@@ -123,7 +110,7 @@ export async function requireAdmin(
   authHeader: string | null,
   svc: SupabaseClient,
 ): Promise<{ callerId: string } | Response> {
-  const callerId = resolveCallerId(authHeader);
+  const callerId = await resolveCallerId(authHeader);
   if (!callerId) return json({ error: "Unauthorized: missing or invalid token" }, 401);
   if (!(await isAdmin(svc, callerId))) return json({ error: "Forbidden: admin role required" }, 403);
   return { callerId };
@@ -133,10 +120,10 @@ export async function requireAdmin(
  * Convenience: resolve caller, no role check.
  * Returns { callerId } on success, or a 401 Response on failure.
  */
-export function requireAuth(
+export async function requireAuth(
   authHeader: string | null,
-): { callerId: string } | Response {
-  const callerId = resolveCallerId(authHeader);
+): Promise<{ callerId: string } | Response> {
+  const callerId = await resolveCallerId(authHeader);
   if (!callerId) return json({ error: "Unauthorized: missing or invalid token" }, 401);
   return { callerId };
 }
