@@ -1,9 +1,10 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, GitBranch } from 'lucide-react'
+import { CheckCircle2, ChevronRight, GitBranch, XCircle } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import NewRevisionDialog from '../../components/NewRevisionDialog'
 import { useBatteryModels } from '../../hooks/useBatteryModels'
 import { useRevisions, type Revision } from '../../hooks/useRevision'
+import { useRevisionValidation } from '../../hooks/useRevisionValidation'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
 
@@ -12,6 +13,28 @@ const STATUS_STYLES: Record<string, string> = {
   frozen: 'bg-blue-100 text-blue-700',
   active: 'bg-green-100 text-green-700',
   archived: 'bg-amber-100 text-amber-700',
+}
+
+function ValidationBadge({ revisionId }: { revisionId: string }) {
+  const { data } = useRevisionValidation(revisionId, false)
+  const run = data?.run
+  const issues = data?.issues ?? []
+  if (!run || run.status === 'running') return null
+  const errors = issues.filter((i) => i.severity === 'error').length
+  if (errors > 0) {
+    return (
+      <span className="flex items-center gap-1 text-xs text-red-500">
+        <XCircle className="h-3 w-3" />
+        {errors} error{errors !== 1 ? 's' : ''}
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs text-green-600">
+      <CheckCircle2 className="h-3 w-3" />
+      Valid
+    </span>
+  )
 }
 
 function RevisionCard({
@@ -60,13 +83,16 @@ function RevisionCard({
       )}
 
       <div className="flex items-center justify-between border-t pt-3">
-        <span className="text-xs text-slate-400">
-          {index === 0 ? (
-            <span className="font-medium text-slate-600">Latest</span>
-          ) : (
-            `#${revision.revision_number}`
-          )}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">
+            {index === 0 ? (
+              <span className="font-medium text-slate-600">Latest</span>
+            ) : (
+              `#${revision.revision_number}`
+            )}
+          </span>
+          <ValidationBadge revisionId={revision.revision_id} />
+        </div>
         <Badge
           className={cn(
             'border-0 text-xs capitalize',

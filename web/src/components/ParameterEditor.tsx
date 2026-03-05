@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
@@ -27,7 +27,6 @@ import {
 // Add / Edit dialog
 // ---------------------------------------------------------------------------
 
-const DISTRIBUTIONS = ['', 'uniform', 'triangular', 'normal', 'lognormal'] as const
 
 interface ParamFormProps {
   revisionId: string
@@ -224,7 +223,7 @@ interface RowProps {
   onDelete: (p: Parameter) => void
 }
 
-function ParameterRow({ param, revisionId, onEdit, onDelete }: RowProps) {
+function ParameterRow({ param, revisionId: _revisionId, onEdit, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const hasDistribution = !!param.distribution_type
 

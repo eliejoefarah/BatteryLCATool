@@ -36,12 +36,12 @@ async function fetchRevisionValidation(
 
 export function useRevisionValidation(
   revisionId: string | undefined,
-  enabled = true,
+  poll = true,
 ) {
   return useQuery({
     queryKey: ['revision-validation', revisionId],
     queryFn: () => fetchRevisionValidation(revisionId!),
-    enabled: !!revisionId && enabled,
-    refetchInterval: enabled ? 10_000 : false,
+    enabled: !!revisionId,
+    refetchInterval: poll ? 10_000 : false,
   })
 }

@@ -250,16 +250,9 @@ export default function ProcessForm({
       comment: values.comment?.trim() || null,
     }
 
-    let error
-
-    if (isEdit) {
-      ;({ error } = await supabase
-        .from('process_instance')
-        .update(payload)
-        .eq('process_id', process.process_id))
-    } else {
-      ;({ error } = await supabase.from('process_instance').insert(payload))
-    }
+    const { error } = isEdit
+      ? await supabase.from('process_instance').update(payload).eq('process_id', process.process_id)
+      : await supabase.from('process_instance').insert(payload)
 
     setSubmitting(false)
 
