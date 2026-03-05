@@ -19,11 +19,13 @@
 //   SUPABASE_ANON_KEY         (auto-injected)
 //   SUPABASE_SERVICE_ROLE_KEY (auto-injected)
 //   FASTAPI_URL               (e.g. "https://your-api.up.railway.app")
+//   INTERNAL_API_SECRET       (shared secret forwarded to FastAPI to restrict /validate access)
 // =============================================================================
 
 import { CORS_HEADERS, handleCors, json, requireAuth } from "../_shared/utils.ts";
 
-const FASTAPI_URL = (Deno.env.get("FASTAPI_URL") ?? "").replace(/\/$/, "");
+const FASTAPI_URL     = (Deno.env.get("FASTAPI_URL") ?? "").replace(/\/$/, "");
+const INTERNAL_SECRET = Deno.env.get("INTERNAL_API_SECRET") ?? "";
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const cors = handleCors(req);
@@ -55,9 +57,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   let fastapiRes: Response;
   try {
+    const fastapiHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (INTERNAL_SECRET) fastapiHeaders["x-internal-secret"] = INTERNAL_SECRET;
+
     fastapiRes = await fetch(`${FASTAPI_URL}/validate`, {
       method:  "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: fastapiHeaders,
       body:    JSON.stringify({ revision_id: revisionId, triggered_by: callerId }),
     });
   } catch (fetchErr) {

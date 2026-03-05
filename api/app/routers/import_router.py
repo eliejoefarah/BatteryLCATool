@@ -61,12 +61,11 @@ router = APIRouter(prefix="/import", tags=["import"])
 # Config
 # ---------------------------------------------------------------------------
 
-# HS256 fallback secret — used when JWKS verification fails (local dev / legacy tokens).
-# Local Supabase CLI default is used when the env var is absent.
-_HS256_SECRET: str = os.environ.get(
-    "SUPABASE_JWT_SECRET",
-    "super-secret-jwt-token-with-at-least-32-characters-long",
-)
+# HS256 fallback secret — used when JWKS verification fails (local dev only).
+# In production SUPABASE_JWT_SECRET must be set; the fallback is intentionally
+# empty so that HS256 verification fails rather than silently accepting tokens
+# signed with the publicly-known Supabase CLI development default.
+_HS256_SECRET: str | None = os.environ.get("SUPABASE_JWT_SECRET") or None
 
 # JWKS client — lazily initialised, cached for the process lifetime.
 # Handles ES256 (P-256) keys used by production Supabase since the HS256 legacy
@@ -125,7 +124,9 @@ async def get_current_user_id(
                 options={"verify_aud": False},
             )
         except (PyJWKClientError, Exception):
-            # 2. Fall back to HS256 — local dev / legacy tokens still in circulation
+            # 2. Fall back to HS256 — local dev only (requires SUPABASE_JWT_SECRET env var)
+            if not _HS256_SECRET:
+                raise HTTPException(status_code=401, detail="Unauthorized.")
             payload = jwt.decode(
                 token,
                 _HS256_SECRET,
@@ -133,8 +134,10 @@ async def get_current_user_id(
                 options={"verify_aud": False},
             )
         return UUID(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError) as exc:
-        raise HTTPException(status_code=401, detail=f"Invalid JWT: {exc}") from exc
+    except HTTPException:
+        raise
+    except (jwt.PyJWTError, KeyError, ValueError):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
 
 
 # ---------------------------------------------------------------------------

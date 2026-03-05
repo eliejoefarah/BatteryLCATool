@@ -15,12 +15,14 @@ from __future__ import annotations
 # authentication and forwards { revision_id, triggered_by }.
 # =============================================================================
 
+import hmac
 import logging
+import os
 import uuid
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,6 +32,21 @@ from app.db import get_db
 log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["validate"])
+
+# Shared secret that the edge function must include so this endpoint cannot be
+# called directly from the public internet. Set INTERNAL_API_SECRET on both
+# Railway (FastAPI) and Supabase Edge Function env vars to the same value.
+# If not configured the endpoint is open (acceptable during initial setup).
+_INTERNAL_SECRET: str | None = os.environ.get("INTERNAL_API_SECRET") or None
+
+
+def _verify_internal_secret(x_internal_secret: str | None = Header(default=None)) -> None:
+    if not _INTERNAL_SECRET:
+        return  # Not configured — skip check (dev/initial setup mode)
+    if not x_internal_secret:
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    if not hmac.compare_digest(x_internal_secret, _INTERNAL_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
 
 # ---------------------------------------------------------------------------
 # Request / response models
@@ -159,6 +176,7 @@ def _check_process_rules(
 async def run_validation(
     body: ValidateRequest,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(_verify_internal_secret),
 ) -> ValidateResponse:
     try:
         revision_id = UUID(body.revision_id)
