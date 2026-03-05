@@ -223,7 +223,7 @@ interface RowProps {
   onDelete: (p: Parameter) => void
 }
 
-function ParameterRow({ param, revisionId: _revisionId, onEdit, onDelete }: RowProps) {
+function ParameterRow({ param, onEdit, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const hasDistribution = !!param.distribution_type
 
