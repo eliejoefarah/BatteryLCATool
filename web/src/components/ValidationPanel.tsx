@@ -154,6 +154,8 @@ export default function ValidationPanel({
       if (error) throw error
       await refetch()
       queryClient.invalidateQueries({ queryKey: ['revision-validation', revisionId] })
+      // Invalidate revision list so status badge (draft/validated) updates immediately
+      queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Validation failed')
     } finally {
