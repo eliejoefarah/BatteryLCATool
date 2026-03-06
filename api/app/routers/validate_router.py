@@ -257,27 +257,47 @@ async def run_validation(
                 issue,
             )
 
-        # ── 6. Mark run completed ─────────────────────────────────────────
+        # ── 6. Compute final status and mark run complete ─────────────────
+        error_count = sum(1 for i in issues if i["severity"] == "error")
+        if error_count > 0:
+            final_status = "fail"
+        elif any(i["severity"] == "warning" for i in issues):
+            final_status = "warning"
+        else:
+            final_status = "pass"
+
         await db.execute(
             text("""
                 UPDATE validation_run
-                SET status      = 'completed',
+                SET status      = :status,
                     issue_count = :cnt
                 WHERE validation_id = :vid
             """),
-            {"cnt": len(issues), "vid": str(validation_id)},
+            {"status": final_status, "cnt": len(issues), "vid": str(validation_id)},
         )
+
+        # Flip revision lifecycle status based on validation result
+        revision_status = "validated" if final_status == "pass" else "draft"
+        await db.execute(
+            text("""
+                UPDATE battery_model_revision
+                SET status = :s
+                WHERE revision_id = :rid
+            """),
+            {"s": revision_status, "rid": str(revision_id)},
+        )
+
         await db.commit()
 
         log.info(
-            "validate: revision=%s validation=%s issues=%d",
-            revision_id, validation_id, len(issues),
+            "validate: revision=%s validation=%s status=%s issues=%d",
+            revision_id, validation_id, final_status, len(issues),
         )
 
         return ValidateResponse(
             validation_id=str(validation_id),
             revision_id=str(revision_id),
-            status="completed",
+            status=final_status,
             issue_count=len(issues),
         )
 
