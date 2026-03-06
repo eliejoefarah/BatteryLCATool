@@ -302,9 +302,18 @@ function ManageMembersDialog({
       const toRemove = currentIds.filter((id) => !selectedIds.includes(id))
 
       if (toAdd.length > 0) {
+        const session = await getSession()
+        const adminId = session?.user.id ?? ''
         const { error } = await supabase
           .from('project_member')
-          .insert(toAdd.map((user_id) => ({ project_id: project.project_id, user_id })))
+          .insert(
+            toAdd.map((user_id) => ({
+              project_id: project.project_id,
+              user_id,
+              assigned_by: adminId,
+              role: (allUsers!.find((u) => u.user_id === user_id)?.role ?? 'manufacturer') as 'manufacturer' | 'reviewer' | 'admin',
+            })),
+          )
         if (error) throw error
       }
 
