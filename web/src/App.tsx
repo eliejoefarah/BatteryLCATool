@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Toaster } from './components/ui/sonner'
 import AdminRoute from './components/AdminRoute'
+import InactivityDialog from './components/InactivityDialog'
 import Unauthorized from './pages/Unauthorized'
 import Login from './pages/Login'
 import UsersPage from './pages/admin/Users'
@@ -54,6 +55,8 @@ export default function App() {
         />
       </Routes>
       <Toaster />
+      {/* 1 min inactivity → "still there?" dialog → 30 s grace → sign out */}
+      <InactivityDialog timeoutMs={60_000} />
     </BrowserRouter>
   )
 }
