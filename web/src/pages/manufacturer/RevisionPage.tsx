@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, Cpu, Eye, MapPin, UploadCloud } from 'lucide-react'
+import { ChevronRight, Cpu, Eye, Lock, LockOpen, MapPin, UploadCloud } from 'lucide-react'
+import { toast } from 'sonner'
 import AppLayout from '../../components/AppLayout'
 import ProcessForm from '../../components/ProcessForm'
 import ImportRevisionButton from '../../components/ImportRevisionButton'
@@ -11,6 +13,17 @@ import ParameterEditor from '../../components/ParameterEditor'
 import ValidationPanel from '../../components/ValidationPanel'
 import { useAuthStore } from '../../store/auth'
 import { Badge } from '../../components/ui/badge'
+import { Button } from '../../components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog'
+import { supabase } from '../../lib/supabase'
+import { queryClient } from '../../lib/queryClient'
 import { cn } from '../../lib/utils'
 
 const STAGE_STYLES: Record<string, string> = {
@@ -94,6 +107,9 @@ export default function RevisionPage() {
     modelId: string
     revisionId: string
   }>()
+  const [freezeOpen, setFreezeOpen] = useState(false)
+  const [acting, setActing] = useState(false)
+
   const user = useAuthStore((s) => s.user)
   const role = useAuthStore((s) => s.role)
   const { data: models } = useBatteryModels(projectId)
@@ -104,10 +120,75 @@ export default function RevisionPage() {
 
   const model = models?.find((m) => m.model_id === modelId)
   const revision = revisions?.find((r) => r.revision_id === revisionId)
-  const canEdit = role === 'manufacturer' && (!!user && revision?.created_by === user.id)
+  const isFrozen = !!revision?.frozen_at
+  const isCreator = role === 'manufacturer' && !!user && revision?.created_by === user.id
+  const canEdit = isCreator && !isFrozen
+  const canValidate = canEdit
+  const canFreeze = isCreator && !isFrozen
+  const canUnfreeze = role === 'admin' && isFrozen
+
+  async function handleFreeze() {
+    if (!revisionId) return
+    setActing(true)
+    try {
+      const { error } = await supabase
+        .from('battery_model_revision')
+        .update({ frozen_at: new Date().toISOString(), status: 'frozen' })
+        .eq('revision_id', revisionId)
+      if (error) throw error
+      queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })
+      toast.success('Revision frozen successfully')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to freeze revision')
+    } finally {
+      setActing(false)
+      setFreezeOpen(false)
+    }
+  }
+
+  async function handleUnfreeze() {
+    if (!revisionId) return
+    setActing(true)
+    try {
+      const { error } = await supabase
+        .from('battery_model_revision')
+        .update({ frozen_at: null, status: 'draft' })
+        .eq('revision_id', revisionId)
+      if (error) throw error
+      queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })
+      toast.success('Revision unfrozen')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to unfreeze revision')
+    } finally {
+      setActing(false)
+    }
+  }
 
   return (
     <AppLayout>
+      {/* Freeze confirmation dialog */}
+      <Dialog open={freezeOpen} onOpenChange={setFreezeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Freeze this revision?</DialogTitle>
+            <DialogDescription>
+              Freezing locks the revision permanently. No further edits,
+              process changes, or validation runs will be allowed. Only an
+              admin can unfreeze it afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFreezeOpen(false)} disabled={acting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleFreeze} disabled={acting}>
+              <Lock className="mr-1.5 h-3.5 w-3.5" />
+              {acting ? 'Freezing…' : 'Freeze Revision'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-lg font-semibold text-slate-900">
@@ -117,6 +198,29 @@ export default function RevisionPage() {
           <p className="mt-1 text-sm text-slate-500">{model?.name}</p>
         </div>
         <div className="flex items-center gap-2">
+          {canFreeze && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={() => setFreezeOpen(true)}
+            >
+              <Lock className="mr-1.5 h-3.5 w-3.5" />
+              Freeze
+            </Button>
+          )}
+          {canUnfreeze && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={handleUnfreeze}
+              disabled={acting}
+            >
+              <LockOpen className="mr-1.5 h-3.5 w-3.5" />
+              {acting ? 'Unfreezing…' : 'Unfreeze'}
+            </Button>
+          )}
           {!canEdit && revision && (
             <Badge variant="outline" className="flex items-center gap-1 text-xs text-slate-400">
               <Eye className="h-3 w-3" />
@@ -134,7 +238,9 @@ export default function RevisionPage() {
 
       {!canEdit && revision && (
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          {role === 'admin'
+          {isFrozen
+            ? 'This revision is frozen and cannot be edited.'
+            : role === 'admin'
             ? 'Viewing in read-only mode — admins cannot edit revisions.'
             : role === 'reviewer'
             ? 'You have reviewer access — viewing in read-only mode.'
@@ -218,6 +324,7 @@ export default function RevisionPage() {
               projectId={projectId}
               modelId={modelId}
               processes={processes ?? []}
+              canValidate={canValidate}
             />
           )}
         </div>

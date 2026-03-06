@@ -11,7 +11,6 @@ import {
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { queryClient } from '../lib/queryClient'
-import { useAuthStore } from '../store/auth'
 import { useRevisionValidation } from '../hooks/useRevisionValidation'
 import type { ValidationIssue } from '../hooks/useRevisionValidation'
 import type { Process } from '../hooks/useProcesses'
@@ -131,6 +130,7 @@ interface Props {
   projectId: string
   modelId: string
   processes: Process[]
+  canValidate: boolean
 }
 
 export default function ValidationPanel({
@@ -138,10 +138,9 @@ export default function ValidationPanel({
   projectId,
   modelId,
   processes,
+  canValidate,
 }: Props) {
   const [triggering, setTriggering] = useState(false)
-  const role = useAuthStore((s) => s.role)
-  const canValidate = role === 'manufacturer'
   const { data, isLoading, refetch } = useRevisionValidation(revisionId, true)
 
   const run = data?.run ?? null
