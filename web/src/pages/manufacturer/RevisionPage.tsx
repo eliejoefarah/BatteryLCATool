@@ -104,7 +104,7 @@ export default function RevisionPage() {
 
   const model = models?.find((m) => m.model_id === modelId)
   const revision = revisions?.find((r) => r.revision_id === revisionId)
-  const canEdit = role !== 'admin' && (!!user && revision?.created_by === user.id)
+  const canEdit = role === 'manufacturer' && (!!user && revision?.created_by === user.id)
 
   return (
     <AppLayout>
@@ -136,6 +136,8 @@ export default function RevisionPage() {
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
           {role === 'admin'
             ? 'Viewing in read-only mode — admins cannot edit revisions.'
+            : role === 'reviewer'
+            ? 'You have reviewer access — viewing in read-only mode.'
             : 'This revision was created by another team member — viewing in read-only mode.'}
         </div>
       )}

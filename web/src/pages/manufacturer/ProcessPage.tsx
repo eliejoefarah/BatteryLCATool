@@ -19,7 +19,7 @@ export default function ProcessPage() {
   const process = processes?.find((p) => p.process_id === processId)
   const revision = revisions?.find((r) => r.revision_id === revisionId)
 
-  const canEdit = role !== 'admin' && (!!user && revision?.created_by === user.id)
+  const canEdit = role === 'manufacturer' && (!!user && revision?.created_by === user.id)
 
   return (
     <AppLayout>

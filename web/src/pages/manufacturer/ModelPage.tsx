@@ -5,6 +5,7 @@ import NewRevisionDialog from '../../components/NewRevisionDialog'
 import { useBatteryModels } from '../../hooks/useBatteryModels'
 import { useRevisions, type Revision } from '../../hooks/useRevision'
 import { useRevisionValidation } from '../../hooks/useRevisionValidation'
+import { useAuthStore } from '../../store/auth'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
 
@@ -114,6 +115,7 @@ export default function ModelPage() {
     projectId: string
     modelId: string
   }>()
+  const role = useAuthStore((s) => s.role)
   const { data: models } = useBatteryModels(projectId)
   const { data: revisions } = useRevisions(modelId)
   const model = models?.find((m) => m.model_id === modelId)
@@ -130,7 +132,7 @@ export default function ModelPage() {
             {model?.functional_unit}
           </p>
         </div>
-        {modelId && <NewRevisionDialog modelId={modelId} />}
+        {modelId && role === 'manufacturer' && <NewRevisionDialog modelId={modelId} />}
       </div>
 
       <div className="mt-6">

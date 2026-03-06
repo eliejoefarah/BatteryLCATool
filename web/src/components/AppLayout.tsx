@@ -16,6 +16,7 @@ import { useBatteryModels } from '../hooks/useBatteryModels'
 import { useRevisions } from '../hooks/useRevision'
 import { useProcesses } from '../hooks/useProcesses'
 import { useProject } from '../hooks/useProject'
+import { useAuthStore } from '../store/auth'
 import TopBar from './TopBar'
 
 interface SidebarProps {
@@ -143,6 +144,7 @@ function RevisionList({
 function ModelList({ projectId }: { projectId: string }) {
   const { modelId: activeModelId } = useParams()
   const navigate = useNavigate()
+  const role = useAuthStore((s) => s.role)
   const { data: models } = useBatteryModels(projectId)
   const [expandedModels, setExpandedModels] = useState<Set<string>>(
     () => new Set(activeModelId ? [activeModelId] : []),
@@ -201,9 +203,11 @@ function ModelList({ projectId }: { projectId: string }) {
             {isExpanded && (
               <>
                 <RevisionList modelId={m.model_id} projectId={projectId} />
-                <div className="ml-5 mt-0.5">
-                  <NewRevisionDialog modelId={m.model_id} compact />
-                </div>
+                {role === 'manufacturer' && (
+                  <div className="ml-5 mt-0.5">
+                    <NewRevisionDialog modelId={m.model_id} compact />
+                  </div>
+                )}
               </>
             )}
           </li>
@@ -216,6 +220,7 @@ function ModelList({ projectId }: { projectId: string }) {
 function Sidebar({ projectId }: SidebarProps) {
   const { data: project } = useProject(projectId)
   const navigate = useNavigate()
+  const isManufacturer = useAuthStore((s) => s.role) === 'manufacturer'
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -238,7 +243,7 @@ function Sidebar({ projectId }: SidebarProps) {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
             Models
           </p>
-          <NewModelDialog projectId={projectId} compact />
+          {isManufacturer && <NewModelDialog projectId={projectId} compact />}
         </div>
         <ModelList projectId={projectId} />
       </div>

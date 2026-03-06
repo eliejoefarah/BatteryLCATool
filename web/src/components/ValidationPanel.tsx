@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { queryClient } from '../lib/queryClient'
+import { useAuthStore } from '../store/auth'
 import { useRevisionValidation } from '../hooks/useRevisionValidation'
 import type { ValidationIssue } from '../hooks/useRevisionValidation'
 import type { Process } from '../hooks/useProcesses'
@@ -139,6 +140,8 @@ export default function ValidationPanel({
   processes,
 }: Props) {
   const [triggering, setTriggering] = useState(false)
+  const role = useAuthStore((s) => s.role)
+  const canValidate = role === 'manufacturer'
   const { data, isLoading, refetch } = useRevisionValidation(revisionId, true)
 
   const run = data?.run ?? null
@@ -237,19 +240,21 @@ export default function ValidationPanel({
               })}
             </div>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={triggering || isRunning}
-            onClick={handleRunValidation}
-          >
-            {triggering || isRunning ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {triggering ? 'Running…' : 'Run Validation'}
-          </Button>
+          {canValidate && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={triggering || isRunning}
+              onClick={handleRunValidation}
+            >
+              {triggering || isRunning ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {triggering ? 'Running…' : 'Run Validation'}
+            </Button>
+          )}
         </div>
       </div>
 

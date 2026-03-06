@@ -5,6 +5,7 @@ import NewModelDialog from '../../components/NewModelDialog'
 import { useProject } from '../../hooks/useProject'
 import { useBatteryModels, type BatteryModel } from '../../hooks/useBatteryModels'
 import { useRevisions } from '../../hooks/useRevision'
+import { useAuthStore } from '../../store/auth'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
 
@@ -90,6 +91,7 @@ function ModelCard({
 
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
+  const role = useAuthStore((s) => s.role)
   const { data: project } = useProject(projectId)
   const { data: models } = useBatteryModels(projectId)
 
@@ -104,7 +106,7 @@ export default function ProjectPage() {
             <p className="mt-1 text-sm text-slate-500">{project.description}</p>
           )}
         </div>
-        {projectId && <NewModelDialog projectId={projectId} />}
+        {projectId && role === 'manufacturer' && <NewModelDialog projectId={projectId} />}
       </div>
 
       <div className="mt-6">
