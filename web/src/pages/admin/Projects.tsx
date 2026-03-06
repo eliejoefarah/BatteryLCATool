@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink } from 'lucide-react'
+import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink, Users } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getSession } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
@@ -125,9 +125,14 @@ function RevisionRow({
   return (
     <div className="flex items-center gap-3 rounded px-2 py-1.5 text-xs hover:bg-slate-50">
       <GitBranch className="h-3 w-3 shrink-0 text-slate-300" />
-      <span className="w-32 truncate font-medium text-slate-700">
+      <button
+        onClick={() => navigate(href)}
+        title="View revision"
+        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-slate-500 hover:bg-slate-200 hover:text-slate-800 font-medium"
+      >
+        <ExternalLink className="h-3 w-3" />
         {revision.label ?? `Rev ${revision.revision_number}`}
-      </span>
+      </button>
       {revision.status && (
         <Badge
           className={cn(
@@ -146,14 +151,6 @@ function RevisionRow({
           ? (revision.creator.display_name ?? revision.creator.email)
           : '—'}
       </span>
-      <button
-        onClick={() => navigate(href)}
-        title="View revision"
-        className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
-      >
-        <ExternalLink className="h-3 w-3" />
-        View
-      </button>
     </div>
   )
 }
@@ -240,6 +237,143 @@ function ProjectDrillDown({ projectId }: { projectId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Manage Members dialog
+// ---------------------------------------------------------------------------
+
+function ManageMembersDialog({
+  project,
+  onClose,
+}: {
+  project: ProjectRow
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [saving, setSaving] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null)
+
+  // All non-admin users
+  const { data: allUsers } = useQuery({
+    queryKey: ['admin', 'manufacturers'],
+    queryFn: fetchManufacturers,
+  })
+
+  // Current members of this project
+  const { data: currentMembers } = useQuery({
+    queryKey: ['admin', 'members', project.project_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('project_member')
+        .select('user_id')
+        .eq('project_id', project.project_id)
+      if (error) throw error
+      return data
+    },
+  })
+
+  useEffect(() => {
+    if (currentMembers) {
+      setSelectedIds((prev) => prev ?? currentMembers.map((r) => r.user_id))
+    }
+  }, [currentMembers])
+
+  function toggle(userId: string) {
+    setSelectedIds((prev) =>
+      prev === null
+        ? [userId]
+        : prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    )
+  }
+
+  async function handleSave() {
+    if (selectedIds === null) return
+    setSaving(true)
+    try {
+      // Fetch current members fresh to compute diff
+      const { data: current, error: fetchErr } = await supabase
+        .from('project_member')
+        .select('user_id')
+        .eq('project_id', project.project_id)
+      if (fetchErr) throw fetchErr
+
+      const currentIds = current.map((r) => r.user_id)
+      const toAdd = selectedIds.filter((id) => !currentIds.includes(id))
+      const toRemove = currentIds.filter((id) => !selectedIds.includes(id))
+
+      if (toAdd.length > 0) {
+        const { error } = await supabase
+          .from('project_member')
+          .insert(toAdd.map((user_id) => ({ project_id: project.project_id, user_id })))
+        if (error) throw error
+      }
+
+      if (toRemove.length > 0) {
+        const { error } = await supabase
+          .from('project_member')
+          .delete()
+          .eq('project_id', project.project_id)
+          .in('user_id', toRemove)
+        if (error) throw error
+      }
+
+      toast.success('Members updated')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'projects'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'members', project.project_id] })
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update members')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const ready = allUsers !== undefined && currentMembers !== undefined && selectedIds !== null
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Manage Members — {project.name}</DialogTitle>
+        </DialogHeader>
+
+        <div className="py-2">
+          {!ready ? (
+            <Skeleton className="h-32 w-full" />
+          ) : allUsers!.length === 0 ? (
+            <p className="text-sm text-slate-500">No users available.</p>
+          ) : (
+            <div className="max-h-60 overflow-y-auto rounded-md border p-2 space-y-1">
+              {allUsers!.map((u) => (
+                <label
+                  key={u.user_id}
+                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds!.includes(u.user_id)}
+                    onChange={() => toggle(u.user_id)}
+                    className="accent-slate-800"
+                  />
+                  <span className="text-sm">{u.display_name ? `${u.display_name} (${u.email})` : u.email}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={!ready || saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -251,6 +385,7 @@ export default function ProjectsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [managingProject, setManagingProject] = useState<ProjectRow | null>(null)
 
   const { data: projects, isLoading: loadingProjects } = useQuery({
     queryKey: ['admin', 'projects'],
@@ -312,12 +447,13 @@ export default function ProjectsPage() {
 
       <div className="rounded-lg border bg-white">
         {/* Header */}
-        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr] gap-4 border-b px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] gap-4 border-b px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-400">
           <span>Name</span>
           <span>Description</span>
           <span>Members</span>
           <span>Models</span>
           <span>Created</span>
+          <span></span>
         </div>
 
         {loadingProjects ? (
@@ -333,8 +469,8 @@ export default function ProjectsPage() {
             const isExpanded = expandedProjects.has(p.project_id)
             return (
               <div key={p.project_id} className="border-b last:border-b-0">
-                <button
-                  className="grid w-full grid-cols-[2fr_2fr_1fr_1fr_1fr] gap-4 px-4 py-3 text-left text-sm hover:bg-slate-50"
+                <div
+                  className="grid w-full grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 text-left text-sm hover:bg-slate-50 cursor-pointer items-center"
                   onClick={() => toggleProject(p.project_id)}
                 >
                   <span className="flex items-center gap-2 font-medium text-slate-800">
@@ -351,7 +487,15 @@ export default function ProjectsPage() {
                   <span className="text-slate-500">
                     {new Date(p.created_at).toLocaleDateString()}
                   </span>
-                </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setManagingProject(p) }}
+                    title="Manage members"
+                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-200 hover:text-slate-800"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Members
+                  </button>
+                </div>
                 {isExpanded && <ProjectDrillDown projectId={p.project_id} />}
               </div>
             )
@@ -423,6 +567,13 @@ export default function ProjectsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {managingProject && (
+        <ManageMembersDialog
+          project={managingProject}
+          onClose={() => setManagingProject(null)}
+        />
+      )}
     </div>
     </div>
   )
