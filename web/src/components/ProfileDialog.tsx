@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, FlaskConical, FolderOpen, GitBranch, ShieldCheck, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
