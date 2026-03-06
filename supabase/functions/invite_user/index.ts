@@ -47,7 +47,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   const email       = (body.email ?? "").trim().toLowerCase();
-  const role        = body.role === "admin" ? "admin" : "editor";
+  const VALID_ROLES = ["admin", "manufacturer", "reviewer"];
+  const role        = VALID_ROLES.includes(body.role ?? "") ? body.role! : "manufacturer";
   const displayName = (body.display_name ?? "").trim() || null;
 
   if (!email || !email.includes("@")) {

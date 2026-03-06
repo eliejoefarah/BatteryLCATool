@@ -68,7 +68,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // The invite_user function may have pre-set a role in metadata.
   const requestedRole = record.raw_user_meta_data?.role;
-  const role = requestedRole === "admin" ? "admin" : "editor";
+  const VALID_ROLES = ["admin", "manufacturer", "reviewer"];
+  const role = VALID_ROLES.includes(requestedRole ?? "") ? requestedRole! : "manufacturer";
 
   // ── Upsert into app_user ────────────────────────────────────────────────────
   const svc = adminClient();

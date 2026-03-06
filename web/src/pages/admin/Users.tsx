@@ -66,13 +66,13 @@ async function inviteUser(email: string, role: string) {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
-  editor: 'Manufacturer',
+  manufacturer: 'Manufacturer',
   reviewer: 'Reviewer',
 }
 
 const ROLE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
   admin: 'default',
-  editor: 'secondary',
+  manufacturer: 'secondary',
   reviewer: 'outline',
 }
 
@@ -80,7 +80,7 @@ export default function UsersPage() {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState('editor')
+  const [role, setRole] = useState('manufacturer')
   const [submitting, setSubmitting] = useState(false)
 
   const { data: users, isLoading } = useQuery({
@@ -96,7 +96,7 @@ export default function UsersPage() {
       toast.success(`Invite sent to ${email}`)
       setOpen(false)
       setEmail('')
-      setRole('editor')
+      setRole('manufacturer')
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to send invite')
@@ -183,7 +183,7 @@ export default function UsersPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="editor">Manufacturer</SelectItem>
+                  <SelectItem value="manufacturer">Manufacturer</SelectItem>
                   <SelectItem value="reviewer">Reviewer</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
