@@ -149,7 +149,8 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
 
       const { data, error } = await supabase
         .from('process_exchange')
-        .insert(payload)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(payload as any)
         .select('*')
         .single()
 

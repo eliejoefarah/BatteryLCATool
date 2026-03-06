@@ -67,14 +67,16 @@ function ParamForm({ revisionId, existing, onDone }: ParamFormProps) {
       if (existing) {
         const { error } = await supabase
           .from('model_parameter')
-          .update(payload)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .update(payload as any)
           .eq('param_id', existing.param_id)
         if (error) throw error
         toast.success(`Parameter "${name.trim()}" updated`)
       } else {
         const { error } = await supabase
           .from('model_parameter')
-          .insert(payload)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(payload as any)
         if (error) throw error
         toast.success(`Parameter "${name.trim()}" added`)
       }
