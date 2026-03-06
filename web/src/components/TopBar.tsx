@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ChevronRight, LogOut, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -7,6 +8,7 @@ import { useBatteryModels } from '../hooks/useBatteryModels'
 import { useRevisions } from '../hooks/useRevision'
 import { useProcesses } from '../hooks/useProcesses'
 import ValidationBadge from './ValidationBadge'
+import ProfileDialog from './ProfileDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,7 @@ import { Button } from './ui/button'
 export default function TopBar() {
   const { projectId, modelId, revisionId, processId } = useParams()
   const user = useAuthStore((s) => s.user)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const { data: project } = useProject(projectId)
   const { data: models } = useBatteryModels(projectId)
@@ -36,6 +39,7 @@ export default function TopBar() {
   }
 
   return (
+    <>
     <header className="flex h-12 items-center justify-between border-b bg-white px-4">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-slate-600">
@@ -94,7 +98,10 @@ export default function TopBar() {
               {user?.email}
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-sm cursor-pointer">
+            <DropdownMenuItem
+              className="gap-2 text-sm cursor-pointer"
+              onClick={() => setProfileOpen(true)}
+            >
               <User className="h-4 w-4" />
               Profile
             </DropdownMenuItem>
@@ -110,5 +117,8 @@ export default function TopBar() {
         </DropdownMenu>
       </div>
     </header>
+
+    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
+    </>
   )
 }
