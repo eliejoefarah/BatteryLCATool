@@ -62,7 +62,7 @@ async function fetchManufacturers(): Promise<AppUser[]> {
   const { data, error } = await supabase
     .from('app_user')
     .select('*')
-    .eq('role', 'editor')
+    .neq('role', 'admin')
     .order('email')
   if (error) throw error
   return data
