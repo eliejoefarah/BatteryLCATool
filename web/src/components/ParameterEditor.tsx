@@ -221,9 +221,10 @@ interface RowProps {
   revisionId: string
   onEdit: (p: Parameter) => void
   onDelete: (p: Parameter) => void
+  readOnly?: boolean
 }
 
-function ParameterRow({ param, onEdit, onDelete }: RowProps) {
+function ParameterRow({ param, onEdit, onDelete, readOnly }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const hasDistribution = !!param.distribution_type
 
@@ -270,24 +271,26 @@ function ParameterRow({ param, onEdit, onDelete }: RowProps) {
         </span>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2 text-xs text-slate-500"
-            onClick={() => onEdit(param)}
-          >
-            Edit
-          </Button>
-          <button
-            type="button"
-            title="Delete parameter"
-            className="flex h-7 w-7 items-center justify-center rounded text-slate-300 transition-colors hover:text-red-500"
-            onClick={() => onDelete(param)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs text-slate-500"
+              onClick={() => onEdit(param)}
+            >
+              Edit
+            </Button>
+            <button
+              type="button"
+              title="Delete parameter"
+              className="flex h-7 w-7 items-center justify-center rounded text-slate-300 transition-colors hover:text-red-500"
+              onClick={() => onDelete(param)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Distribution detail */}
@@ -339,9 +342,10 @@ function ParameterRow({ param, onEdit, onDelete }: RowProps) {
 
 interface Props {
   revisionId: string
+  readOnly?: boolean
 }
 
-export default function ParameterEditor({ revisionId }: Props) {
+export default function ParameterEditor({ revisionId, readOnly }: Props) {
   const { data: parameters = [], isLoading } = useParameters(revisionId)
   const [addOpen, setAddOpen] = useState(false)
   const [editParam, setEditParam] = useState<Parameter | null>(null)
@@ -376,23 +380,25 @@ export default function ParameterEditor({ revisionId }: Props) {
             <code className="rounded bg-slate-100 px-1">capacity_Ah * 0.5</code>)
           </p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add Parameter
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add Parameter</DialogTitle>
-            </DialogHeader>
-            <ParamForm
-              revisionId={revisionId}
-              onDone={() => setAddOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {!readOnly && (
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add Parameter
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add Parameter</DialogTitle>
+              </DialogHeader>
+              <ParamForm
+                revisionId={revisionId}
+                onDone={() => setAddOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Available names hint */}
@@ -432,6 +438,7 @@ export default function ParameterEditor({ revisionId }: Props) {
               revisionId={revisionId}
               onEdit={setEditParam}
               onDelete={setDeleteParam}
+              readOnly={readOnly}
             />
           ))}
         </div>

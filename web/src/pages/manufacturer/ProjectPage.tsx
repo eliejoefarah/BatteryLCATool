@@ -10,8 +10,8 @@ import { cn } from '../../lib/utils'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
+  validated: 'bg-green-100 text-green-700',
   frozen: 'bg-blue-100 text-blue-700',
-  active: 'bg-green-100 text-green-700',
   archived: 'bg-amber-100 text-amber-700',
 }
 
@@ -24,18 +24,10 @@ function ModelCard({
 }) {
   const navigate = useNavigate()
   const { data: revisions } = useRevisions(model.model_id)
-  const activeRevision = revisions?.find((r) => r.is_active)
   const latestRevision = revisions?.[0]
-  const targetRevision = activeRevision ?? latestRevision
 
   function handleClick() {
-    if (targetRevision) {
-      navigate(
-        `/projects/${projectId}/models/${model.model_id}/revisions/${targetRevision.revision_id}`,
-      )
-    } else {
-      navigate(`/projects/${projectId}/models/${model.model_id}`)
-    }
+    navigate(`/projects/${projectId}/models/${model.model_id}`)
   }
 
   return (
@@ -78,17 +70,17 @@ function ModelCard({
             </span>
           )}
         </div>
-        {targetRevision && (
+        {latestRevision && (
           <Badge
             className={cn(
               'border-0 text-xs',
-              STATUS_STYLES[targetRevision.status] ??
+              STATUS_STYLES[latestRevision.status] ??
                 'bg-slate-100 text-slate-600',
             )}
           >
-            {targetRevision.label ?? `Rev ${targetRevision.revision_number}`}
+            {latestRevision.label ?? `Rev ${latestRevision.revision_number}`}
             {' · '}
-            <span className="capitalize">{targetRevision.status}</span>
+            <span className="capitalize">{latestRevision.status}</span>
           </Badge>
         )}
       </div>

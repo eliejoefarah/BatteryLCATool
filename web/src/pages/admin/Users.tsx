@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { supabase, getSession } from '../../lib/supabase'
+import TopBar from '../../components/TopBar'
 import type { Database } from '../../types/database.types'
 import { Button } from '../../components/ui/button'
 import {
@@ -103,7 +106,14 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex h-screen flex-col bg-slate-50">
+      <TopBar />
+      <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
+        <Link to="/admin" className="hover:text-slate-800">Admin</Link>
+        <ChevronRight className="h-3 w-3" />
+        <span className="font-medium text-slate-700">Users</span>
+      </div>
+    <div className="flex-1 overflow-auto space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-800">Users</h1>
         <Button onClick={() => setOpen(true)}>Invite User</Button>
@@ -191,6 +201,7 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   )
 }

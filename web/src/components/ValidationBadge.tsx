@@ -55,7 +55,8 @@ export default function ValidationBadge({ revisionId }: Props) {
     )
   }
 
-  if (s === 'pass') {
+  // 'pass' or legacy 'completed' with no issues
+  if (s === 'pass' || (s === 'completed' && count === 0)) {
     return (
       <Badge className="gap-1 border-0 bg-green-100 text-xs text-green-800 hover:bg-green-100">
         <CheckCircle className="h-3 w-3" />
@@ -73,6 +74,7 @@ export default function ValidationBadge({ revisionId }: Props) {
     )
   }
 
+  // 'fail', legacy 'completed' with issues, 'failed' (exception path), or unknown
   return (
     <Badge className="gap-1 border-0 bg-red-100 text-xs text-red-800 hover:bg-red-100">
       <XCircle className="h-3 w-3" />

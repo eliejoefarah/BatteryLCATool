@@ -50,7 +50,7 @@ function ProcessList({
             className={cn(
               'flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs transition-colors',
               activeProcessId === p.process_id
-                ? 'bg-slate-200 font-medium text-slate-900'
+                ? 'bg-green-50 font-medium text-green-800'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
             )}
           >
@@ -118,7 +118,7 @@ function RevisionList({
                 className={cn(
                   'flex flex-1 items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs transition-colors',
                   isActive
-                    ? 'bg-slate-200 font-medium text-slate-900'
+                    ? 'bg-green-50 font-medium text-green-800'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                 )}
               >
@@ -190,7 +190,7 @@ function ModelList({ projectId }: { projectId: string }) {
                 className={cn(
                   'flex flex-1 items-center gap-1.5 rounded px-1.5 py-1 text-left text-sm transition-colors',
                   isActive
-                    ? 'bg-slate-200 font-medium text-slate-900'
+                    ? 'bg-green-50 font-medium text-green-800'
                     : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
                 )}
               >
@@ -224,7 +224,7 @@ function Sidebar({ projectId }: SidebarProps) {
         onClick={() => navigate(`/projects/${projectId}`)}
         className="flex items-center gap-2 border-b px-3 py-3 text-left hover:bg-slate-50"
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-slate-700 text-xs font-bold text-white">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-green-600 text-xs font-bold text-white">
           {project?.name?.slice(0, 1).toUpperCase() ?? '…'}
         </div>
         <span className="truncate text-sm font-semibold text-slate-800">

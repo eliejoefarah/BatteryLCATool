@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ChevronRight, LogOut, User } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ChevronRight, Home, LogOut, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/auth'
 import { useProject } from '../hooks/useProject'
@@ -20,7 +20,9 @@ import { Button } from './ui/button'
 
 export default function TopBar() {
   const { projectId, modelId, revisionId, processId } = useParams()
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const role = useAuthStore((s) => s.role)
   const [profileOpen, setProfileOpen] = useState(false)
 
   const { data: project } = useProject(projectId)
@@ -36,6 +38,7 @@ export default function TopBar() {
 
   async function handleSignOut() {
     await supabase.auth.signOut()
+    navigate('/login')
   }
 
   return (
@@ -43,13 +46,22 @@ export default function TopBar() {
     <header className="flex h-12 items-center justify-between border-b bg-white px-4">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-slate-600">
+        <Link
+          to={role === 'admin' ? '/admin' : '/projects'}
+          className="flex items-center text-slate-400 hover:text-slate-700"
+        >
+          <Home className="h-3.5 w-3.5" />
+        </Link>
         {project && (
-          <Link
-            to={`/projects/${projectId}`}
-            className="hover:text-slate-900"
-          >
-            {project.name}
-          </Link>
+          <>
+            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+            <Link
+              to={`/projects/${projectId}`}
+              className="hover:text-slate-900"
+            >
+              {project.name}
+            </Link>
+          </>
         )}
         {model && (
           <>

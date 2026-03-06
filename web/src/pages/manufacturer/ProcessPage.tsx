@@ -3,14 +3,23 @@ import AppLayout from '../../components/AppLayout'
 import ProcessForm from '../../components/ProcessForm'
 import ExchangeGrid from '../../components/ExchangeGrid'
 import { useProcesses } from '../../hooks/useProcesses'
+import { useRevisions } from '../../hooks/useRevision'
+import { useAuthStore } from '../../store/auth'
 
 export default function ProcessPage() {
-  const { revisionId, processId } = useParams<{
+  const { modelId, revisionId, processId } = useParams<{
+    modelId: string
     revisionId: string
     processId: string
   }>()
+  const user = useAuthStore((s) => s.user)
+  const role = useAuthStore((s) => s.role)
   const { data: processes } = useProcesses(revisionId)
+  const { data: revisions } = useRevisions(modelId)
   const process = processes?.find((p) => p.process_id === processId)
+  const revision = revisions?.find((r) => r.revision_id === revisionId)
+
+  const canEdit = role !== 'admin' && (!!user && revision?.created_by === user.id)
 
   return (
     <AppLayout>
@@ -34,14 +43,20 @@ export default function ProcessPage() {
             )}
           </p>
         </div>
-        {revisionId && process && (
+        {canEdit && revisionId && process && (
           <ProcessForm revisionId={revisionId} process={process} />
         )}
       </div>
 
+      {!canEdit && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          This revision was created by another team member — viewing in read-only mode.
+        </div>
+      )}
+
       <div className="mt-6">
         {processId && revisionId ? (
-          <ExchangeGrid processId={processId} revisionId={revisionId} />
+          <ExchangeGrid processId={processId} revisionId={revisionId} readOnly={!canEdit} />
         ) : null}
       </div>
     </AppLayout>

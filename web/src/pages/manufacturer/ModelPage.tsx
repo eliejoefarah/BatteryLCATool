@@ -10,8 +10,8 @@ import { cn } from '../../lib/utils'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
+  validated: 'bg-green-100 text-green-700',
   frozen: 'bg-blue-100 text-blue-700',
-  active: 'bg-green-100 text-green-700',
   archived: 'bg-amber-100 text-amber-700',
 }
 

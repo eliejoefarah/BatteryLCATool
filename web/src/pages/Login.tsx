@@ -9,6 +9,7 @@ import { Label } from '../components/ui/label'
 export default function Login() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const role = useAuthStore((s) => s.role)
   const loading = useAuthStore((s) => s.loading)
 
   const [email, setEmail] = useState('')
@@ -16,12 +17,12 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // If already authenticated, go straight to projects
+  // If already authenticated, redirect based on role
   useEffect(() => {
     if (!loading && user) {
-      navigate('/projects', { replace: true })
+      navigate(role === 'admin' ? '/admin' : '/projects', { replace: true })
     }
-  }, [user, loading, navigate])
+  }, [user, role, loading, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,7 +59,9 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="w-full max-w-sm space-y-6 rounded-lg border bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm overflow-hidden rounded-lg border bg-white shadow-sm">
+        <div className="h-1.5 bg-green-500" />
+        <div className="space-y-6 p-8">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">Battery LCA Tool</h1>
           <p className="text-sm text-slate-500">Sign in with your email</p>
@@ -80,6 +83,7 @@ export default function Login() {
             {submitting ? 'Sending…' : 'Send magic link'}
           </Button>
         </form>
+        </div>
       </div>
     </div>
   )

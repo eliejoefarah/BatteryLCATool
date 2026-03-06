@@ -207,9 +207,10 @@ function DeleteButtonRenderer({ data, onDelete }: DeleteButtonParams) {
 interface Props {
   processId: string
   revisionId: string
+  readOnly?: boolean
 }
 
-export default function ExchangeGrid({ processId, revisionId }: Props) {
+export default function ExchangeGrid({ processId, revisionId, readOnly = false }: Props) {
   const gridRef = useRef<AgGridReact>(null)
   const [pendingDeleteRow, setPendingDeleteRow] = useState<Exchange | null>(null)
   const location = useLocation()
@@ -411,13 +412,14 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
   // ---------------------------------------------------------------------------
 
   const columnDefs = useMemo<ColDef[]>(
-    () => [
+    () => {
+      const cols: ColDef[] = [
       {
         field: 'raw_name',
         headerName: 'Flow name',
         flex: 2,
         minWidth: 200,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: FlowNameEditor,
         // The editor returns FlowEditorValue; display the name string
         valueGetter: (p) =>
@@ -435,7 +437,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'quantity_user',
         headerName: 'Quantity',
         width: 100,
-        editable: (p) => !(p.data as Exchange).formula_user,
+        editable: readOnly ? false : (p) => !(p.data as Exchange).formula_user,
         cellEditor: 'agNumberCellEditor',
         valueFormatter: (p) => (p.value != null ? String(p.value) : ''),
         // Dim the quantity cell when a formula is overriding it
@@ -452,7 +454,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'formula_user',
         headerName: 'Formula',
         width: 160,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: 'agTextCellEditor',
         headerTooltip: paramNames.length
           ? `Available: ${paramNames.join(', ')}`
@@ -467,7 +469,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'user_unit',
         headerName: 'Unit',
         width: 100,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: { values: unitSymbols },
       },
@@ -475,7 +477,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'exchange_direction',
         headerName: 'Direction',
         width: 110,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: { values: ['input', 'output'] },
         cellClass: (p) =>
@@ -487,7 +489,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'output_type',
         headerName: 'Output type',
         width: 140,
-        editable: (p) =>
+        editable: readOnly ? false : (p) =>
           (p.data as Exchange).exchange_direction === 'output',
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: {
@@ -500,7 +502,7 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         field: 'source_database',
         headerName: 'Source DB',
         width: 130,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: 'agTextCellEditor',
       },
       {
@@ -508,10 +510,12 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         headerName: 'Comment',
         flex: 1,
         minWidth: 120,
-        editable: true,
+        editable: readOnly ? false : true,
         cellEditor: 'agTextCellEditor',
       },
-      {
+    ]
+    if (!readOnly) {
+      cols.push({
         headerName: '',
         width: 48,
         minWidth: 48,
@@ -521,9 +525,11 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
         suppressMovable: true,
         cellRenderer: DeleteButtonRenderer,
         cellRendererParams: { onDelete: setPendingDeleteRow },
-      },
-    ],
-    [unitSymbols, paramNames],
+      })
+    }
+    return cols
+    },
+    [unitSymbols, paramNames, readOnly],
   )
 
   const defaultColDef = useMemo<ColDef>(
@@ -543,15 +549,18 @@ export default function ExchangeGrid({ processId, revisionId }: Props) {
     <div className="flex flex-col gap-2">
       {/* Toolbar */}
       <div className="flex items-center gap-2">
-        <AddExchangeDialog
-          processId={processId}
-          revisionId={revisionId}
-          unitSymbols={unitSymbols}
-          onAdded={handleExchangeAdded}
-        />
-        <span className="ml-auto text-xs text-slate-400">
+        {!readOnly && (
+          <AddExchangeDialog
+            processId={processId}
+            revisionId={revisionId}
+            unitSymbols={unitSymbols}
+            onAdded={handleExchangeAdded}
+          />
+        )}
+        <span className={readOnly ? 'text-xs text-slate-400' : 'ml-auto text-xs text-slate-400'}>
           {exchanges?.length ?? 0} exchange
-          {(exchanges?.length ?? 0) !== 1 ? 's' : ''} · edits auto-save
+          {(exchanges?.length ?? 0) !== 1 ? 's' : ''}
+          {readOnly ? ' · read-only' : ' · edits auto-save'}
         </span>
       </div>
 

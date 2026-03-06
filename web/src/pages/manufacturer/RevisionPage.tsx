@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, Cpu, MapPin, UploadCloud } from 'lucide-react'
+import { ChevronRight, Cpu, Eye, MapPin, UploadCloud } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import ProcessForm from '../../components/ProcessForm'
 import ImportRevisionButton from '../../components/ImportRevisionButton'
@@ -9,6 +9,7 @@ import { useProcesses, type Process } from '../../hooks/useProcesses'
 import { useRevisionExchangeCount, useRevisionParameterCount } from '../../hooks/useRevisionCounts'
 import ParameterEditor from '../../components/ParameterEditor'
 import ValidationPanel from '../../components/ValidationPanel'
+import { useAuthStore } from '../../store/auth'
 import { Badge } from '../../components/ui/badge'
 import { cn } from '../../lib/utils'
 
@@ -93,6 +94,8 @@ export default function RevisionPage() {
     modelId: string
     revisionId: string
   }>()
+  const user = useAuthStore((s) => s.user)
+  const role = useAuthStore((s) => s.role)
   const { data: models } = useBatteryModels(projectId)
   const { data: revisions } = useRevisions(modelId)
   const { data: processes } = useProcesses(revisionId)
@@ -101,6 +104,7 @@ export default function RevisionPage() {
 
   const model = models?.find((m) => m.model_id === modelId)
   const revision = revisions?.find((r) => r.revision_id === revisionId)
+  const canEdit = role !== 'admin' && (!!user && revision?.created_by === user.id)
 
   return (
     <AppLayout>
@@ -113,6 +117,12 @@ export default function RevisionPage() {
           <p className="mt-1 text-sm text-slate-500">{model?.name}</p>
         </div>
         <div className="flex items-center gap-2">
+          {!canEdit && revision && (
+            <Badge variant="outline" className="flex items-center gap-1 text-xs text-slate-400">
+              <Eye className="h-3 w-3" />
+              Read-only
+            </Badge>
+          )}
           <Badge
             variant="outline"
             className="text-xs capitalize text-slate-500"
@@ -121,6 +131,14 @@ export default function RevisionPage() {
           </Badge>
         </div>
       </div>
+
+      {!canEdit && revision && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          {role === 'admin'
+            ? 'Viewing in read-only mode — admins cannot edit revisions.'
+            : 'This revision was created by another team member — viewing in read-only mode.'}
+        </div>
+      )}
 
       {/* Summary stats */}
       <div className="mt-6 grid grid-cols-3 gap-4">
@@ -142,12 +160,14 @@ export default function RevisionPage() {
       {/* Processes section */}
       <div className="mt-8 flex items-center justify-between">
         <h2 className="text-sm font-medium text-slate-700">Processes</h2>
-        <div className="flex items-center gap-2">
-          {revisionId && modelId && (
-            <ImportRevisionButton revisionId={revisionId} modelId={modelId} />
-          )}
-          {revisionId && <ProcessForm revisionId={revisionId} />}
-        </div>
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            {revisionId && modelId && (
+              <ImportRevisionButton revisionId={revisionId} modelId={modelId} />
+            )}
+            {revisionId && <ProcessForm revisionId={revisionId} />}
+          </div>
+        )}
       </div>
 
       <div className="mt-4">
@@ -182,7 +202,7 @@ export default function RevisionPage() {
       <div className="mt-10">
         <div className="mb-1 h-px bg-slate-100" />
         <div className="mt-6">
-          {revisionId && <ParameterEditor revisionId={revisionId} />}
+          {revisionId && <ParameterEditor revisionId={revisionId} readOnly={!canEdit} />}
         </div>
       </div>
 

@@ -1,9 +1,10 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from './components/ui/sonner'
 import AdminRoute from './components/AdminRoute'
 import InactivityDialog from './components/InactivityDialog'
 import Unauthorized from './pages/Unauthorized'
 import Login from './pages/Login'
+import AdminDashboard from './pages/admin/Dashboard'
 import UsersPage from './pages/admin/Users'
 import ProjectsPage from './pages/admin/Projects'
 import ProjectListPage from './pages/manufacturer/ProjectListPage'
@@ -11,12 +12,20 @@ import ProjectPage from './pages/manufacturer/ProjectPage'
 import ModelPage from './pages/manufacturer/ModelPage'
 import RevisionPage from './pages/manufacturer/RevisionPage'
 import ProcessPage from './pages/manufacturer/ProcessPage'
+import { useAuthStore } from './store/auth'
+
+function RootRedirect() {
+  const role = useAuthStore((s) => s.role)
+  const loading = useAuthStore((s) => s.loading)
+  if (loading) return null
+  return <Navigate to={role === 'admin' ? '/admin' : '/projects'} replace />
+}
 
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
-        <Route path="/" element={<ProjectListPage />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -38,6 +47,14 @@ export default function App() {
 
         {/* Admin routes */}
         <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
           path="/admin/users"
           element={
             <AdminRoute>
@@ -56,7 +73,7 @@ export default function App() {
       </Routes>
       <Toaster />
       {/* 1 min inactivity → "still there?" dialog → 30 s grace → sign out */}
-      <InactivityDialog timeoutMs={60_000} />
+      <InactivityDialog timeoutMs={60*60_000} />
     </BrowserRouter>
   )
 }
