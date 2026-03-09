@@ -56,6 +56,9 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
   const [outputType, setOutputType] = useState('')
   const [sourceDb, setSourceDb] = useState('')
   const [comment, setComment] = useState('')
+  const [details, setDetails] = useState('')
+  const [costPerUnit, setCostPerUnit] = useState('')
+  const [observations, setObservations] = useState('')
 
   // Debounced flow search
   useEffect(() => {
@@ -89,6 +92,9 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
     setOutputType('')
     setSourceDb('')
     setComment('')
+    setDetails('')
+    setCostPerUnit('')
+    setObservations('')
   }
 
   async function resolveFlow(name: string, knownId: string | null): Promise<string | null> {
@@ -146,6 +152,9 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
       if (direction === 'output' && outputType) payload.output_type = outputType
       if (sourceDb.trim()) payload.source_database = sourceDb.trim()
       if (comment.trim()) payload.comment = comment.trim()
+      if (details.trim()) payload.details = details.trim()
+      if (costPerUnit !== '') payload.cost_per_unit = parseFloat(costPerUnit)
+      if (observations.trim()) payload.observations = observations.trim()
 
       const { data, error } = await supabase
         .from('process_exchange')
@@ -354,6 +363,42 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
               rows={2}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+            />
+          </div>
+
+          {/* Details */}
+          <div className="space-y-1.5">
+            <Label htmlFor="details">Details</Label>
+            <Input
+              id="details"
+              placeholder="Range / min-max values…"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+            />
+          </div>
+
+          {/* Cost per unit */}
+          <div className="space-y-1.5">
+            <Label htmlFor="cost-per-unit">Cost (€/unit)</Label>
+            <Input
+              id="cost-per-unit"
+              type="number"
+              step="any"
+              placeholder="e.g. 5.20"
+              value={costPerUnit}
+              onChange={(e) => setCostPerUnit(e.target.value)}
+            />
+          </div>
+
+          {/* Observations */}
+          <div className="space-y-1.5">
+            <Label htmlFor="observations">Observations</Label>
+            <Textarea
+              id="observations"
+              placeholder="Supplier, % recycled content…"
+              rows={2}
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
             />
           </div>
 
