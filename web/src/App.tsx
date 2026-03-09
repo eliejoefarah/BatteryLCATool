@@ -7,6 +7,8 @@ import Login from './pages/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 import UsersPage from './pages/admin/Users'
 import ProjectsPage from './pages/admin/Projects'
+import CatalogPage from './pages/admin/Catalog'
+import GlobalDataView from './pages/admin/GlobalDataView'
 import ProjectListPage from './pages/manufacturer/ProjectListPage'
 import ProjectPage from './pages/manufacturer/ProjectPage'
 import ModelPage from './pages/manufacturer/ModelPage'
@@ -67,6 +69,22 @@ export default function App() {
           element={
             <AdminRoute>
               <ProjectsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/catalog"
+          element={
+            <AdminRoute>
+              <CatalogPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/global"
+          element={
+            <AdminRoute>
+              <GlobalDataView />
             </AdminRoute>
           }
         />

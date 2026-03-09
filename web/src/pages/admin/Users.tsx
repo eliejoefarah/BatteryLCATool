@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, MoreHorizontal } from 'lucide-react'
 import { supabase, getSession } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
 import type { Database } from '../../types/database.types'
@@ -33,6 +33,13 @@ import {
 } from '../../components/ui/table'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Badge } from '../../components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu'
 
 type AppUser = Database['public']['Tables']['app_user']['Row']
 
@@ -76,6 +83,128 @@ const ROLE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
   reviewer: 'outline',
 }
 
+// ---------------------------------------------------------------------------
+// Change Role dialog
+// ---------------------------------------------------------------------------
+
+function ChangeRoleDialog({
+  user,
+  onClose,
+}: {
+  user: AppUser
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [role, setRole] = useState(user.role)
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (role === user.role) { onClose(); return }
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('app_user')
+        .update({ role })
+        .eq('user_id', user.user_id)
+      if (error) throw error
+      toast.success(`Role updated to ${ROLE_LABELS[role] ?? role}`)
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update role')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Change Role</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-slate-500">{user.email}</p>
+          <div className="space-y-1.5">
+            <Label>New Role</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                <SelectItem value="reviewer">Reviewer</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || role === user.role}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// User row actions
+// ---------------------------------------------------------------------------
+
+function UserActions({ user }: { user: AppUser }) {
+  const queryClient = useQueryClient()
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false)
+
+  async function toggleActive() {
+    const next = !user.is_active
+    const { error } = await supabase
+      .from('app_user')
+      .update({ is_active: next })
+      .eq('user_id', user.user_id)
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success(next ? 'User reactivated' : 'User deactivated')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+    }
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setRoleDialogOpen(true)}>
+            Change role
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={toggleActive}
+            className={user.is_active ? 'text-red-600 focus:text-red-600' : 'text-green-700 focus:text-green-700'}
+          >
+            {user.is_active ? 'Deactivate' : 'Reactivate'}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {roleDialogOpen && (
+        <ChangeRoleDialog user={user} onClose={() => setRoleDialogOpen(false)} />
+      )}
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
+
 export default function UsersPage() {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
@@ -113,95 +242,103 @@ export default function UsersPage() {
         <ChevronRight className="h-3 w-3" />
         <span className="font-medium text-slate-700">Users</span>
       </div>
-    <div className="flex-1 overflow-auto space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-800">Users</h1>
-        <Button onClick={() => setOpen(true)}>Invite User</Button>
-      </div>
+      <div className="flex-1 overflow-auto space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-slate-800">Users</h1>
+          <Button onClick={() => setOpen(true)}>Invite User</Button>
+        </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Email</TableHead>
-            <TableHead>Display Name</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead>Joined</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Display Name</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Active</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 6 }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : users?.map((u) => (
+                  <TableRow key={u.user_id} className={u.is_active ? '' : 'opacity-50'}>
+                    <TableCell className="font-medium">{u.email}</TableCell>
+                    <TableCell>{u.display_name ?? '—'}</TableCell>
+                    <TableCell>
+                      <Badge variant={ROLE_VARIANTS[u.role] ?? 'outline'}>
+                        {ROLE_LABELS[u.role] ?? u.role}
+                      </Badge>
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            : users?.map((u) => (
-                <TableRow key={u.user_id}>
-                  <TableCell className="font-medium">{u.email}</TableCell>
-                  <TableCell>{u.display_name ?? '—'}</TableCell>
-                  <TableCell>
-                    <Badge variant={ROLE_VARIANTS[u.role] ?? 'outline'}>
-                      {ROLE_LABELS[u.role] ?? u.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{u.is_active ? 'Yes' : 'No'}</TableCell>
-                  <TableCell>
-                    {new Date(u.created_at).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-        </TableBody>
-      </Table>
+                    <TableCell>
+                      <span className={u.is_active ? 'text-green-700' : 'text-slate-400'}>
+                        {u.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(u.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <UserActions user={u} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+          </TableBody>
+        </Table>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite User</DialogTitle>
-          </DialogHeader>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Invite User</DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                placeholder="manufacturer@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="manufacturer@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                    <SelectItem value="reviewer">Reviewer</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manufacturer">Manufacturer</SelectItem>
-                  <SelectItem value="reviewer">Reviewer</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleInvite} disabled={!email || submitting}>
-              {submitting ? 'Sending…' : 'Send Invite'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleInvite} disabled={!email || submitting}>
+                {submitting ? 'Sending…' : 'Send Invite'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }

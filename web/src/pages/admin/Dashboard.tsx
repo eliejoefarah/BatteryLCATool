@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FolderOpen, Users } from 'lucide-react'
+import { FolderOpen, Users, BookOpen, LayoutGrid } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
 import TopBar from '../../components/TopBar'
 
@@ -13,8 +13,20 @@ const CARDS = [
   {
     icon: Users,
     title: 'Users',
-    description: 'Invite new team members and manage or revoke access for existing users.',
+    description: 'Invite new team members, change roles, and deactivate or reactivate existing users.',
     href: '/admin/users',
+  },
+  {
+    icon: LayoutGrid,
+    title: 'Global Data View',
+    description: 'Cross-project overview of all revisions — status, exchange counts, frozen state, and creator at a glance.',
+    href: '/admin/global',
+  },
+  {
+    icon: BookOpen,
+    title: 'Catalog',
+    description: 'View reference data: units, data origins, validation rules, and the flow catalog.',
+    href: '/admin/catalog',
   },
 ]
 
