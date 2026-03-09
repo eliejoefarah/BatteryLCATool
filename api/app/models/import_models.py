@@ -125,6 +125,9 @@ class XlsxExchangeRow(BaseModel):
     details: str | None = None        # col G: range / detail notes
     cost_per_unit: Decimal | None = None  # col H: cost in €
     observations: str | None = None   # col J: supplier, recycled content, etc.
+    # Explicit output_type — set by parsers when type is known (e.g. coproducts from
+    # the VUB metadata section).  When None, run_import infers from position order.
+    output_type: OutputType | None = None
 
     model_config = ConfigDict(str_strip_whitespace=True, populate_by_name=True)
 

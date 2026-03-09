@@ -458,11 +458,16 @@ def _parse_vub_template(
       'outputs'           → output exchanges follow
 
     Metadata detection (col A contains, case-insensitive):
-      'process description' → col B = activity name
-      'material/product produced' → col C = ref product, col D = amount, col E = unit
+      'process description'      → col B = activity name
+      'productive process'       → col B = process description → activity.comment
+      'material/product produced'→ col C = ref product, col D = amount, col E = unit,
+                                   col H = cost_per_unit (€/unit)
+      'co-product'               → col C = name, col D = amount, col E = unit
+                                   (multiple rows possible; each becomes output_type='coproduct')
 
-    The reference product is prepended as the first exchange (direction='output')
-    so that run_import assigns output_type='reference' to it.
+    The reference product is prepended as the first exchange (output_type='reference',
+    cost_per_unit set from metadata col H).  Co-products follow immediately after with
+    output_type='coproduct'.  All remaining sheet outputs default to 'waste_output'.
     """
     activities: list[XlsxActivityRow] = []
     exchanges: list[XlsxExchangeRow] = []
@@ -478,9 +483,12 @@ def _parse_vub_template(
         rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
 
         act_name: str | None = None
+        act_comment: str | None = None   # "Productive process" description
         ref_name: str | None = None
         ref_amount: Decimal | None = None
         ref_unit: str | None = None
+        ref_cost: Decimal | None = None  # cost_per_unit for the reference product
+        coproducts: list[tuple[str, Decimal, str | None]] = []  # (name, amount, unit)
 
         state = "meta"           # "meta" | "inputs" | "outputs"
         skip_next_non_empty = False   # True after a section marker — skip the header row
@@ -537,10 +545,17 @@ def _parse_vub_template(
             if state == "meta":
                 if col_a and "process description" in a_lower:
                     act_name = col_b
+                elif col_a and "productive process" in a_lower:
+                    act_comment = col_b
                 elif col_a and "material/product produced" in a_lower:
                     ref_name = col_c
                     ref_amount = col_d
                     ref_unit = col_e
+                    ref_cost = col_h  # cost (€/unit) for the reference product
+                elif col_a and "co-product" in a_lower and col_c:
+                    # One co-product row; multiple rows possible
+                    if col_d is not None:
+                        coproducts.append((col_c, col_d, col_e))
                 continue
 
             # ── Exchange data rows (inputs / outputs) ──────────────────────
@@ -602,7 +617,7 @@ def _parse_vub_template(
                 unit=ref_unit,
                 production_amount=ref_amount,
                 stage=None,
-                comment=None,
+                comment=act_comment,
             )
             activities.append(act)
         except ValueError as exc:
@@ -610,8 +625,8 @@ def _parse_vub_template(
             continue
 
         # ── Prepend reference product as the first exchange ────────────────
-        # run_import assigns output_type='reference' to the first output it sees,
-        # so inserting the reference product at position 0 is sufficient.
+        # output_type='reference' is set explicitly; cost_per_unit carries the
+        # material cost (€/unit) from the metadata section col H.
         if ref_name:
             try:
                 ref_exc = XlsxExchangeRow(
@@ -621,13 +636,34 @@ def _parse_vub_template(
                     formula=None,
                     unit=ref_unit,
                     direction="output",
+                    output_type="reference",
                     source_database=None,
                     source_location=None,
                     data_origin=None,
+                    cost_per_unit=ref_cost,
                 )
                 sheet_exchanges.insert(0, ref_exc)
             except ValueError as exc:
                 errors.append(f"Sheet '{sheet_name}' reference product: {exc}")
+
+        # ── Prepend coproducts immediately after the reference product ─────
+        for i, (cp_name, cp_amount, cp_unit) in enumerate(coproducts):
+            try:
+                cp_exc = XlsxExchangeRow(
+                    activity_name=final_act_name,
+                    flow_name=cp_name,
+                    quantity=cp_amount,
+                    formula=None,
+                    unit=cp_unit,
+                    direction="output",
+                    output_type="coproduct",
+                    source_database=None,
+                    source_location=None,
+                    data_origin=None,
+                )
+                sheet_exchanges.insert(1 + i, cp_exc)
+            except ValueError as exc:
+                errors.append(f"Sheet '{sheet_name}' coproduct '{cp_name}': {exc}")
 
         exchanges.extend(sheet_exchanges)
 
@@ -872,19 +908,24 @@ async def run_import(
                 )
                 qty = abs(qty)
 
-            # Infer output_type from direction + order
-            output_type: str | None = None
-            if exc_row.direction == "output":
+            # Determine output_type — use explicit value from parser when provided,
+            # otherwise infer from position order (first output = reference, rest = waste_output)
+            output_type: str | None = exc_row.output_type
+            if output_type is None and exc_row.direction == "output":
                 if proc_id not in first_output_seen:
                     output_type = "reference"
                     first_output_seen.add(proc_id)
                 else:
                     output_type = "waste_output"
+            elif exc_row.direction == "output" and output_type == "reference":
+                # Explicit reference — mark first_output_seen so subsequent outputs
+                # don't also get assigned reference
+                first_output_seen.add(proc_id)
 
             # Infer flow kind
             flow_kind = _DEFAULT_FLOW_KIND
             if exc_row.direction == "output":
-                flow_kind = "waste" if output_type != "reference" else "material"
+                flow_kind = "waste" if output_type not in ("reference", "coproduct") else "material"
 
             # Resolve / create flow_catalog entry
             cache_key = (exc_row.flow_name, flow_kind)
