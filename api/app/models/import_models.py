@@ -120,6 +120,11 @@ class XlsxExchangeRow(BaseModel):
     source_database: str | None = None
     source_location: str | None = None
     data_origin: str | None = None    # data_origin_catalog.code; informational
+    # VUB template extra columns
+    comment: str | None = None        # col F: function/use, treatment, mode of transport
+    details: str | None = None        # col G: range / detail notes
+    cost_per_unit: Decimal | None = None  # col H: cost in €
+    observations: str | None = None   # col J: supplier, recycled content, etc.
 
     model_config = ConfigDict(str_strip_whitespace=True, populate_by_name=True)
 
@@ -204,6 +209,11 @@ class ProcessExchangeCreate(BaseModel):
     source_location: str | None = None
     amount_is_ecoinvent_signed: bool = False
     sort_order: int | None = None
+    # VUB template extra columns
+    comment: str | None = None
+    details: str | None = None
+    cost_per_unit: Decimal | None = None
+    observations: str | None = None
 
     model_config = ConfigDict(str_strip_whitespace=True)
 

@@ -513,6 +513,30 @@ export default function ExchangeGrid({ processId, revisionId, readOnly = false }
         editable: readOnly ? false : true,
         cellEditor: 'agTextCellEditor',
       },
+      {
+        field: 'details',
+        headerName: 'Details',
+        flex: 1,
+        minWidth: 120,
+        editable: readOnly ? false : true,
+        cellEditor: 'agTextCellEditor',
+      },
+      {
+        field: 'cost_per_unit',
+        headerName: 'Cost (€/unit)',
+        width: 110,
+        editable: readOnly ? false : true,
+        cellEditor: 'agNumberCellEditor',
+        valueFormatter: (p) => p.value != null ? String(p.value) : '',
+      },
+      {
+        field: 'observations',
+        headerName: 'Observations',
+        flex: 1,
+        minWidth: 120,
+        editable: readOnly ? false : true,
+        cellEditor: 'agTextCellEditor',
+      },
     ]
     if (!readOnly) {
       cols.push({

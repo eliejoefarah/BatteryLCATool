@@ -696,11 +696,14 @@ export type Database = {
         Row: {
           amount_is_ecoinvent_signed: boolean
           comment: string | null
+          cost_per_unit: number | null
           created_at: string
+          details: string | null
           exchange_direction: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id: string
           flow_id: string | null
           formula_user: string | null
+          observations: string | null
           output_type: Database["public"]["Enums"]["output_type_enum"] | null
           process_id: string
           quantity_user: number | null
@@ -713,11 +716,14 @@ export type Database = {
         Insert: {
           amount_is_ecoinvent_signed?: boolean
           comment?: string | null
+          cost_per_unit?: number | null
           created_at?: string
+          details?: string | null
           exchange_direction: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id?: string
           flow_id?: string | null
           formula_user?: string | null
+          observations?: string | null
           output_type?: Database["public"]["Enums"]["output_type_enum"] | null
           process_id: string
           quantity_user?: number | null
@@ -730,11 +736,14 @@ export type Database = {
         Update: {
           amount_is_ecoinvent_signed?: boolean
           comment?: string | null
+          cost_per_unit?: number | null
           created_at?: string
+          details?: string | null
           exchange_direction?: Database["public"]["Enums"]["exchange_direction_enum"]
           exchange_id?: string
           flow_id?: string | null
           formula_user?: string | null
+          observations?: string | null
           output_type?: Database["public"]["Enums"]["output_type_enum"] | null
           process_id?: string
           quantity_user?: number | null

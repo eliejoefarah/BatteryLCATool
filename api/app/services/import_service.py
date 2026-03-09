@@ -68,6 +68,7 @@ _SKIP_SHEETS: frozenset[str] = frozenset(
         "legend",
         "changelog",
         "cover",
+        "title page",
     }
 )
 
@@ -272,7 +273,17 @@ def _parse_brightway(
     list[XlsxParameterRow],
     list[str],
 ]:
-    """Parse the Brightway multi-sheet format. Returns (activities, exchanges, params, errors)."""
+    """Parse the Brightway format. Returns (activities, exchanges, params, errors).
+
+    Supports two layouts transparently:
+    • One activity per sheet  — classic Brightway Excel export (e.g. example_database.xlsx)
+    • Many activities per sheet — activities stacked vertically on one sheet, each block
+      starting with a new 'Activity' key-value row (e.g. Ali 2025 SI2 format).
+
+    Within each sheet the parser loops: collect key-value metadata → find 'Exchanges'
+    separator → parse exchange table until the next 'Activity' row (or end of sheet).
+    For single-activity sheets the inner loop simply runs to the end naturally.
+    """
     activities: list[XlsxActivityRow] = []
     exchanges: list[XlsxExchangeRow] = []
     parameters: list[XlsxParameterRow] = []
@@ -287,95 +298,125 @@ def _parse_brightway(
         rows_v = list(ws_v.iter_rows(values_only=True))
         rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
 
-        # ── Scan metadata rows until 'Exchanges' separator ────────────────
-        meta: dict[str, Any] = {}
-        exchanges_row: int | None = None
-        skip_sheet = False
+        i = 0
+        while i < len(rows_v):
 
-        for i, row in enumerate(rows_v):
-            first = _str(row[0]) if row else None
-            if first is None:
-                continue
-            if first.lower() == "skip":
-                skip_sheet = True
+            # ── Collect key-value metadata until 'Exchanges' separator ────
+            meta: dict[str, Any] = {}
+            exchanges_row: int | None = None
+            skip_block = False
+
+            while i < len(rows_v):
+                row = rows_v[i]
+                first = _str(row[0]) if row else None
+                if first is None:
+                    i += 1
+                    continue
+                fl = first.lower()
+                if fl == "skip":
+                    skip_block = True
+                    break
+                if fl == "exchanges":
+                    exchanges_row = i
+                    i += 1
+                    break
+                val = row[1] if len(row) > 1 else None
+                meta[fl] = val
+                i += 1
+
+            if skip_block:
+                break  # skip remainder of this sheet
+
+            # No 'Exchanges' row found — no more activity blocks on this sheet
+            if exchanges_row is None or not meta:
                 break
-            if first.lower() == "exchanges":
-                exchanges_row = i
-                break
-            val = row[1] if len(row) > 1 else None
-            meta[first.lower()] = val
 
-        if skip_sheet or exchanges_row is None:
-            continue
-
-        # ── Build activity row ────────────────────────────────────────────
-        act_name = (
-            _str(meta.get("activity"))
-            or _str(meta.get("process description:"))
-            or sheet_name
-        )
-        prod_amount = _to_decimal(meta.get("production amount")) or Decimal("1.0")
-        try:
-            act = XlsxActivityRow(
-                name=act_name,
-                location=_str(meta.get("location")),
-                unit=_str(meta.get("unit")),
-                production_amount=prod_amount,
-                # 'categories' in Brightway maps to our 'stage' (e.g. 'cathode material')
-                stage=_str(meta.get("categories")) or _str(meta.get("stage")),
-                comment=_str(meta.get("comment")),
+            # ── Build activity ────────────────────────────────────────────
+            act_name = (
+                _str(meta.get("activity"))
+                or _str(meta.get("process description:"))
+                or sheet_name
             )
-        except ValueError as exc:
-            errors.append(f"Sheet '{sheet_name}' activity: {exc}")
-            continue
-        activities.append(act)
-
-        # ── Parse exchange table ──────────────────────────────────────────
-        if exchanges_row + 1 >= len(rows_v):
-            continue
-
-        hdr_row = rows_v[exchanges_row + 1]
-        idx = _hdr(hdr_row)
-        amt_col = idx.get("amount", 1)
-
-        for r_i, row in enumerate(rows_v[exchanges_row + 2:], start=exchanges_row + 2):
-            if not any(v is not None for v in row):
-                continue
-
-            flow_name = _str(row[idx.get("name", 0)])
-            if not flow_name:
-                continue
-
-            qty_val = _to_decimal(row[amt_col])
-
-            # Formula string from formulas workbook
-            formula_str: str | None = None
-            if rows_f and r_i < len(rows_f) and rows_f[r_i] is not None:
-                fml_cell = rows_f[r_i][amt_col] if len(rows_f[r_i]) > amt_col else None
-                if fml_cell and str(fml_cell).startswith("="):
-                    formula_str = str(fml_cell)
-
-            # Skip rows with neither quantity nor formula
-            if qty_val is None and formula_str is None:
-                continue
-
-            bw_type = _str(row[idx.get("type", 5)]) or "technosphere"
-            direction, _ = _BW_TYPE_MAP.get(bw_type.lower(), ("input", None))
-
+            prod_amount = _to_decimal(meta.get("production amount")) or Decimal("1.0")
             try:
-                exchanges.append(XlsxExchangeRow(
-                    activity_name=act_name,
-                    flow_name=flow_name,
-                    quantity=qty_val,
-                    formula=formula_str,
-                    unit=_str(row[idx.get("unit", 2)]),
-                    direction=direction,  # type: ignore[arg-type]
-                    source_database=_str(row[idx.get("database", 3)]),
-                    source_location=_str(row[idx.get("location", 4)]),
-                    data_origin=None,
-                ))
+                act = XlsxActivityRow(
+                    name=act_name,
+                    location=_str(meta.get("location")),
+                    unit=_str(meta.get("unit")),
+                    production_amount=prod_amount,
+                    # 'categories' in Brightway maps to our 'stage'
+                    stage=_str(meta.get("categories")) or _str(meta.get("stage")),
+                    comment=_str(meta.get("comment")),
+                )
+                activities.append(act)
             except ValueError as exc:
-                errors.append(f"Sheet '{sheet_name}' exchange row {r_i}: {exc}")
+                errors.append(f"Sheet '{sheet_name}' activity '{act_name}': {exc}")
+                # Advance to the next 'Activity' row and retry
+                while i < len(rows_v):
+                    first = _str(rows_v[i][0]) if rows_v[i] else None
+                    if first and first.lower() == "activity":
+                        break
+                    i += 1
+                continue
+
+            # ── Skip the exchange-table header row ────────────────────────
+            if i >= len(rows_v):
+                break
+            hdr_row = rows_v[i]
+            idx = _hdr(hdr_row)
+            amt_col = idx.get("amount", 1)
+            i += 1
+
+            # ── Parse exchange rows ───────────────────────────────────────
+            # Stop when we hit a new 'Activity' metadata row (multi-activity sheets)
+            # or run out of rows (single-activity sheets) — both are handled the same way.
+            while i < len(rows_v):
+                row = rows_v[i]
+
+                first = _str(row[0]) if row else None
+                if first and first.lower() == "activity":
+                    break  # start of next activity block; outer loop will collect it
+
+                if not any(v is not None for v in row):
+                    i += 1
+                    continue
+
+                flow_name = _str(row[idx.get("name", 0)])
+                if not flow_name:
+                    i += 1
+                    continue
+
+                qty_val = _to_decimal(row[amt_col])
+
+                formula_str: str | None = None
+                if rows_f and i < len(rows_f) and rows_f[i] is not None:
+                    fml_cell = rows_f[i][amt_col] if len(rows_f[i]) > amt_col else None
+                    if fml_cell and str(fml_cell).startswith("="):
+                        formula_str = str(fml_cell)
+
+                if qty_val is None and formula_str is None:
+                    i += 1
+                    continue
+
+                bw_type = _str(row[idx.get("type", 5)]) or "technosphere"
+                direction, _ = _BW_TYPE_MAP.get(bw_type.lower(), ("input", None))
+
+                try:
+                    exchanges.append(XlsxExchangeRow(
+                        activity_name=act_name,
+                        flow_name=flow_name,
+                        quantity=qty_val,
+                        formula=formula_str,
+                        unit=_str(row[idx.get("unit", 2)]),
+                        direction=direction,  # type: ignore[arg-type]
+                        source_database=_str(row[idx.get("database", 3)]),
+                        source_location=_str(row[idx.get("location", 4)]),
+                        data_origin=None,
+                    ))
+                except ValueError as exc:
+                    errors.append(f"Sheet '{sheet_name}' exchange row {i + 1}: {exc}")
+
+                i += 1
 
     return activities, exchanges, parameters, errors
 
@@ -402,10 +443,15 @@ def _parse_vub_template(
       Col C (2): Flow name  ← key field; non-empty = real data row
       Col D (3): Amount
       Col E (4): Unit
-      Col F (5): Function / use (inputs) or treatment (outputs)
-      Col I (8): Origin / location
+      Col F (5): Function/use (inputs) | Treatment/destination (outputs) |
+                 Mode of transport (transport)  → comment
+      Col G (6): Details / range info                                → details
+      Col H (7): Cost (€ per unit)                                   → cost_per_unit
+      Col I (8): Origin / location                                   → source_location
+      Col J (9): Observations / supplier / recycled-content          → observations
+                 (only present in the INPUTS section header)
 
-    Section markers (col A, exact match, case-insensitive):
+    Section markers (col A, exact match, case-insensitive, only when col C is empty):
       'inventory process' → metadata preamble; skip header row after it
       'inputs'            → input exchanges follow
       'transport'         → transport inputs (direction='input')
@@ -442,37 +488,44 @@ def _parse_vub_template(
         sheet_exchanges: list[XlsxExchangeRow] = []
 
         for r_i, row in enumerate(rows_v):
-            # Pad row to at least 9 elements to avoid index errors
-            if len(row) < 9:
-                row = row + (None,) * (9 - len(row))
+            # Pad row to at least 10 elements to cover col J
+            if len(row) < 10:
+                row = row + (None,) * (10 - len(row))
 
             col_a = _str(row[0])
             col_b = _str(row[1])
             col_c = _str(row[2])
             col_d = _to_decimal(row[3])
             col_e = _str(row[4])
-            col_i = _str(row[8])
+            col_f = _str(row[5])   # comment (function/use, treatment, mode of transport)
+            col_g = _str(row[6])   # details / range
+            col_h = _to_decimal(row[7])  # cost_per_unit
+            col_i = _str(row[8])   # source_location (origin)
+            col_j = _str(row[9])   # observations
 
             a_lower = col_a.lower() if col_a else ""
 
             # ── Section markers ────────────────────────────────────────────
-            if a_lower == "inventory process":
-                state = "meta"
-                skip_next_non_empty = True
-                continue
-            if a_lower == "inputs":
-                state = "inputs"
-                skip_next_non_empty = True
-                continue
-            if a_lower == "transport":
-                # Transport items are still inputs
-                state = "inputs"
-                skip_next_non_empty = True
-                continue
-            if a_lower == "outputs":
-                state = "outputs"
-                skip_next_non_empty = True
-                continue
+            # Only fire when col C is empty — rows with a flow name in col C
+            # are data rows even if col A happens to say "Transport" etc.
+            if col_c is None:
+                if a_lower == "inventory process":
+                    state = "meta"
+                    skip_next_non_empty = True
+                    continue
+                if a_lower == "inputs":
+                    state = "inputs"
+                    skip_next_non_empty = True
+                    continue
+                if a_lower == "transport":
+                    # Transport items are still inputs
+                    state = "inputs"
+                    skip_next_non_empty = True
+                    continue
+                if a_lower == "outputs":
+                    state = "outputs"
+                    skip_next_non_empty = True
+                    continue
 
             # ── Skip the column header row that follows each section marker ─
             if skip_next_non_empty:
@@ -526,6 +579,10 @@ def _parse_vub_template(
                     source_database=None,
                     source_location=col_i,
                     data_origin=None,
+                    comment=col_f,
+                    details=col_g,
+                    cost_per_unit=col_h,
+                    observations=col_j,
                 ))
             except ValueError as exc:
                 errors.append(f"Sheet '{sheet_name}' row {r_i + 1}: {exc}")
@@ -851,26 +908,32 @@ async def run_import(
                        quantity_user, formula_user, user_unit,
                        exchange_direction, output_type,
                        source_database, source_location,
+                       comment, details, cost_per_unit, observations,
                        amount_is_ecoinvent_signed)
                     VALUES
                       (:eid, :pid, :fid, :rname,
                        :qty, :fml, :unit,
                        :dir, :otype,
                        :sdb, :sloc,
+                       :comment, :details, :cost, :obs,
                        FALSE)
                 """),
                 {
-                    "eid":   str(exc_id),
-                    "pid":   str(proc_id),
-                    "fid":   str(flow_id),
-                    "rname": exc_row.flow_name,
-                    "qty":   str(qty) if qty is not None else None,
-                    "fml":   exc_row.formula,
-                    "unit":  exc_row.unit,
-                    "dir":   exc_row.direction,
-                    "otype": output_type,
-                    "sdb":   exc_row.source_database,
-                    "sloc":  exc_row.source_location,
+                    "eid":     str(exc_id),
+                    "pid":     str(proc_id),
+                    "fid":     str(flow_id),
+                    "rname":   exc_row.flow_name,
+                    "qty":     str(qty) if qty is not None else None,
+                    "fml":     exc_row.formula,
+                    "unit":    exc_row.unit,
+                    "dir":     exc_row.direction,
+                    "otype":   output_type,
+                    "sdb":     exc_row.source_database,
+                    "sloc":    exc_row.source_location,
+                    "comment": exc_row.comment,
+                    "details": exc_row.details,
+                    "cost":    str(exc_row.cost_per_unit) if exc_row.cost_per_unit is not None else None,
+                    "obs":     exc_row.observations,
                 },
             )
             result.exchanges_created += 1
