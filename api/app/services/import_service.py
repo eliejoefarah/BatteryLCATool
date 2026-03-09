@@ -543,15 +543,20 @@ def _parse_vub_template(
 
             # ── Metadata rows ──────────────────────────────────────────────
             if state == "meta":
-                if col_a and "process description" in a_lower:
+                if col_a and "process description" in a_lower and col_b:
+                    # Guard: only update if col B has a value; row 15 is a bare
+                    # "Process description" section-header with no value in col B
+                    # and must not overwrite the real name set from row 6.
                     act_name = col_b
-                elif col_a and "productive process" in a_lower:
+                elif col_a and "productive process" in a_lower and col_b:
                     act_comment = col_b
                 elif col_a and "material/product produced" in a_lower:
                     ref_name = col_c
                     ref_amount = col_d
                     ref_unit = col_e
-                    ref_cost = col_h  # cost (€/unit) for the reference product
+                    # Cost (€/unit) is in col F (index 5) of the metadata table,
+                    # not col H — the metadata table has its own column layout.
+                    ref_cost = _to_decimal(row[5])
                 elif col_a and "co-product" in a_lower and col_c:
                     # One co-product row; multiple rows possible
                     if col_d is not None:
