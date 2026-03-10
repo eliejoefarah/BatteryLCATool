@@ -55,6 +55,7 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
   const [direction, setDirection] = useState<'input' | 'output'>('input')
   const [outputType, setOutputType] = useState('')
   const [sourceDb, setSourceDb] = useState('')
+  const [sourceLocation, setSourceLocation] = useState('')
   const [comment, setComment] = useState('')
   const [details, setDetails] = useState('')
   const [costPerUnit, setCostPerUnit] = useState('')
@@ -91,6 +92,7 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
     setDirection('input')
     setOutputType('')
     setSourceDb('')
+    setSourceLocation('')
     setComment('')
     setDetails('')
     setCostPerUnit('')
@@ -151,6 +153,7 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
       if (userUnit) payload.user_unit = userUnit
       if (direction === 'output' && outputType) payload.output_type = outputType
       if (sourceDb.trim()) payload.source_database = sourceDb.trim()
+      if (sourceLocation.trim()) payload.source_location = sourceLocation.trim()
       if (comment.trim()) payload.comment = comment.trim()
       if (details.trim()) payload.details = details.trim()
       if (costPerUnit !== '') payload.cost_per_unit = parseFloat(costPerUnit)
@@ -343,15 +346,26 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
             )}
           </div>
 
-          {/* Source DB */}
-          <div className="space-y-1.5">
-            <Label htmlFor="source-db">Source database</Label>
-            <Input
-              id="source-db"
-              placeholder="e.g. ecoinvent 3.9"
-              value={sourceDb}
-              onChange={(e) => setSourceDb(e.target.value)}
-            />
+          {/* Source DB + Origin in a two-column row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="source-db">Source database</Label>
+              <Input
+                id="source-db"
+                placeholder="e.g. ecoinvent 3.9"
+                value={sourceDb}
+                onChange={(e) => setSourceDb(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-location">Origin / geography</Label>
+              <Input
+                id="source-location"
+                placeholder="e.g. DE, RoW, GLO"
+                value={sourceLocation}
+                onChange={(e) => setSourceLocation(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Comment */}

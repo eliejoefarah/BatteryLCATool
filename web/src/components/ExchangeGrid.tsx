@@ -506,6 +506,13 @@ export default function ExchangeGrid({ processId, revisionId, readOnly = false }
         cellEditor: 'agTextCellEditor',
       },
       {
+        field: 'source_location',
+        headerName: 'Origin',
+        width: 100,
+        editable: readOnly ? false : true,
+        cellEditor: 'agTextCellEditor',
+      },
+      {
         field: 'comment',
         headerName: 'Comment',
         flex: 1,
