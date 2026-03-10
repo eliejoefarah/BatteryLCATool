@@ -95,6 +95,7 @@ def _check_process_rules(
     exchanges: list[dict[str, Any]],
     issues: list[dict[str, Any]],
     validation_id: UUID,
+    confirmed_flow_ids: set[str] | None = None,
 ) -> None:
     """Per-process rules."""
     pid = process["process_id"]
@@ -168,9 +169,73 @@ def _check_process_rules(
                 "suggestion": "Search for and select a matching flow from the catalog.",
             })
 
-        # NEGATIVE_FOREGROUND_QTY — quantity is negative (direction carries the sign)
+        # FORMULA_PRESERVED — exchange has a formula; value may change when params are updated
+        if exc.get("formula_user"):
+            issues.append({
+                "issue_id": str(uuid.uuid4()),
+                "validation_id": str(validation_id),
+                "severity": "info",
+                "code": "FORMULA_PRESERVED",
+                "message": (
+                    f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
+                    f"uses a formula expression ({exc['formula_user']}). "
+                    "The computed value depends on the current parameter values."
+                ),
+                "process_id": pid,
+                "exchange_id": eid,
+                "suggestion": "Ensure all referenced parameters have correct values set.",
+            })
+
+        # UNMAPPED_FLOW — flow is in the catalog but has no confirmed Brightway mapping
+        fid_str = str(exc.get("flow_id")) if exc.get("flow_id") else None
+        if (
+            fid_str
+            and exc.get("exchange_direction") == "input"
+            and confirmed_flow_ids is not None
+            and fid_str not in confirmed_flow_ids
+        ):
+            issues.append({
+                "issue_id": str(uuid.uuid4()),
+                "validation_id": str(validation_id),
+                "severity": "warning",
+                "code": "UNMAPPED_FLOW",
+                "message": (
+                    f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
+                    "has no confirmed Brightway background mapping. "
+                    "It will be excluded from LCA calculations until mapped."
+                ),
+                "process_id": pid,
+                "exchange_id": eid,
+                "suggestion": "Run the mapping job and confirm a match in the Mapping panel.",
+            })
+
         qty_raw = exc.get("quantity_user")
-        if qty_raw is not None:
+        is_ecoinvent_signed = bool(exc.get("amount_is_ecoinvent_signed"))
+
+        # ECOINVENT_NEGATIVE_AMT — ecoinvent-convention negative amount (expected, not an error)
+        if is_ecoinvent_signed and qty_raw is not None:
+            try:
+                if Decimal(str(qty_raw)) < 0:
+                    issues.append({
+                        "issue_id": str(uuid.uuid4()),
+                        "validation_id": str(validation_id),
+                        "severity": "info",
+                        "code": "ECOINVENT_NEGATIVE_AMT",
+                        "message": (
+                            f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
+                            f"has a negative amount ({qty_raw}) per ecoinvent sign convention. "
+                            "This is expected behaviour for some background flows."
+                        ),
+                        "process_id": pid,
+                        "exchange_id": eid,
+                        "suggestion": None,
+                    })
+            except (InvalidOperation, TypeError):
+                pass
+
+        # NEGATIVE_FOREGROUND_QTY — quantity is negative (direction carries the sign)
+        # Skip if this exchange uses the ecoinvent sign convention — that's handled above.
+        if not is_ecoinvent_signed and qty_raw is not None:
             try:
                 qty = Decimal(str(qty_raw))
                 if qty < 0:
@@ -314,8 +379,9 @@ async def run_validation(
         exc_rows = (await db.execute(
             text("""
                 SELECT exchange_id, process_id, flow_id, raw_name,
-                       quantity_user, formula_user,
-                       exchange_direction, output_type
+                       quantity_user, formula_user, user_unit,
+                       exchange_direction, output_type,
+                       amount_is_ecoinvent_signed
                 FROM process_exchange
                 WHERE process_id IN (
                     SELECT process_id FROM process_instance WHERE revision_id = :rid
@@ -325,6 +391,17 @@ async def run_validation(
         )).mappings().all()
 
         exchanges = [dict(r) for r in exc_rows]
+
+        # ── 3c. Load confirmed Brightway mappings for this revision ───────
+        mapping_rows = (await db.execute(
+            text("""
+                SELECT DISTINCT flow_id::text
+                FROM bw_mapping_selection
+                WHERE revision_id = :rid AND mapping_status = 'confirmed'
+            """),
+            {"rid": str(revision_id)},
+        )).fetchall()
+        confirmed_flow_ids: set[str] = {str(r[0]) for r in mapping_rows}
 
         # ── 3b. Load model parameters ─────────────────────────────────────
         param_rows = (await db.execute(
@@ -347,9 +424,32 @@ async def run_validation(
             # Only validate foreground processes
             if process.get("system_boundary") == "background":
                 continue
-            _check_process_rules(process, exchanges, issues, validation_id)
+            _check_process_rules(
+                process, exchanges, issues, validation_id,
+                confirmed_flow_ids=confirmed_flow_ids,
+            )
 
         _check_param_rules(parameters, issues, validation_id)
+
+        # FOREGROUND_CONFIRMED — positive info when all exchange-level checks pass cleanly
+        exchange_errors = [
+            i for i in issues
+            if i["severity"] in ("error", "warning") and i.get("exchange_id") is not None
+        ]
+        if processes and not exchange_errors:
+            issues.append({
+                "issue_id": str(uuid.uuid4()),
+                "validation_id": str(validation_id),
+                "severity": "info",
+                "code": "FOREGROUND_CONFIRMED",
+                "message": (
+                    "All foreground exchanges passed validation checks. "
+                    "No quantity, reference flow, or sign issues were found."
+                ),
+                "process_id": None,
+                "exchange_id": None,
+                "suggestion": None,
+            })
 
         # ── 5. Insert issues ──────────────────────────────────────────────
         for issue in issues:

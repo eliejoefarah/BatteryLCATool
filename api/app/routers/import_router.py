@@ -195,6 +195,32 @@ async def clear_import_data(
             detail="Revision not found or you do not have access.",
         )
 
+    # Delete validation data first (FK: validation_issue.exchange_id → process_exchange)
+    await db.execute(
+        text("""
+            DELETE FROM validation_issue
+            WHERE exchange_id IN (
+                SELECT exchange_id FROM process_exchange
+                WHERE process_id IN (
+                    SELECT process_id FROM process_instance WHERE revision_id = :rid
+                )
+            )
+        """),
+        {"rid": str(revision_id)},
+    )
+    await db.execute(
+        text("""
+            DELETE FROM validation_issue
+            WHERE validation_id IN (
+                SELECT validation_id FROM validation_run WHERE revision_id = :rid
+            )
+        """),
+        {"rid": str(revision_id)},
+    )
+    await db.execute(
+        text("DELETE FROM validation_run WHERE revision_id = :rid"),
+        {"rid": str(revision_id)},
+    )
     await db.execute(
         text("""
             DELETE FROM process_exchange
