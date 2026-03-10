@@ -157,7 +157,7 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
         onClick={() => fileInputRef.current?.click()}
       >
         <Upload className="mr-1.5 h-4 w-4" />
-        {loading ? 'Importing…' : 'Import xlsx'}
+        {loading ? 'Importing…' : 'Import Sheet'}
       </Button>
 
       <input
