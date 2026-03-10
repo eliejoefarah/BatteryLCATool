@@ -19,6 +19,7 @@ import hmac
 import logging
 import os
 import uuid
+from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
@@ -133,6 +134,7 @@ def _check_process_rules(
     # Per-exchange rules
     for exc in proc_exchanges:
         eid = exc["exchange_id"]
+        flow_label = exc.get("raw_name") or str(exc.get("flow_id") or eid)
 
         # MISSING_QUANTITY — both quantity_user and formula_user are NULL
         if exc.get("quantity_user") is None and not exc.get("formula_user"):
@@ -142,7 +144,7 @@ def _check_process_rules(
                 "severity": "error",
                 "code": "MISSING_QUANTITY",
                 "message": (
-                    f"Exchange \"{exc.get('raw_name') or exc.get('flow_id') or eid}\" "
+                    f"Exchange \"{flow_label}\" "
                     f"in process \"{process['name']}\" has no quantity or formula."
                 ),
                 "process_id": pid,
@@ -165,6 +167,98 @@ def _check_process_rules(
                 "exchange_id": eid,
                 "suggestion": "Search for and select a matching flow from the catalog.",
             })
+
+        # NEGATIVE_FOREGROUND_QTY — quantity is negative (direction carries the sign)
+        qty_raw = exc.get("quantity_user")
+        if qty_raw is not None:
+            try:
+                qty = Decimal(str(qty_raw))
+                if qty < 0:
+                    issues.append({
+                        "issue_id": str(uuid.uuid4()),
+                        "validation_id": str(validation_id),
+                        "severity": "error",
+                        "code": "NEGATIVE_FOREGROUND_QTY",
+                        "message": (
+                            f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
+                            f"has a negative quantity ({qty}). "
+                            "Foreground quantities must be positive — use the direction "
+                            "field ('input' / 'output') to represent flow direction."
+                        ),
+                        "process_id": pid,
+                        "exchange_id": eid,
+                        "suggestion": "Enter a positive value and set the correct direction.",
+                    })
+            except (InvalidOperation, TypeError):
+                pass
+
+        # NEGATIVE_REF_PRODUCT — reference output with zero or negative quantity
+        if exc.get("output_type") == "reference" and qty_raw is not None:
+            try:
+                if Decimal(str(qty_raw)) <= 0:
+                    issues.append({
+                        "issue_id": str(uuid.uuid4()),
+                        "validation_id": str(validation_id),
+                        "severity": "error",
+                        "code": "NEGATIVE_REF_PRODUCT",
+                        "message": (
+                            f"Reference product \"{flow_label}\" in process "
+                            f"\"{process['name']}\" has a zero or negative amount ({qty_raw})."
+                        ),
+                        "process_id": pid,
+                        "exchange_id": eid,
+                        "suggestion": "The reference product amount must be a positive number.",
+                    })
+            except (InvalidOperation, TypeError):
+                pass
+
+
+def _check_param_rules(
+    parameters: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+    validation_id: UUID,
+) -> None:
+    """Revision-level: parameter range checks."""
+    for param in parameters:
+        try:
+            val = Decimal(str(param["value"]))
+        except (InvalidOperation, TypeError):
+            continue
+
+        min_v = param.get("min_value")
+        max_v = param.get("max_value")
+
+        try:
+            if min_v is not None and val < Decimal(str(min_v)):
+                issues.append({
+                    "issue_id": str(uuid.uuid4()),
+                    "validation_id": str(validation_id),
+                    "severity": "warning",
+                    "code": "PARAM_RANGE",
+                    "message": (
+                        f"Parameter \"{param['name']}\" has value {val} which is "
+                        f"below its declared minimum ({min_v})."
+                    ),
+                    "process_id": None,
+                    "exchange_id": None,
+                    "suggestion": f"Update the value to be ≥ {min_v}, or adjust the min bound.",
+                })
+            elif max_v is not None and val > Decimal(str(max_v)):
+                issues.append({
+                    "issue_id": str(uuid.uuid4()),
+                    "validation_id": str(validation_id),
+                    "severity": "warning",
+                    "code": "PARAM_RANGE",
+                    "message": (
+                        f"Parameter \"{param['name']}\" has value {val} which is "
+                        f"above its declared maximum ({max_v})."
+                    ),
+                    "process_id": None,
+                    "exchange_id": None,
+                    "suggestion": f"Update the value to be ≤ {max_v}, or adjust the max bound.",
+                })
+        except (InvalidOperation, TypeError):
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +326,18 @@ async def run_validation(
 
         exchanges = [dict(r) for r in exc_rows]
 
+        # ── 3b. Load model parameters ─────────────────────────────────────
+        param_rows = (await db.execute(
+            text("""
+                SELECT param_id, name, value, min_value, max_value
+                FROM model_parameter
+                WHERE revision_id = :rid
+            """),
+            {"rid": str(revision_id)},
+        )).mappings().all()
+
+        parameters = [dict(r) for r in param_rows]
+
         # ── 4. Run rules ──────────────────────────────────────────────────
         issues: list[dict[str, Any]] = []
 
@@ -242,6 +348,8 @@ async def run_validation(
             if process.get("system_boundary") == "background":
                 continue
             _check_process_rules(process, exchanges, issues, validation_id)
+
+        _check_param_rules(parameters, issues, validation_id)
 
         # ── 5. Insert issues ──────────────────────────────────────────────
         for issue in issues:
