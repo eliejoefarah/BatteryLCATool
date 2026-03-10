@@ -167,6 +167,54 @@ class ImportJobResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+@router.delete("/{revision_id}", status_code=204)
+async def clear_import_data(
+    revision_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+) -> None:
+    """Remove all imported processes, exchanges, and parameters for a revision.
+
+    Called by the frontend when the user chooses 'Undo import' after reviewing
+    import issues. Requires the caller to be a project member.
+    """
+    row = (await db.execute(
+        text("""
+            SELECT 1
+            FROM battery_model_revision r
+            JOIN battery_model bm ON bm.model_id = r.model_id
+            JOIN project_member pm ON pm.project_id = bm.project_id
+            WHERE r.revision_id = :rid AND pm.user_id = :uid
+        """),
+        {"rid": str(revision_id), "uid": str(user_id)},
+    )).fetchone()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Revision not found or you do not have access.",
+        )
+
+    await db.execute(
+        text("""
+            DELETE FROM process_exchange
+            WHERE process_id IN (
+                SELECT process_id FROM process_instance WHERE revision_id = :rid
+            )
+        """),
+        {"rid": str(revision_id)},
+    )
+    await db.execute(
+        text("DELETE FROM process_instance WHERE revision_id = :rid"),
+        {"rid": str(revision_id)},
+    )
+    await db.execute(
+        text("DELETE FROM model_parameter WHERE revision_id = :rid"),
+        {"rid": str(revision_id)},
+    )
+    await db.commit()
+
+
 @router.post("/{revision_id}", response_model=ImportJobResponse)
 async def upload_and_import(
     revision_id: UUID,

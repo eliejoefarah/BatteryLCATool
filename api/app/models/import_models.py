@@ -133,18 +133,10 @@ class XlsxExchangeRow(BaseModel):
 
     @field_validator("quantity", mode="before")
     @classmethod
-    def quantity_non_negative(cls, v: object) -> Decimal | None:
+    def _parse_quantity(cls, v: object) -> Decimal | None:
         if v is None or str(v).strip() == "":
             return None
-        d = Decimal(str(v))
-        if d < 0:
-            raise ValueError(
-                f"quantity must be >= 0 for foreground exchanges (got {d}). "
-                "Foreground quantities are positive magnitudes — use the "
-                "'direction' column ('input' or 'output') to indicate flow "
-                "direction rather than a negative sign."
-            )
-        return d
+        return Decimal(str(v))
 
     @field_validator("activity_name", "flow_name")
     @classmethod
@@ -152,16 +144,6 @@ class XlsxExchangeRow(BaseModel):
         if not v:
             raise ValueError("activity_name and flow_name must not be empty.")
         return v
-
-    @model_validator(mode="after")
-    def quantity_or_formula_required(self) -> XlsxExchangeRow:
-        if self.quantity is None and not self.formula:
-            raise ValueError(
-                f"Exchange row for flow '{self.flow_name}' in activity "
-                f"'{self.activity_name}' must supply at least one of "
-                "'quantity' or 'formula'."
-            )
-        return self
 
 
 # ---------------------------------------------------------------------------

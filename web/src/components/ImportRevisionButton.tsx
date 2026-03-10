@@ -18,6 +18,18 @@ interface Props {
   onImported?: (result: ImportResult) => void
 }
 
+/** Removes raw Pydantic / framework boilerplate from a backend message. */
+function cleanMessage(msg: string): string {
+  return msg
+    // strip "N validation error(s) for XlsxExchangeRow …" prefix
+    .replace(/\d+ validation errors? for \w+\s*/gi, '')
+    // strip "[type=…, input_value=…, input_type=…]" suffix
+    .replace(/\[type=[^\]]+\]/g, '')
+    // strip "For further information visit https://…" suffix
+    .replace(/\s*For further information visit https?:\/\/\S+/gi, '')
+    .trim()
+}
+
 /** Matches the API's ImportJobResponse model. */
 interface ImportResult {
   activities_created: number
@@ -40,6 +52,34 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
 
   // Import messages dialog
   const [importMessages, setImportMessages] = useState<ImportResult | null>(null)
+  const [undoing, setUndoing] = useState(false)
+
+  async function undoImport() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) return
+
+    const apiUrl = import.meta.env.VITE_RAILWAY_FASTAPI_URL as string
+    setUndoing(true)
+    try {
+      await fetch(`${apiUrl}/api/v1/import/${revisionId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      queryClient.invalidateQueries({ queryKey: ['processes', revisionId] })
+      queryClient.invalidateQueries({ queryKey: ['exchanges'] })
+      queryClient.invalidateQueries({ queryKey: ['exchange-count', revisionId] })
+      queryClient.invalidateQueries({ queryKey: ['parameter-count', revisionId] })
+      queryClient.invalidateQueries({ queryKey: ['parameters', revisionId] })
+      toast.success('Import undone — revision is now empty.')
+    } catch {
+      toast.error('Could not undo the import.')
+    } finally {
+      setUndoing(false)
+      setImportMessages(null)
+    }
+  }
 
   async function doImport(file: File, force = false) {
     const {
@@ -227,7 +267,9 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
       {importMessages && (
         <ImportMessagesDialog
           result={importMessages}
-          onClose={() => setImportMessages(null)}
+          onKeep={() => setImportMessages(null)}
+          onUndo={undoImport}
+          undoing={undoing}
         />
       )}
     </>
@@ -240,53 +282,72 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
 
 function ImportMessagesDialog({
   result,
-  onClose,
+  onKeep,
+  onUndo,
+  undoing,
 }: {
   result: ImportResult
-  onClose: () => void
+  onKeep: () => void
+  onUndo: () => void
+  undoing: boolean
 }) {
   const [showWarnings, setShowWarnings] = useState(true)
   const [showErrors, setShowErrors] = useState(true)
 
+  const allMessages = [...result.errors, ...result.warnings]
+  const total = allMessages.length
+
   return (
-    <Dialog open onOpenChange={(v) => { if (!v) onClose() }}>
+    <Dialog open onOpenChange={(v) => { if (!v && !undoing) onKeep() }}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Import completed with issues
+            Import completed — {total} issue{total !== 1 ? 's' : ''} found
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-slate-500">
-          {result.activities_created} process{result.activities_created !== 1 ? 'es' : ''},{' '}
-          {result.exchanges_created} exchange{result.exchanges_created !== 1 ? 's' : ''} imported.
-          Review the issues below — rows with errors were skipped.
+        <p className="text-sm text-slate-600">
+          <span className="font-medium">{result.activities_created}</span> process{result.activities_created !== 1 ? 'es' : ''} and{' '}
+          <span className="font-medium">{result.exchanges_created}</span> exchange{result.exchanges_created !== 1 ? 's' : ''} were imported,
+          including any rows with issues.
+          You can keep the import and fix issues later using the Exchanges panel,
+          or undo it to correct your spreadsheet first.
         </p>
 
         <div className="flex-1 overflow-auto space-y-3 mt-2">
           {result.errors.length > 0 && (
             <MessageSection
-              title={`Errors (${result.errors.length})`}
-              messages={result.errors}
+              title={`Issues (${result.errors.length})`}
+              messages={result.errors.map(cleanMessage)}
               open={showErrors}
               onToggle={() => setShowErrors((v) => !v)}
-              variant="error"
+              variant="warning"
             />
           )}
           {result.warnings.length > 0 && (
             <MessageSection
-              title={`Warnings (${result.warnings.length})`}
-              messages={result.warnings}
+              title={`Notices (${result.warnings.length})`}
+              messages={result.warnings.map(cleanMessage)}
               open={showWarnings}
               onToggle={() => setShowWarnings((v) => !v)}
-              variant="warning"
+              variant="info"
             />
           )}
         </div>
 
-        <div className="pt-2">
-          <Button className="w-full" onClick={onClose}>Close</Button>
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+            onClick={onUndo}
+            disabled={undoing}
+          >
+            {undoing ? 'Undoing…' : 'Undo import'}
+          </Button>
+          <Button className="flex-1" onClick={onKeep}>
+            Keep import
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -304,22 +365,22 @@ function MessageSection({
   messages: string[]
   open: boolean
   onToggle: () => void
-  variant: 'error' | 'warning'
+  variant: 'warning' | 'info'
 }) {
-  const isError = variant === 'error'
+  const isWarning = variant === 'warning'
   return (
-    <div className={`rounded-lg border ${isError ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+    <div className={`rounded-lg border ${isWarning ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}>
       <button
-        className={`flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium ${isError ? 'text-red-700' : 'text-amber-700'}`}
+        className={`flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium ${isWarning ? 'text-amber-700' : 'text-blue-700'}`}
         onClick={onToggle}
       >
         {title}
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
       {open && (
-        <ul className="border-t px-4 py-2 space-y-1 max-h-60 overflow-auto">
+        <ul className="border-t px-4 py-2 space-y-2 max-h-60 overflow-auto">
           {messages.map((msg, i) => (
-            <li key={i} className={`text-xs font-mono ${isError ? 'text-red-700' : 'text-amber-700'}`}>
+            <li key={i} className={`text-xs ${isWarning ? 'text-amber-800' : 'text-blue-800'}`}>
               {msg}
             </li>
           ))}

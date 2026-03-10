@@ -622,10 +622,10 @@ def _parse_vub_template(
 
             if col_d is None and not formula_str:
                 errors.append(
-                    f"Sheet '{sheet_name}' row {r_i + 1}: "
-                    f"flow '{col_c}' has no quantity or formula; skipped."
+                    f"Sheet '{sheet_name}', row {r_i + 1}: "
+                    f"'{col_c}' has no quantity — imported with quantity 0. "
+                    "Fill in the correct value in the Exchanges panel."
                 )
-                continue
 
             final_act_name = act_name or sheet_name
             direction: Literal["input", "output"] = (
@@ -655,10 +655,10 @@ def _parse_vub_template(
         final_act_name = act_name or sheet_name
         if not ref_amount:
             errors.append(
-                f"Sheet '{sheet_name}': reference product has zero or missing "
-                f"production amount; sheet skipped."
+                f"Sheet '{sheet_name}': production amount not found in metadata — "
+                f"defaulted to 1.0. Update the reference product row if needed."
             )
-            continue
+            ref_amount = Decimal("1.0")
         try:
             act = XlsxActivityRow(
                 name=final_act_name,
@@ -888,9 +888,9 @@ async def run_import(
                 params.append(XlsxParameterRow(name=name, value=Decimal("0")))
                 existing_param_names.add(name)
                 result.add_warning(
-                    f"Auto-created parameter '{name}' (found in formula "
-                    f"'{exc_row.formula}'). Value defaults to 0 — update it "
-                    "in the Parameters panel."
+                    f"Parameter '{name}' was found in a formula but has no "
+                    f"defined value — created with value 0. Set the correct "
+                    "value in the Parameters panel."
                 )
 
         # ── 4. Idempotency — clear previous rows for this revision ────────
@@ -920,8 +920,8 @@ async def run_import(
             loc = act.location
             if loc is not None and loc not in valid_region_codes:
                 result.add_warning(
-                    f"Activity '{act.name}': location '{loc}' not found in "
-                    f"region_catalog; mapped to 'RoW'."
+                    f"Process '{act.name}': location code '{loc}' is not in the "
+                    f"region catalogue — mapped to 'RoW' (Rest of World)."
                 )
                 loc = "RoW"
 
@@ -968,15 +968,14 @@ async def run_import(
                 )
                 continue
 
-            # Quantity sign validation
+            # Store quantity as-is — negatives are imported and flagged by the validator.
             qty = exc_row.quantity
             if qty is not None and qty < 0:
                 result.add_warning(
-                    f"Negative quantity ({qty}) for flow '{exc_row.flow_name}' "
-                    f"in activity '{exc_row.activity_name}'. "
-                    f"Foreground quantities must be >= 0 — using abs() value."
+                    f"'{exc_row.flow_name}' in '{exc_row.activity_name}' has a "
+                    f"negative quantity ({qty}). Imported as-is — the validator "
+                    "will flag it. Update in the Exchanges panel if needed."
                 )
-                qty = abs(qty)
 
             # Determine output_type — use explicit value from parser when provided,
             # otherwise infer from position order (first output = reference, rest = waste_output)
