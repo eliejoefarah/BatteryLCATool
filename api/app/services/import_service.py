@@ -35,6 +35,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import re
 import uuid
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
@@ -97,6 +98,49 @@ def _to_decimal(v: Any) -> Decimal | None:
         return Decimal(str(v))
     except (InvalidOperation, TypeError, ValueError):
         return None
+
+
+# ---------------------------------------------------------------------------
+# Formula parameter extraction helpers
+# ---------------------------------------------------------------------------
+
+# Excel built-in function names — these tokens should NOT become parameters.
+_EXCEL_FUNCTIONS: frozenset[str] = frozenset({
+    "ABS", "ADDRESS", "AND", "AVERAGE", "CEILING", "CHOOSE", "COLUMN",
+    "COLUMNS", "CONCATENATE", "COUNT", "COUNTA", "DATE", "DAY", "EXP",
+    "FALSE", "FLOOR", "IF", "IFERROR", "INDEX", "INDIRECT", "INT",
+    "ISBLANK", "ISERROR", "ISNUMBER", "ISTEXT", "LEFT", "LEN", "LN",
+    "LOG", "LOG10", "LOWER", "MATCH", "MAX", "MID", "MIN", "MOD",
+    "MONTH", "NOT", "NOW", "OFFSET", "OR", "PI", "POWER", "RIGHT",
+    "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SQRT", "SUM",
+    "SUMIF", "SUMPRODUCT", "TEXT", "TODAY", "TRIM", "TRUE", "UPPER",
+    "VALUE", "VLOOKUP", "YEAR",
+})
+
+# Matches a single Excel cell reference: A1, B12, AA3, $B$2, etc.
+_CELL_REF_RE = re.compile(r"^\$?[A-Z]+\$?[0-9]+$", re.IGNORECASE)
+
+# Matches any word-like token inside a formula expression.
+_TOKEN_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_.]*)\b")
+
+
+def _param_names_from_formula(formula: str) -> set[str]:
+    """Return identifiers in *formula* that look like parameter names.
+
+    Strips the leading ``=``, then finds all word tokens.  Tokens that are
+    Excel built-in function names or cell references (e.g. ``A1``, ``$B$2``)
+    are excluded; everything else is treated as a potential parameter name.
+    """
+    expr = formula.lstrip("=")
+    names: set[str] = set()
+    for m in _TOKEN_RE.finditer(expr):
+        token = m.group(1)
+        if token.upper() in _EXCEL_FUNCTIONS:
+            continue
+        if _CELL_REF_RE.match(token):
+            continue
+        names.add(token)
+    return names
 
 
 def _str(v: Any) -> str | None:
@@ -827,6 +871,27 @@ async def run_import(
 
         for e in parse_errors:
             result.add_warning(e)
+
+        # ── 3b. Auto-discover parameters from formula identifiers ─────────
+        # Any identifier token inside a formula string (e.g. ``=mass*density``)
+        # that is not an Excel built-in or cell reference is treated as a
+        # parameter name.  If it is not already in the explicit params list,
+        # a stub entry is created (value=0; all other fields empty) so the
+        # import can succeed.  The importer can fill values/ranges afterwards.
+        existing_param_names: set[str] = {p.name for p in params}
+        for exc_row in excs:
+            if not exc_row.formula:
+                continue
+            for name in sorted(_param_names_from_formula(exc_row.formula)):
+                if name in existing_param_names:
+                    continue
+                params.append(XlsxParameterRow(name=name, value=Decimal("0")))
+                existing_param_names.add(name)
+                result.add_warning(
+                    f"Auto-created parameter '{name}' (found in formula "
+                    f"'{exc_row.formula}'). Value defaults to 0 — update it "
+                    "in the Parameters panel."
+                )
 
         # ── 4. Idempotency — clear previous rows for this revision ────────
         await db.execute(
