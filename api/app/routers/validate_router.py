@@ -397,7 +397,7 @@ async def run_validation(
             text("""
                 SELECT DISTINCT flow_id::text
                 FROM bw_mapping_selection
-                WHERE revision_id = :rid AND mapping_status = 'confirmed'
+                WHERE revision_id = :rid AND mapping_status = 'mapped'
             """),
             {"rid": str(revision_id)},
         )).fetchall()
