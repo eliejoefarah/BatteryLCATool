@@ -7,31 +7,38 @@ export type ValidationRun =
 export type ValidationIssue =
   Database['public']['Tables']['validation_issue']['Row']
 
-export interface RevisionValidation {
-  run: ValidationRun | null
-  issues: ValidationIssue[]
+export interface RevisionValidationHistory {
+  runs: ValidationRun[]
+  issuesByRunId: Record<string, ValidationIssue[]>
 }
 
 async function fetchRevisionValidation(
   revisionId: string,
-): Promise<RevisionValidation> {
-  const { data: run } = await supabase
+): Promise<RevisionValidationHistory> {
+  const { data: runs, error: runsError } = await supabase
     .from('validation_run')
     .select('*')
     .eq('revision_id', revisionId)
     .order('run_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  if (!run) return { run: null, issues: [] }
+  if (runsError) throw runsError
+  if (!runs || runs.length === 0) return { runs: [], issuesByRunId: {} }
 
-  const { data: issues, error } = await supabase
+  const runIds = runs.map((r) => r.validation_id)
+  const { data: issues, error: issuesError } = await supabase
     .from('validation_issue')
     .select('*')
-    .eq('validation_id', run.validation_id)
+    .in('validation_id', runIds)
 
-  if (error) throw error
-  return { run, issues: issues ?? [] }
+  if (issuesError) throw issuesError
+
+  const issuesByRunId: Record<string, ValidationIssue[]> = {}
+  for (const run of runs) issuesByRunId[run.validation_id] = []
+  for (const issue of issues ?? []) {
+    issuesByRunId[issue.validation_id]?.push(issue)
+  }
+
+  return { runs, issuesByRunId }
 }
 
 export function useRevisionValidation(

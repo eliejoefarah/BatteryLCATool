@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -21,6 +20,7 @@ import {
   AccordionTrigger,
 } from './ui/accordion'
 import { Button } from './ui/button'
+import { useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Severity config
@@ -68,6 +68,47 @@ const SEVERITY_CONFIG: Record<
 }
 
 // ---------------------------------------------------------------------------
+// Run status config
+// ---------------------------------------------------------------------------
+
+function RunStatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case 'pass':
+      return <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+    case 'warning':
+      return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+    case 'fail':
+    case 'failed':
+      return <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+    case 'running':
+      return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
+    default:
+      return <Info className="h-4 w-4 shrink-0 text-slate-400" />
+  }
+}
+
+function runStatusLabel(status: string): string {
+  switch (status) {
+    case 'pass':    return 'Passed'
+    case 'warning': return 'Warnings'
+    case 'fail':    return 'Failed'
+    case 'failed':  return 'Error'
+    case 'running': return 'Running…'
+    default:        return status
+  }
+}
+
+function runStatusTextClass(status: string): string {
+  switch (status) {
+    case 'pass':    return 'text-green-700'
+    case 'warning': return 'text-amber-700'
+    case 'fail':
+    case 'failed':  return 'text-red-700'
+    default:        return 'text-slate-500'
+  }
+}
+
+// ---------------------------------------------------------------------------
 // IssueRow
 // ---------------------------------------------------------------------------
 
@@ -91,16 +132,12 @@ function IssueRow({
   }
 
   return (
-    <div
-      className={`rounded-lg border px-3 py-2.5 text-xs ${cfg.rowClass}`}
-    >
+    <div className={`rounded-lg border px-3 py-2.5 text-xs ${cfg.rowClass}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <code className={`font-mono font-semibold ${cfg.codeClass}`}>
-              {issue.code}
-            </code>
-          </div>
+          <code className={`font-mono font-semibold ${cfg.codeClass}`}>
+            {issue.code}
+          </code>
           <p className="mt-1 text-slate-600 leading-snug">{issue.message}</p>
           {issue.suggestion && (
             <p className="mt-1 text-slate-400 italic">{issue.suggestion}</p>
@@ -117,6 +154,124 @@ function IssueRow({
           </Button>
         )}
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// RunIssues — issues for a single run, grouped by severity
+// ---------------------------------------------------------------------------
+
+function RunIssues({
+  issues,
+  processPathMap,
+  runId,
+}: {
+  issues: ValidationIssue[]
+  processPathMap: Map<string, string>
+  runId: string
+}) {
+  if (issues.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+        <p className="text-sm text-green-700">No issues found</p>
+      </div>
+    )
+  }
+
+  const grouped = new Map<Severity, ValidationIssue[]>()
+  for (const sev of SEVERITY_ORDER) grouped.set(sev, [])
+  for (const issue of issues) {
+    const sev =
+      (issue.severity as Severity) in SEVERITY_CONFIG
+        ? (issue.severity as Severity)
+        : 'info'
+    grouped.get(sev)!.push(issue)
+  }
+
+  const defaultOpen = SEVERITY_ORDER.filter(
+    (s) => (grouped.get(s)?.length ?? 0) > 0,
+  ).slice(0, 2)
+
+  return (
+    <Accordion
+      type="multiple"
+      defaultValue={defaultOpen}
+      className="space-y-2"
+    >
+      {SEVERITY_ORDER.map((sev) => {
+        const group = grouped.get(sev) ?? []
+        if (!group.length) return null
+        const cfg = SEVERITY_CONFIG[sev]
+
+        return (
+          <AccordionItem
+            key={`${runId}-${sev}`}
+            value={sev}
+            className="rounded-lg border bg-white overflow-hidden"
+          >
+            <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline">
+              <span className={`flex items-center gap-2 font-medium ${cfg.triggerClass}`}>
+                <cfg.Icon className="h-4 w-4" />
+                {cfg.label}
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.badgeClass}`}>
+                  {group.length}
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <div className="space-y-2">
+                {group.map((issue) => (
+                  <IssueRow
+                    key={issue.issue_id}
+                    issue={issue}
+                    processPath={
+                      issue.process_id
+                        ? (processPathMap.get(issue.process_id) ?? null)
+                        : null
+                    }
+                  />
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )
+      })}
+    </Accordion>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// RunTriggerBadges — compact issue count badges shown in the run header
+// ---------------------------------------------------------------------------
+
+function RunTriggerBadges({ issues }: { issues: ValidationIssue[] }) {
+  const counts: Partial<Record<Severity, number>> = {}
+  for (const issue of issues) {
+    const sev =
+      (issue.severity as Severity) in SEVERITY_CONFIG
+        ? (issue.severity as Severity)
+        : 'info'
+    counts[sev] = (counts[sev] ?? 0) + 1
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {SEVERITY_ORDER.map((sev) => {
+        const count = counts[sev]
+        if (!count) return null
+        const cfg = SEVERITY_CONFIG[sev]
+        return (
+          <span
+            key={sev}
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badgeClass}`}
+          >
+            <cfg.Icon className="h-3 w-3" />
+            {count}
+          </span>
+        )
+      })}
     </div>
   )
 }
@@ -143,9 +298,10 @@ export default function ValidationPanel({
   const [triggering, setTriggering] = useState(false)
   const { data, isLoading, refetch } = useRevisionValidation(revisionId, true)
 
-  const run = data?.run ?? null
-  const issues = data?.issues ?? []
-  const isRunning = run?.status === 'running'
+  const runs = data?.runs ?? []
+  const issuesByRunId = data?.issuesByRunId ?? {}
+  const latestRun = runs[0] ?? null
+  const isRunning = latestRun?.status === 'running'
 
   async function handleRunValidation() {
     setTriggering(true)
@@ -156,7 +312,6 @@ export default function ValidationPanel({
       if (error) throw error
       await refetch()
       queryClient.invalidateQueries({ queryKey: ['revision-validation', revisionId] })
-      // Invalidate revision list so status badge (draft/validated) updates immediately
       queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Validation failed')
@@ -173,96 +328,38 @@ export default function ValidationPanel({
     ]),
   )
 
-  // Group issues by severity
-  const grouped = new Map<Severity, ValidationIssue[]>()
-  for (const sev of SEVERITY_ORDER) grouped.set(sev, [])
-  for (const issue of issues) {
-    const sev = (issue.severity as Severity) in SEVERITY_CONFIG
-      ? (issue.severity as Severity)
-      : 'info'
-    grouped.get(sev)!.push(issue)
-  }
+  // Open the most recent run by default
+  const defaultOpen = latestRun ? [latestRun.validation_id] : []
 
-  // Default open: error and warning groups that have items
-  const defaultOpen = SEVERITY_ORDER.filter(
-    (s) => (grouped.get(s)?.length ?? 0) > 0,
-  ).slice(0, 2)
-
-  // ---------------------------------------------------------------------------
-  // Header
-  // ---------------------------------------------------------------------------
   return (
     <div className="space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-sm font-medium text-slate-700">Validation</h2>
-          {run && (
-            <p className="mt-0.5 text-xs text-slate-400">
-              {isRunning ? (
-                <span className="flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Running…
-                </span>
-              ) : (
-                <>
-                  Last run:{' '}
-                  {new Date(run.run_at).toLocaleString(undefined, {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                  })}
-                  {run.status === 'failed' && (
-                    <span className="ml-1 text-red-500">· failed</span>
-                  )}
-                </>
-              )}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Summary badges */}
-          {!isLoading && issues.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              {SEVERITY_ORDER.map((sev) => {
-                const count = grouped.get(sev)?.length ?? 0
-                if (!count) return null
-                const cfg = SEVERITY_CONFIG[sev]
-                return (
-                  <span
-                    key={sev}
-                    className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badgeClass}`}
-                  >
-                    <cfg.Icon className="h-3 w-3" />
-                    {count}
-                  </span>
-                )
-              })}
-            </div>
-          )}
-          {canValidate && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={triggering || isRunning}
-              onClick={handleRunValidation}
-            >
-              {triggering || isRunning ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Play className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              {triggering ? 'Running…' : 'Run Validation'}
-            </Button>
-          )}
-        </div>
+        <h2 className="text-sm font-medium text-slate-700">Validation</h2>
+        {canValidate && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={triggering || isRunning}
+            onClick={handleRunValidation}
+          >
+            {triggering || isRunning ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {triggering ? 'Running…' : 'Run Validation'}
+          </Button>
+        )}
       </div>
 
-      {/* Empty / loading states */}
+      {/* Loading */}
       {isLoading && (
         <p className="text-xs text-slate-400">Loading…</p>
       )}
 
-      {!isLoading && !run && (
+      {/* No runs yet */}
+      {!isLoading && runs.length === 0 && (
         <div className="rounded-lg border border-dashed border-slate-300 px-5 py-6 text-center">
           <p className="text-sm text-slate-500">No validation run yet</p>
           <p className="mt-1 text-xs text-slate-400">
@@ -271,56 +368,56 @@ export default function ValidationPanel({
         </div>
       )}
 
-      {!isLoading && run && issues.length === 0 && !isRunning && (
-        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-          <p className="text-sm text-green-700">No issues found</p>
-        </div>
-      )}
-
-      {/* Accordion groups */}
-      {!isLoading && issues.length > 0 && (
+      {/* Runs list */}
+      {!isLoading && runs.length > 0 && (
         <Accordion
           type="multiple"
           defaultValue={defaultOpen}
           className="space-y-2"
         >
-          {SEVERITY_ORDER.map((sev) => {
-            const group = grouped.get(sev) ?? []
-            if (!group.length) return null
-            const cfg = SEVERITY_CONFIG[sev]
-
+          {runs.map((run, idx) => {
+            const runIssues = issuesByRunId[run.validation_id] ?? []
             return (
               <AccordionItem
-                key={sev}
-                value={sev}
+                key={run.validation_id}
+                value={run.validation_id}
                 className="rounded-lg border bg-white overflow-hidden"
               >
-                <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline">
-                  <span className={`flex items-center gap-2 font-medium ${cfg.triggerClass}`}>
-                    <cfg.Icon className="h-4 w-4" />
-                    {cfg.label}
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.badgeClass}`}
-                    >
-                      {group.length}
-                    </span>
-                  </span>
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <RunStatusIcon status={run.status} />
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${runStatusTextClass(run.status)}`}>
+                          {runStatusLabel(run.status)}
+                        </span>
+                        {idx === 0 && (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                            Latest
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {new Date(run.run_at).toLocaleString(undefined, {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </p>
+                    </div>
+                    {runIssues.length > 0 && (
+                      <RunTriggerBadges issues={runIssues} />
+                    )}
+                    {run.status === 'pass' && runIssues.length === 0 && (
+                      <span className="text-xs text-green-600">No issues</span>
+                    )}
+                  </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                  <div className="space-y-2">
-                    {group.map((issue) => (
-                      <IssueRow
-                        key={issue.issue_id}
-                        issue={issue}
-                        processPath={
-                          issue.process_id
-                            ? processPathMap.get(issue.process_id) ?? null
-                            : null
-                        }
-                      />
-                    ))}
-                  </div>
+                  <RunIssues
+                    issues={runIssues}
+                    processPathMap={processPathMap}
+                    runId={run.validation_id}
+                  />
                 </AccordionContent>
               </AccordionItem>
             )
