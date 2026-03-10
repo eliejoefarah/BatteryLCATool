@@ -18,10 +18,10 @@ const STATUS_STYLES: Record<string, string> = {
 
 function ValidationBadge({ revisionId }: { revisionId: string }) {
   const { data } = useRevisionValidation(revisionId, false)
-  const run = data?.run
-  const issues = data?.issues ?? []
+  const run = data?.runs?.[0] ?? null
+  const issues = (run ? data?.issuesByRunId?.[run.validation_id] : null) ?? []
   if (!run || run.status === 'running') return null
-  const errors = issues.filter((i) => i.severity === 'error').length
+  const errors = issues.filter((i: { severity: string }) => i.severity === 'error').length
   if (errors > 0) {
     return (
       <span className="flex items-center gap-1 text-xs text-red-500">
