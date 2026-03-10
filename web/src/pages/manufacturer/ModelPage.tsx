@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, ChevronRight, GitBranch, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronRight, GitBranch, XCircle } from 'lucide-react'
 import AppLayout from '../../components/AppLayout'
 import NewRevisionDialog from '../../components/NewRevisionDialog'
 import { useBatteryModels } from '../../hooks/useBatteryModels'
@@ -22,11 +22,20 @@ function ValidationBadge({ revisionId }: { revisionId: string }) {
   const issues = (run ? data?.issuesByRunId?.[run.validation_id] : null) ?? []
   if (!run || run.status === 'running') return null
   const errors = issues.filter((i: { severity: string }) => i.severity === 'error').length
+  const warnings = issues.filter((i: { severity: string }) => i.severity === 'warning').length
   if (errors > 0) {
     return (
       <span className="flex items-center gap-1 text-xs text-red-500">
         <XCircle className="h-3 w-3" />
         {errors} error{errors !== 1 ? 's' : ''}
+      </span>
+    )
+  }
+  if (warnings > 0) {
+    return (
+      <span className="flex items-center gap-1 text-xs text-amber-500">
+        <AlertTriangle className="h-3 w-3" />
+        Valid
       </span>
     )
   }
