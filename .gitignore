@@ -58,3 +58,6 @@ Thumbs.db
 /MoreData
 /docs
 api/tests
+
+# ─── Local utility scripts (not for version control) ─────────────────────────
+scripts/reset_data.sql
