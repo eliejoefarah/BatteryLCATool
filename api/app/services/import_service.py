@@ -502,13 +502,14 @@ def _parse_vub_template(
       'outputs'           → output exchanges follow
 
     Metadata detection (col A contains, case-insensitive):
-      'process description'      → col B = activity name
-      'productive process'       → col B = process description → activity.comment
+      'process description'      → col B = process comment (activity.comment)
+      'productive process'       → skipped; no process_instance field maps to it
       'material/product produced'→ col C = ref product, col D = amount, col E = unit,
                                    col H = cost_per_unit (€/unit)
       'co-product'               → col C = name, col D = amount, col E = unit
                                    (multiple rows possible; each becomes output_type='coproduct')
 
+    Process name is always taken from the sheet name (never from a metadata row).
     The reference product is prepended as the first exchange (output_type='reference',
     cost_per_unit set from metadata col H).  Co-products follow immediately after with
     output_type='coproduct'.  All remaining sheet outputs default to 'waste_output'.
@@ -526,8 +527,7 @@ def _parse_vub_template(
         rows_v = list(ws_v.iter_rows(values_only=True))
         rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
 
-        act_name: str | None = None
-        act_comment: str | None = None   # "Productive process" description
+        act_comment: str | None = None   # "Process description:" row col B
         ref_name: str | None = None
         ref_amount: Decimal | None = None
         ref_unit: str | None = None
@@ -588,12 +588,11 @@ def _parse_vub_template(
             # ── Metadata rows ──────────────────────────────────────────────
             if state == "meta":
                 if col_a and "process description" in a_lower and col_b:
-                    # Guard: only update if col B has a value; row 15 is a bare
-                    # "Process description" section-header with no value in col B
-                    # and must not overwrite the real name set from row 6.
-                    act_name = col_b
-                elif col_a and "productive process" in a_lower and col_b:
+                    # Guard: col B must have a value; row 15 is a bare
+                    # "Process description" section-header with no value in col B.
                     act_comment = col_b
+                elif col_a and "productive process" in a_lower:
+                    pass   # no process_instance field maps to this row — skip
                 elif col_a and "material/product produced" in a_lower:
                     ref_name = col_c
                     ref_amount = col_d
@@ -627,7 +626,7 @@ def _parse_vub_template(
                     "Fill in the correct value in the Exchanges panel."
                 )
 
-            final_act_name = act_name or sheet_name
+            final_act_name = sheet_name
             direction: Literal["input", "output"] = (
                 "input" if state == "inputs" else "output"
             )
@@ -652,7 +651,7 @@ def _parse_vub_template(
                 errors.append(f"Sheet '{sheet_name}' row {r_i + 1}: {exc}")
 
         # ── Build activity row ─────────────────────────────────────────────
-        final_act_name = act_name or sheet_name
+        final_act_name = sheet_name
         if not ref_amount:
             errors.append(
                 f"Sheet '{sheet_name}': production amount not found in metadata — "
