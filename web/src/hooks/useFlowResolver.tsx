@@ -52,7 +52,6 @@ interface ResolverCallbacks {
   reject: () => void
 }
 
-const CANCELLED = 'FLOW_RESOLVER_CANCELLED'
 
 // ── hook ───────────────────────────────────────────────────────────────────────
 
@@ -294,4 +293,3 @@ export function useFlowResolver() {
   return { resolveFlow, FlowResolverModal }
 }
 
-export { CANCELLED }

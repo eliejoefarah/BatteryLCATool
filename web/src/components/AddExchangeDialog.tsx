@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import type { Exchange } from '../hooks/useExchanges'
 import { useParameterNames } from '../hooks/useParameters'
+import { useFlowResolver } from '../hooks/useFlowResolver'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -41,6 +42,7 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const paramNames = useParameterNames(revisionId)
+  const { resolveFlow, FlowResolverModal } = useFlowResolver()
 
   // Flow name typeahead state
   const [rawName, setRawName] = useState('')
@@ -99,38 +101,6 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
     setObservations('')
   }
 
-  async function resolveFlow(name: string, knownId: string | null): Promise<string | null> {
-    if (knownId) return knownId
-    const trimmed = name.trim()
-    if (!trimmed) return null
-
-    const escaped = trimmed.replace(/"/g, '""')
-    const { data: match } = await supabase
-      .from('flow_catalog')
-      .select('flow_id')
-      .or(`canonical_name.ilike."${escaped}",display_name.ilike."${escaped}"`)
-      .limit(1)
-      .maybeSingle()
-    if (match) return match.flow_id
-
-    const { data: catalogSet } = await supabase
-      .from('catalog_set')
-      .select('catalog_set_id')
-      .limit(1)
-      .maybeSingle()
-    if (!catalogSet) return null
-
-    const { data: result, error } = await supabase.functions.invoke('create_flow', {
-      body: { catalog_set_id: catalogSet.catalog_set_id, canonical_name: trimmed, kind: 'material' },
-    })
-    if (error || !result?.flow_id) {
-      toast.error(`Could not register flow "${trimmed}"`)
-      return null
-    }
-    toast.success(`New flow "${trimmed}" added to catalog`)
-    return result.flow_id as string
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!rawName.trim()) {
@@ -140,6 +110,7 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
 
     setSubmitting(true)
     try {
+      // resolveFlow may open an interactive modal; throws if user cancels
       const flowId = await resolveFlow(rawName, selectedFlowId)
 
       const payload: Record<string, unknown> = {
@@ -179,13 +150,18 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
       setOpen(false)
       reset()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add exchange')
+      // resolveFlow rejects (void) when user hits Cancel — don't show an error
+      if (err !== undefined) {
+        toast.error(err instanceof Error ? err.message : 'Failed to add exchange')
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
+    <>
+    <FlowResolverModal allowCancel />
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset() }}>
       <DialogTrigger asChild>
         <Button size="sm">
@@ -427,5 +403,6 @@ export default function AddExchangeDialog({ processId, revisionId, unitSymbols, 
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
