@@ -27,6 +27,7 @@ import { useExchanges, type Exchange } from '../hooks/useExchanges'
 import { useUnitCatalog } from '../hooks/useUnitCatalog'
 import { useValidationIssues } from '../hooks/useValidationIssues'
 import { useParameterNames } from '../hooks/useParameters'
+import { useFlowResolver } from '../hooks/useFlowResolver'
 import AddExchangeDialog from './AddExchangeDialog'
 import { Button } from './ui/button'
 import {
@@ -215,6 +216,8 @@ export default function ExchangeGrid({ processId, revisionId, readOnly = false }
   const [pendingDeleteRow, setPendingDeleteRow] = useState<Exchange | null>(null)
   const location = useLocation()
 
+  const { resolveFlow, FlowResolverModal } = useFlowResolver()
+
   const { data: exchanges, isLoading } = useExchanges(processId)
   const { data: units = [] } = useUnitCatalog()
   const paramNames = useParameterNames(revisionId)
@@ -256,56 +259,6 @@ export default function ExchangeGrid({ processId, revisionId, readOnly = false }
     }, 300)
     return () => clearTimeout(timer)
   }, [highlightExchangeId, isLoading])
-
-  // Lookup or create a flow by name, returns flow_id
-  async function resolveFlow(
-    name: string,
-    knownFlowId: string | null,
-  ): Promise<string | null> {
-    if (knownFlowId) return knownFlowId
-    const trimmed = name.trim()
-    if (!trimmed) return null
-
-    // Exact match search first
-    const esc = trimmed.replace(/"/g, '""')
-    const { data: match } = await supabase
-      .from('flow_catalog')
-      .select('flow_id')
-      .or(`canonical_name.ilike."${esc}",display_name.ilike."${esc}"`)
-      .limit(1)
-      .maybeSingle()
-
-    if (match) return match.flow_id
-
-    // Get default catalog set id
-    const { data: catalogSet } = await supabase
-      .from('catalog_set')
-      .select('catalog_set_id')
-      .limit(1)
-      .maybeSingle()
-
-    if (!catalogSet) return null
-
-    // Create new flow via Edge Function
-    const { data: result, error } = await supabase.functions.invoke(
-      'create_flow',
-      {
-        body: {
-          catalog_set_id: catalogSet.catalog_set_id,
-          canonical_name: trimmed,
-          kind: 'material',
-        },
-      },
-    )
-
-    if (error || !result?.flow_id) {
-      toast.error(`Could not register flow "${trimmed}"`)
-      return null
-    }
-
-    toast.success(`New flow "${trimmed}" added to catalog`)
-    return result.flow_id as string
-  }
 
   // Auto-save on every cell value change
   async function handleCellValueChanged(params: CellValueChangedEvent) {
@@ -633,6 +586,9 @@ export default function ExchangeGrid({ processId, revisionId, readOnly = false }
           </span>
         </div>
       )}
+
+      {/* Flow resolver modal (fuzzy match + create confirmation) */}
+      <FlowResolverModal allowCancel={false} />
 
       {/* Delete confirmation dialog */}
       <Dialog
