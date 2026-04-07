@@ -491,7 +491,7 @@ async def run_validation(
                     SELECT fau.flow_id::text, uc.symbol
                     FROM flow_allowed_unit fau
                     JOIN unit_catalog uc ON uc.unit_id = fau.unit_id
-                    WHERE fau.flow_id = ANY(:fids::uuid[])
+                    WHERE fau.flow_id::text = ANY(:fids)
                 """),
                 {"fids": list(flow_ids_in_revision)},
             )).fetchall()

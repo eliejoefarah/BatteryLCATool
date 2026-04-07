@@ -314,20 +314,12 @@ export default function ValidationPanel({
       const { error } = await supabase.functions.invoke('trigger_validation', {
         body: { revision_id: revisionId },
       })
-      if (error) {
-        const ctx = (error as Record<string, unknown>).context
-        let body = ''
-        try { body = ctx instanceof Response ? await ctx.text() : JSON.stringify(ctx) } catch { /* ignore */ }
-        console.error('[trigger_validation body]', body)
-        throw error
-      }
+      if (error) throw error
       await refetch()
       queryClient.invalidateQueries({ queryKey: ['revision-validation', revisionId] })
       queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })
     } catch (err) {
-      console.error('[validation error]', err)
-      const msg = err instanceof Error ? err.message : String(err)
-      toast.error(`Validation failed: ${msg}`)
+      toast.error(err instanceof Error ? err.message : 'Validation failed')
     } finally {
       setTriggering(false)
     }
