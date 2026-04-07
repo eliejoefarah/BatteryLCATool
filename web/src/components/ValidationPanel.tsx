@@ -315,7 +315,10 @@ export default function ValidationPanel({
         body: { revision_id: revisionId },
       })
       if (error) {
-        console.error('[trigger_validation error]', error, 'context:', (error as Record<string, unknown>).context, 'data:', invokeData)
+        const ctx = (error as Record<string, unknown>).context
+        let body = ''
+        try { body = ctx instanceof Response ? await ctx.text() : JSON.stringify(ctx) } catch { /* ignore */ }
+        console.error('[trigger_validation body]', body)
         throw error
       }
       await refetch()
