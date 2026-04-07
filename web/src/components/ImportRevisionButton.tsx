@@ -15,6 +15,7 @@ import NewRevisionDialog from './NewRevisionDialog'
 interface Props {
   revisionId: string
   modelId: string
+  hasData?: boolean
   onImported?: (result: ImportResult) => void
 }
 
@@ -41,7 +42,7 @@ interface ImportResult {
   errors: string[]
 }
 
-export default function ImportRevisionButton({ revisionId, modelId, onImported }: Props) {
+export default function ImportRevisionButton({ revisionId, modelId, hasData = false, onImported }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
 
@@ -173,7 +174,12 @@ export default function ImportRevisionButton({ revisionId, modelId, onImported }
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-    doImport(file)
+    if (hasData) {
+      setPendingFile(file)
+      setShowConflict(true)
+    } else {
+      doImport(file)
+    }
   }
 
   async function handleOverride() {

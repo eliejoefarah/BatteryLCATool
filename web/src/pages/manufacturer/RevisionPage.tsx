@@ -271,7 +271,7 @@ export default function RevisionPage() {
         {canEdit && (
           <div className="flex items-center gap-2">
             {revisionId && modelId && (
-              <ImportRevisionButton revisionId={revisionId} modelId={modelId} />
+              <ImportRevisionButton revisionId={revisionId} modelId={modelId} hasData={!!processes?.length} />
             )}
             {revisionId && <ProcessForm revisionId={revisionId} />}
           </div>
