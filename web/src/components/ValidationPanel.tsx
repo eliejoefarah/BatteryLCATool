@@ -315,7 +315,7 @@ export default function ValidationPanel({
         body: { revision_id: revisionId },
       })
       if (error) {
-        console.error('[trigger_validation error]', error, 'context:', (error as any).context, 'data:', invokeData)
+        console.error('[trigger_validation error]', error, 'context:', (error as Record<string, unknown>).context, 'data:', invokeData)
         throw error
       }
       await refetch()
