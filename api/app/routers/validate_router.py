@@ -585,8 +585,10 @@ async def run_validation(
             {"status": final_status, "cnt": len(issues), "vid": str(validation_id)},
         )
 
-        # Flip revision lifecycle status based on validation result
-        revision_status = "validated" if final_status == "pass" else "draft"
+        # Flip revision lifecycle status based on validation result.
+        # Both clean passes and passes-with-warnings advance to 'unmapped'
+        # (ready for flow mapping). Only errors send the revision back to 'draft'.
+        revision_status = "unmapped" if final_status in ("pass", "warning") else "draft"
         await db.execute(
             text("""
                 UPDATE battery_model_revision
