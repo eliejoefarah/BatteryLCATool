@@ -311,7 +311,7 @@ export default function ValidationPanel({
   async function handleRunValidation() {
     setTriggering(true)
     try {
-      const { data: invokeData, error } = await supabase.functions.invoke('trigger_validation', {
+      const { error } = await supabase.functions.invoke('trigger_validation', {
         body: { revision_id: revisionId },
       })
       if (error) {
