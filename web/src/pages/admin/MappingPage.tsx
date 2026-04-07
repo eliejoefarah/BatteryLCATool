@@ -4,7 +4,7 @@ import { ChevronRight, Link2 } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 
 export default function MappingPage() {
-  const { projectId, modelId, revisionId } = useParams<{
+  const { revisionId } = useParams<{
     projectId: string
     modelId: string
     revisionId: string
