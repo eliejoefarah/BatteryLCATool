@@ -942,14 +942,14 @@ async def run_import(
         act_name_to_id: dict[str, UUID] = {}
 
         for act in acts:
-            # Validate location against region_catalog; unknown codes → RoW
+            # Validate location against region_catalog; unknown codes → GLO
             loc = act.location
             if loc is not None and loc not in valid_region_codes:
                 result.add_warning(
                     f"Process '{act.name}': location code '{loc}' is not in the "
-                    f"region catalogue — mapped to 'RoW' (Rest of World)."
+                    f"region catalogue — mapped to 'GLO' (Global)."
                 )
-                loc = "RoW"
+                loc = "GLO"
 
             proc_id = uuid.uuid4()
             await db.execute(

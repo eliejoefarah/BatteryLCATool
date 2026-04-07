@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  Link,
   Loader2,
   Play,
   XCircle,
@@ -77,6 +78,8 @@ function RunStatusIcon({ status }: { status: string }) {
       return <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
     case 'warning':
       return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+    case 'unmapped':
+      return <Link className="h-4 w-4 shrink-0 text-slate-400" />
     case 'fail':
     case 'failed':
       return <XCircle className="h-4 w-4 shrink-0 text-red-500" />
@@ -89,22 +92,24 @@ function RunStatusIcon({ status }: { status: string }) {
 
 function runStatusLabel(status: string): string {
   switch (status) {
-    case 'pass':    return 'Passed'
-    case 'warning': return 'Warnings'
-    case 'fail':    return 'Failed'
-    case 'failed':  return 'Error'
-    case 'running': return 'Running…'
-    default:        return status
+    case 'pass':     return 'Passed'
+    case 'warning':  return 'Warnings'
+    case 'unmapped': return 'Pending mapping'
+    case 'fail':     return 'Failed'
+    case 'failed':   return 'Error'
+    case 'running':  return 'Running…'
+    default:         return status
   }
 }
 
 function runStatusTextClass(status: string): string {
   switch (status) {
-    case 'pass':    return 'text-green-700'
-    case 'warning': return 'text-amber-700'
+    case 'pass':     return 'text-green-700'
+    case 'warning':  return 'text-amber-700'
+    case 'unmapped': return 'text-slate-500'
     case 'fail':
-    case 'failed':  return 'text-red-700'
-    default:        return 'text-slate-500'
+    case 'failed':   return 'text-red-700'
+    default:         return 'text-slate-500'
   }
 }
 
@@ -286,6 +291,7 @@ interface Props {
   modelId: string
   processes: Process[]
   canValidate: boolean
+  isAdmin?: boolean
 }
 
 export default function ValidationPanel({
@@ -294,6 +300,7 @@ export default function ValidationPanel({
   modelId,
   processes,
   canValidate,
+  isAdmin = false,
 }: Props) {
   const [triggering, setTriggering] = useState(false)
   const { data, isLoading, refetch } = useRevisionValidation(revisionId, true)
@@ -376,7 +383,10 @@ export default function ValidationPanel({
           className="space-y-2"
         >
           {runs.map((run, idx) => {
-            const runIssues = issuesByRunId[run.validation_id] ?? []
+            const allIssues = issuesByRunId[run.validation_id] ?? []
+            const runIssues = isAdmin
+              ? allIssues
+              : allIssues.filter((i) => i.code !== 'UNMAPPED_FLOW')
             return (
               <AccordionItem
                 key={run.validation_id}

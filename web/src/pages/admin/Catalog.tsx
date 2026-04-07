@@ -29,20 +29,21 @@ type ValidationRuleRow = Database['public']['Tables']['validation_rule']['Row']
 type FlowRow = Database['public']['Tables']['flow_catalog']['Row']
 
 type ValidationSeverity = 'error' | 'warning' | 'info'
-type FlowKind = 'material' | 'energy' | 'emission' | 'waste' | 'water' | 'service'
+type FlowKind = 'material' | 'energy' | 'emission' | 'waste' | 'water' | 'service' | 'infrastructure'
 
-const FLOW_KINDS: FlowKind[] = ['material', 'energy', 'emission', 'waste', 'water', 'service']
+const FLOW_KINDS: FlowKind[] = ['material', 'energy', 'emission', 'waste', 'water', 'service', 'infrastructure']
 const PAGE_SIZE = 100
 
 // ── kind styling ─────────────────────────────────────────────────────────────
 
 const KIND_STYLE: Record<FlowKind, { bg: string; text: string; border: string }> = {
-  material:  { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200' },
-  energy:    { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200' },
-  emission:  { bg: 'bg-rose-50',   text: 'text-rose-700',   border: 'border-rose-200' },
-  waste:     { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  water:     { bg: 'bg-cyan-50',   text: 'text-cyan-700',   border: 'border-cyan-200' },
-  service:   { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200' },
+  material:       { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200' },
+  energy:         { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200' },
+  emission:       { bg: 'bg-rose-50',   text: 'text-rose-700',   border: 'border-rose-200' },
+  waste:          { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  water:          { bg: 'bg-cyan-50',   text: 'text-cyan-700',   border: 'border-cyan-200' },
+  service:        { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200' },
+  infrastructure: { bg: 'bg-slate-50',  text: 'text-slate-700',  border: 'border-slate-200' },
 }
 
 function KindBadge({ kind }: { kind: string }) {

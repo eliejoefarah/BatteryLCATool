@@ -1284,8 +1284,9 @@ export type Database = {
         | "waste"
         | "water"
         | "service"
+        | "infrastructure"
       mapping_status_enum: "mapped" | "foreground" | "unmappable" | "pending"
-      model_status_enum: "draft" | "frozen"
+      model_status_enum: "draft" | "frozen" | "validated" | "unmapped"
       output_type_enum: "reference" | "coproduct" | "waste_output" | "stock"
       param_type_enum: "scalar" | "lookup"
       project_member_role_enum: "manufacturer" | "reviewer" | "admin"
@@ -1442,9 +1443,10 @@ export const Constants = {
         "waste",
         "water",
         "service",
+        "infrastructure",
       ],
       mapping_status_enum: ["mapped", "foreground", "unmappable", "pending"],
-      model_status_enum: ["draft", "frozen"],
+      model_status_enum: ["draft", "frozen", "validated", "unmapped"],
       output_type_enum: ["reference", "coproduct", "waste_output", "stock"],
       param_type_enum: ["scalar", "lookup"],
       project_member_role_enum: ["manufacturer", "reviewer", "admin"],

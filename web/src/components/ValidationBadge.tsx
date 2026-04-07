@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, AlertTriangle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, AlertTriangle, XCircle, Loader2, Link } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Badge } from './ui/badge'
 
@@ -70,6 +70,15 @@ export default function ValidationBadge({ revisionId }: Props) {
       <Badge className="gap-1 border-0 bg-amber-100 text-xs text-amber-800 hover:bg-amber-100">
         <AlertTriangle className="h-3 w-3" />
         {count > 0 ? `${count} warning${count !== 1 ? 's' : ''}` : 'Warning'}
+      </Badge>
+    )
+  }
+
+  if (s === 'unmapped') {
+    return (
+      <Badge className="gap-1 border-0 bg-slate-100 text-xs text-slate-600 hover:bg-slate-100">
+        <Link className="h-3 w-3" />
+        Pending mapping
       </Badge>
     )
   }

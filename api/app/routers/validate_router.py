@@ -278,6 +278,118 @@ def _check_process_rules(
                 pass
 
 
+def _check_mass_balance(
+    process: dict[str, Any],
+    exchanges: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+    validation_id: UUID,
+) -> None:
+    """Per-process: warn if total mass inputs ≠ total mass outputs (> 1% difference).
+
+    Only considers exchanges whose user_unit is a pure mass unit ('kg') and whose
+    quantity_user is set (formula-only exchanges are skipped).  Processes with
+    mass flows on only one side (e.g. pure material-output processes) are not
+    flagged — a balance requires at least one mass exchange in each direction.
+    """
+    pid = process["process_id"]
+    MASS_UNITS: frozenset[str] = frozenset({"kg"})
+    TOLERANCE = Decimal("0.01")  # 1 %
+
+    input_mass = Decimal(0)
+    output_mass = Decimal(0)
+    has_input = False
+    has_output = False
+
+    for exc in exchanges:
+        if exc["process_id"] != pid:
+            continue
+        if exc.get("user_unit") not in MASS_UNITS:
+            continue
+        qty_raw = exc.get("quantity_user")
+        if qty_raw is None:
+            continue
+        try:
+            qty = Decimal(str(qty_raw))
+        except (InvalidOperation, TypeError):
+            continue
+        if qty < 0:
+            continue  # already flagged by NEGATIVE_FOREGROUND_QTY
+        if exc.get("exchange_direction") == "input":
+            input_mass += qty
+            has_input = True
+        else:
+            output_mass += qty
+            has_output = True
+
+    # Can only check balance when both sides have mass flows
+    if not has_input or not has_output:
+        return
+    if input_mass == 0 and output_mass == 0:
+        return
+
+    max_mass = max(input_mass, output_mass)
+    imbalance = abs(input_mass - output_mass) / max_mass
+    if imbalance > TOLERANCE:
+        issues.append({
+            "issue_id": str(uuid.uuid4()),
+            "validation_id": str(validation_id),
+            "severity": "warning",
+            "code": "MASS_BALANCE_WARNING",
+            "message": (
+                f"Process \"{process['name']}\" has a mass imbalance: "
+                f"{input_mass:f} kg in vs {output_mass:f} kg out "
+                f"({imbalance:.1%} difference)."
+            ),
+            "process_id": pid,
+            "exchange_id": None,
+            "suggestion": (
+                "Check that all material inputs and outputs are accounted for. "
+                "Common causes: missing waste output, unreported co-product, or unit error."
+            ),
+        })
+
+
+def _check_unit_mismatch(
+    process: dict[str, Any],
+    exchanges: list[dict[str, Any]],
+    issues: list[dict[str, Any]],
+    validation_id: UUID,
+    flow_allowed_units: dict[str, set[str]],
+) -> None:
+    """Per-process: warn when user_unit is set but not in flow_allowed_unit."""
+    pid = process["process_id"]
+    for exc in exchanges:
+        if exc["process_id"] != pid:
+            continue
+        fid = str(exc.get("flow_id")) if exc.get("flow_id") else None
+        user_unit = exc.get("user_unit")
+        if not fid or not user_unit:
+            continue
+        allowed = flow_allowed_units.get(fid)
+        if allowed is None:
+            # Flow has no allowed-unit entries — nothing to validate against
+            continue
+        if user_unit not in allowed:
+            flow_label = exc.get("raw_name") or fid
+            issues.append({
+                "issue_id": str(uuid.uuid4()),
+                "validation_id": str(validation_id),
+                "severity": "warning",
+                "code": "UNIT_MISMATCH",
+                "message": (
+                    f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
+                    f"uses unit \"{user_unit}\" which is not an allowed unit for this flow "
+                    f"(allowed: {', '.join(sorted(allowed))})."
+                ),
+                "process_id": pid,
+                "exchange_id": exc["exchange_id"],
+                "suggestion": (
+                    f"Change the unit to one of the allowed values: "
+                    f"{', '.join(sorted(allowed))}."
+                ),
+            })
+
+
 def _check_param_rules(
     parameters: list[dict[str, Any]],
     issues: list[dict[str, Any]],
@@ -403,6 +515,25 @@ async def run_validation(
         )).fetchall()
         confirmed_flow_ids: set[str] = {str(r[0]) for r in mapping_rows}
 
+        # ── 3d. Load allowed units for flows used in this revision ────────
+        flow_ids_in_revision = {
+            str(e["flow_id"]) for e in exchanges if e.get("flow_id")
+        }
+        flow_allowed_units: dict[str, set[str]] = {}
+        if flow_ids_in_revision:
+            unit_rows = (await db.execute(
+                text("""
+                    SELECT fau.flow_id::text, uc.symbol
+                    FROM flow_allowed_unit fau
+                    JOIN unit_catalog uc ON uc.unit_id = fau.unit_id
+                    WHERE fau.flow_id = ANY(:fids::uuid[])
+                """),
+                {"fids": list(flow_ids_in_revision)},
+            )).fetchall()
+            for row in unit_rows:
+                fid_str = str(row[0])
+                flow_allowed_units.setdefault(fid_str, set()).add(row[1])
+
         # ── 3b. Load model parameters ─────────────────────────────────────
         param_rows = (await db.execute(
             text("""
@@ -428,15 +559,23 @@ async def run_validation(
                 process, exchanges, issues, validation_id,
                 confirmed_flow_ids=confirmed_flow_ids,
             )
+            _check_mass_balance(
+                process, exchanges, issues, validation_id,
+            )
+            _check_unit_mismatch(
+                process, exchanges, issues, validation_id,
+                flow_allowed_units=flow_allowed_units,
+            )
 
         _check_param_rules(parameters, issues, validation_id)
 
-        # FOREGROUND_CONFIRMED — positive info when all exchange-level checks pass cleanly
-        exchange_errors = [
+        # FOREGROUND_CONFIRMED — positive info when all manufacturer-facing checks pass.
+        # UNMAPPED_FLOW is excluded: mapping is an admin task, not a manufacturer issue.
+        foreground_issues = [
             i for i in issues
-            if i["severity"] in ("error", "warning") and i.get("exchange_id") is not None
+            if i["severity"] in ("error", "warning") and i.get("code") != "UNMAPPED_FLOW"
         ]
-        if processes and not exchange_errors:
+        if processes and not foreground_issues:
             issues.append({
                 "issue_id": str(uuid.uuid4()),
                 "validation_id": str(validation_id),
@@ -444,7 +583,7 @@ async def run_validation(
                 "code": "FOREGROUND_CONFIRMED",
                 "message": (
                     "All foreground exchanges passed validation checks. "
-                    "No quantity, reference flow, or sign issues were found."
+                    "No quantity, reference flow, sign, or mass-balance issues were found."
                 ),
                 "process_id": None,
                 "exchange_id": None,
@@ -466,11 +605,26 @@ async def run_validation(
             )
 
         # ── 6. Compute final status and mark run complete ─────────────────
+        # UNMAPPED_FLOW is treated separately: it is an admin concern, not a
+        # manufacturer defect.  A revision with only unmapped flows gets status
+        # 'unmapped' rather than 'warning', and the manufacturer-facing panel
+        # never shows UNMAPPED_FLOW issues.
         error_count = sum(1 for i in issues if i["severity"] == "error")
+        non_unmapped_warnings = [
+            i for i in issues
+            if i["severity"] == "warning" and i.get("code") != "UNMAPPED_FLOW"
+        ]
+        has_unmapped = any(
+            i["severity"] == "warning" and i.get("code") == "UNMAPPED_FLOW"
+            for i in issues
+        )
+
         if error_count > 0:
             final_status = "fail"
-        elif any(i["severity"] == "warning" for i in issues):
+        elif non_unmapped_warnings:
             final_status = "warning"
+        elif has_unmapped:
+            final_status = "unmapped"
         else:
             final_status = "pass"
 
@@ -485,7 +639,12 @@ async def run_validation(
         )
 
         # Flip revision lifecycle status based on validation result
-        revision_status = "validated" if final_status == "pass" else "draft"
+        if final_status == "pass":
+            revision_status = "validated"
+        elif final_status == "unmapped":
+            revision_status = "unmapped"
+        else:
+            revision_status = "draft"
         await db.execute(
             text("""
                 UPDATE battery_model_revision
