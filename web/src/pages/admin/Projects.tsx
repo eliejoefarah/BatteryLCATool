@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink, Users } from 'lucide-react'
+import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink, Users, Link2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getSession } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
@@ -92,10 +92,13 @@ async function createProject(name: string, description: string, memberIds: strin
 // ---------------------------------------------------------------------------
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600',
+  draft:     'bg-slate-100 text-slate-600',
+  validated: 'bg-green-100 text-green-700',
+  unmapped:  'bg-slate-100 text-slate-500',
+  frozen:    'bg-blue-100 text-blue-700',
   submitted: 'bg-blue-100 text-blue-700',
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
+  approved:  'bg-green-100 text-green-700',
+  rejected:  'bg-red-100 text-red-700',
 }
 
 interface RevisionWithCreator {
@@ -121,6 +124,8 @@ function RevisionRow({
   const { data: exchangeCount } = useRevisionExchangeCount(revision.revision_id)
   const { data: paramCount } = useRevisionParameterCount(revision.revision_id)
   const href = `/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}`
+  const mappingHref = `/admin/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}/mapping`
+  const isUnmapped = revision.status === 'unmapped'
 
   return (
     <div className="flex items-center gap-3 rounded px-2 py-1.5 text-xs hover:bg-slate-50">
@@ -142,6 +147,15 @@ function RevisionRow({
         >
           {revision.status}
         </Badge>
+      )}
+      {isUnmapped && (
+        <button
+          onClick={() => navigate(mappingHref)}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+        >
+          <Link2 className="h-3 w-3" />
+          Begin Mapping
+        </button>
       )}
       <span className="text-slate-400">
         {exchangeCount ?? '—'} exchanges · {paramCount ?? '—'} params

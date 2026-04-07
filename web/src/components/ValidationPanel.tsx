@@ -291,7 +291,6 @@ interface Props {
   modelId: string
   processes: Process[]
   canValidate: boolean
-  isAdmin?: boolean
 }
 
 export default function ValidationPanel({
@@ -300,7 +299,6 @@ export default function ValidationPanel({
   modelId,
   processes,
   canValidate,
-  isAdmin = false,
 }: Props) {
   const [triggering, setTriggering] = useState(false)
   const { data, isLoading, refetch } = useRevisionValidation(revisionId, true)
@@ -383,10 +381,7 @@ export default function ValidationPanel({
           className="space-y-2"
         >
           {runs.map((run, idx) => {
-            const allIssues = issuesByRunId[run.validation_id] ?? []
-            const runIssues = isAdmin
-              ? allIssues
-              : allIssues.filter((i) => i.code !== 'UNMAPPED_FLOW')
+            const runIssues = issuesByRunId[run.validation_id] ?? []
             return (
               <AccordionItem
                 key={run.validation_id}

@@ -325,7 +325,6 @@ export default function RevisionPage() {
               modelId={modelId}
               processes={processes ?? []}
               canValidate={canValidate}
-              isAdmin={role === 'admin'}
             />
           )}
         </div>

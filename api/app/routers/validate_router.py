@@ -95,7 +95,6 @@ def _check_process_rules(
     exchanges: list[dict[str, Any]],
     issues: list[dict[str, Any]],
     validation_id: UUID,
-    confirmed_flow_ids: set[str] | None = None,
 ) -> None:
     """Per-process rules."""
     pid = process["process_id"]
@@ -184,29 +183,6 @@ def _check_process_rules(
                 "process_id": pid,
                 "exchange_id": eid,
                 "suggestion": "Ensure all referenced parameters have correct values set.",
-            })
-
-        # UNMAPPED_FLOW — flow is in the catalog but has no confirmed Brightway mapping
-        fid_str = str(exc.get("flow_id")) if exc.get("flow_id") else None
-        if (
-            fid_str
-            and exc.get("exchange_direction") == "input"
-            and confirmed_flow_ids is not None
-            and fid_str not in confirmed_flow_ids
-        ):
-            issues.append({
-                "issue_id": str(uuid.uuid4()),
-                "validation_id": str(validation_id),
-                "severity": "warning",
-                "code": "UNMAPPED_FLOW",
-                "message": (
-                    f"Exchange \"{flow_label}\" in process \"{process['name']}\" "
-                    "has no confirmed Brightway background mapping. "
-                    "It will be excluded from LCA calculations until mapped."
-                ),
-                "process_id": pid,
-                "exchange_id": eid,
-                "suggestion": "Run the mapping job and confirm a match in the Mapping panel.",
             })
 
         qty_raw = exc.get("quantity_user")
@@ -504,17 +480,6 @@ async def run_validation(
 
         exchanges = [dict(r) for r in exc_rows]
 
-        # ── 3c. Load confirmed Brightway mappings for this revision ───────
-        mapping_rows = (await db.execute(
-            text("""
-                SELECT DISTINCT flow_id::text
-                FROM bw_mapping_selection
-                WHERE revision_id = :rid AND mapping_status = 'mapped'
-            """),
-            {"rid": str(revision_id)},
-        )).fetchall()
-        confirmed_flow_ids: set[str] = {str(r[0]) for r in mapping_rows}
-
         # ── 3d. Load allowed units for flows used in this revision ────────
         flow_ids_in_revision = {
             str(e["flow_id"]) for e in exchanges if e.get("flow_id")
@@ -557,7 +522,6 @@ async def run_validation(
                 continue
             _check_process_rules(
                 process, exchanges, issues, validation_id,
-                confirmed_flow_ids=confirmed_flow_ids,
             )
             _check_mass_balance(
                 process, exchanges, issues, validation_id,
@@ -569,11 +533,9 @@ async def run_validation(
 
         _check_param_rules(parameters, issues, validation_id)
 
-        # FOREGROUND_CONFIRMED — positive info when all manufacturer-facing checks pass.
-        # UNMAPPED_FLOW is excluded: mapping is an admin task, not a manufacturer issue.
+        # FOREGROUND_CONFIRMED — positive info when all checks pass cleanly.
         foreground_issues = [
-            i for i in issues
-            if i["severity"] in ("error", "warning") and i.get("code") != "UNMAPPED_FLOW"
+            i for i in issues if i["severity"] in ("error", "warning")
         ]
         if processes and not foreground_issues:
             issues.append({
@@ -605,26 +567,11 @@ async def run_validation(
             )
 
         # ── 6. Compute final status and mark run complete ─────────────────
-        # UNMAPPED_FLOW is treated separately: it is an admin concern, not a
-        # manufacturer defect.  A revision with only unmapped flows gets status
-        # 'unmapped' rather than 'warning', and the manufacturer-facing panel
-        # never shows UNMAPPED_FLOW issues.
         error_count = sum(1 for i in issues if i["severity"] == "error")
-        non_unmapped_warnings = [
-            i for i in issues
-            if i["severity"] == "warning" and i.get("code") != "UNMAPPED_FLOW"
-        ]
-        has_unmapped = any(
-            i["severity"] == "warning" and i.get("code") == "UNMAPPED_FLOW"
-            for i in issues
-        )
-
         if error_count > 0:
             final_status = "fail"
-        elif non_unmapped_warnings:
+        elif any(i["severity"] == "warning" for i in issues):
             final_status = "warning"
-        elif has_unmapped:
-            final_status = "unmapped"
         else:
             final_status = "pass"
 
@@ -639,12 +586,7 @@ async def run_validation(
         )
 
         # Flip revision lifecycle status based on validation result
-        if final_status == "pass":
-            revision_status = "validated"
-        elif final_status == "unmapped":
-            revision_status = "unmapped"
-        else:
-            revision_status = "draft"
+        revision_status = "validated" if final_status == "pass" else "draft"
         await db.execute(
             text("""
                 UPDATE battery_model_revision
