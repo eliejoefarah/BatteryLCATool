@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FolderOpen, Users, BookOpen, LayoutGrid } from 'lucide-react'
+import { FolderOpen, Users, BookOpen, LayoutGrid, Link2 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
 import TopBar from '../../components/TopBar'
 
@@ -27,6 +27,12 @@ const CARDS = [
     title: 'Catalog',
     description: 'View reference data: units, data origins, validation rules, and the flow catalog.',
     href: '/admin/catalog',
+  },
+  {
+    icon: Link2,
+    title: 'Flow Mapping',
+    description: 'Map validated revision flows to ecoinvent activities. Begin mapping for unmapped revisions or review existing mappings.',
+    href: '/admin/mapping',
   },
 ]
 

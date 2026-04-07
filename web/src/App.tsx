@@ -10,6 +10,7 @@ import ProjectsPage from './pages/admin/Projects'
 import CatalogPage from './pages/admin/Catalog'
 import GlobalDataView from './pages/admin/GlobalDataView'
 import MappingPage from './pages/admin/MappingPage'
+import FlowMappingPage from './pages/admin/FlowMappingPage'
 import ProjectListPage from './pages/manufacturer/ProjectListPage'
 import ProjectPage from './pages/manufacturer/ProjectPage'
 import ModelPage from './pages/manufacturer/ModelPage'
@@ -86,6 +87,14 @@ export default function App() {
           element={
             <AdminRoute>
               <GlobalDataView />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/mapping"
+          element={
+            <AdminRoute>
+              <FlowMappingPage />
             </AdminRoute>
           }
         />
