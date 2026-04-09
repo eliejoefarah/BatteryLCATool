@@ -388,7 +388,7 @@ async def confirm_mapping(
                     'mapped',
                     NULL
                 )
-                ON CONFLICT (exchange_id) DO UPDATE SET
+                ON CONFLICT (exchange_id) WHERE exchange_id IS NOT NULL DO UPDATE SET
                     bw_catalog_id              = EXCLUDED.bw_catalog_id,
                     confirmed_activity_name    = EXCLUDED.confirmed_activity_name,
                     confirmed_reference_product= EXCLUDED.confirmed_reference_product,
@@ -424,7 +424,7 @@ async def confirm_mapping(
         text("""
             UPDATE process_exchange
             SET mapping_status = 'mapped'
-            WHERE exchange_id = ANY(:ids::uuid[])
+            WHERE exchange_id::text = ANY(:ids)
         """),
         {"ids": exchange_ids},
     )
@@ -521,7 +521,7 @@ async def delete_mapping(
     await db.execute(
         text("""
             DELETE FROM bw_mapping_selection
-            WHERE exchange_id = ANY(:ids::uuid[])
+            WHERE exchange_id::text = ANY(:ids)
         """),
         {"ids": exchange_ids},
     )
@@ -531,7 +531,7 @@ async def delete_mapping(
         text("""
             UPDATE process_exchange
             SET mapping_status = 'pending'
-            WHERE exchange_id = ANY(:ids::uuid[])
+            WHERE exchange_id::text = ANY(:ids)
         """),
         {"ids": exchange_ids},
     )
@@ -625,7 +625,7 @@ async def get_revision_mapping(
                        confirmed_ecoinvent_version, confirmed_system_model,
                        confirmed_by, confirmed_at, mapping_notes, mapping_status
                 FROM bw_mapping_selection
-                WHERE exchange_id = ANY(:ids::uuid[])
+                WHERE exchange_id::text = ANY(:ids)
             """),
             {"ids": sample_ids},
         )).mappings().all()
