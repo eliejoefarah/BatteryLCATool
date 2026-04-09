@@ -18,17 +18,21 @@ import {
 } from './ui/dropdown-menu'
 import { Button } from './ui/button'
 
-export default function TopBar() {
+interface TopBarProps {
+  adminBreadcrumb?: { label: string; to: string }[]
+}
+
+export default function TopBar({ adminBreadcrumb }: TopBarProps = {}) {
   const { projectId, modelId, revisionId, processId } = useParams()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const role = useAuthStore((s) => s.role)
   const [profileOpen, setProfileOpen] = useState(false)
 
-  const { data: project } = useProject(projectId)
-  const { data: models } = useBatteryModels(projectId)
-  const { data: revisions } = useRevisions(modelId)
-  const { data: processes } = useProcesses(revisionId)
+  const { data: project } = useProject(adminBreadcrumb ? undefined : projectId)
+  const { data: models } = useBatteryModels(adminBreadcrumb ? undefined : projectId)
+  const { data: revisions } = useRevisions(adminBreadcrumb ? undefined : modelId)
+  const { data: processes } = useProcesses(adminBreadcrumb ? undefined : revisionId)
 
   const model = models?.find((m) => m.model_id === modelId)
   const revision = revisions?.find((r) => r.revision_id === revisionId)
@@ -52,43 +56,58 @@ export default function TopBar() {
         >
           <Home className="h-3.5 w-3.5" />
         </Link>
-        {project && (
+        {adminBreadcrumb ? (
+          adminBreadcrumb.map((crumb, i) => (
+            <span key={crumb.to} className="flex items-center gap-1">
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+              {i === adminBreadcrumb.length - 1 ? (
+                <span className="text-slate-900">{crumb.label}</span>
+              ) : (
+                <Link to={crumb.to} className="hover:text-slate-900">{crumb.label}</Link>
+              )}
+            </span>
+          ))
+        ) : (
           <>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <Link
-              to={`/projects/${projectId}`}
-              className="hover:text-slate-900"
-            >
-              {project.name}
-            </Link>
-          </>
-        )}
-        {model && (
-          <>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <Link
-              to={`/projects/${projectId}/models/${modelId}`}
-              className="hover:text-slate-900"
-            >
-              {model.name}
-            </Link>
-          </>
-        )}
-        {revision && (
-          <>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <Link
-              to={`/projects/${projectId}/models/${modelId}/revisions/${revisionId}`}
-              className="hover:text-slate-900"
-            >
-              {revision.label ?? `Rev ${revision.revision_number}`}
-            </Link>
-          </>
-        )}
-        {process && (
-          <>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-slate-900">{process.name}</span>
+            {project && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <Link
+                  to={`/projects/${projectId}`}
+                  className="hover:text-slate-900"
+                >
+                  {project.name}
+                </Link>
+              </>
+            )}
+            {model && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <Link
+                  to={`/projects/${projectId}/models/${modelId}`}
+                  className="hover:text-slate-900"
+                >
+                  {model.name}
+                </Link>
+              </>
+            )}
+            {revision && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <Link
+                  to={`/projects/${projectId}/models/${modelId}/revisions/${revisionId}`}
+                  className="hover:text-slate-900"
+                >
+                  {revision.label ?? `Rev ${revision.revision_number}`}
+                </Link>
+              </>
+            )}
+            {process && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-slate-900">{process.name}</span>
+              </>
+            )}
           </>
         )}
       </nav>

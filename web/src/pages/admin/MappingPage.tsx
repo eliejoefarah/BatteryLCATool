@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { CheckCircle2, Link2, Loader2 } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
@@ -56,7 +56,10 @@ export default function MappingPage() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <TopBar />
+      <TopBar adminBreadcrumb={[
+        { label: 'Mapping', to: '/admin/mapping' },
+        { label: 'Flow Mapping', to: '' },
+      ]} />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-5xl space-y-4">
@@ -64,12 +67,6 @@ export default function MappingPage() {
           {/* Header + progress summary */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <Link
-                to="/admin/mapping"
-                className="mb-1 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
-              >
-                ← All revisions
-              </Link>
               <h1 className="text-xl font-semibold text-slate-800">Flow Mapping</h1>
               <p className="mt-0.5 text-sm text-slate-500">
                 Map foreground input flows to Brightway background activities.
