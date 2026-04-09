@@ -55,7 +55,7 @@ export default function FlowMappingPage() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <TopBar />
+      <TopBar adminBreadcrumb={[{ label: 'Mapping', to: '/admin/mapping' }]} />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-6xl space-y-6">

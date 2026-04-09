@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <TopBar />
+      <TopBar adminBreadcrumb={[{ label: 'Dashboard', to: '/admin' }]} />
       <main className="flex flex-1 flex-col items-center justify-center p-8">
         <div className="w-full max-w-2xl space-y-6">
           <div>

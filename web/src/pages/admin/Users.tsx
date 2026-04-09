@@ -236,7 +236,7 @@ export default function UsersPage() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <TopBar />
+      <TopBar adminBreadcrumb={[{ label: 'Users', to: '/admin/users' }]} />
       <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
         <Link to="/admin" className="hover:text-slate-800">Admin</Link>
         <ChevronRight className="h-3 w-3" />

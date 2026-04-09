@@ -173,7 +173,7 @@ export default function GlobalDataView() {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <TopBar />
+      <TopBar adminBreadcrumb={[{ label: 'Global Data', to: '/admin/global' }]} />
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
