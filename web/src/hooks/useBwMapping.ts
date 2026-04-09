@@ -51,9 +51,27 @@ export interface RevisionMappingStatus {
   revision_id: string
   total_input_flows: number
   mapped_flows: number
+  skipped_flows: number
   pending_flows: number
   ready_for_export: boolean
   flows: FlowMappingGroup[]
+}
+
+export interface RevisionMappingSummary {
+  revision_id: string
+  total_input_flows: number
+  mapped_flows: number
+  skipped_flows: number
+  pending_flows: number
+  ready_for_export: boolean
+}
+
+export interface SkipFlowPayload {
+  revision_id: string
+  raw_name: string
+  unit?: string | null
+  direction?: string | null
+  scope?: 'all' | 'revision'
 }
 
 export interface ConfirmMappingPayload {
@@ -251,4 +269,69 @@ export function useBwSuggest(): UseBwSuggestReturn {
   })
 
   return { mutate, isPending, isUnavailable }
+}
+
+// ---------------------------------------------------------------------------
+// 6. useSkipFlow
+// ---------------------------------------------------------------------------
+
+interface SkipResponse {
+  exchanges_updated: number
+  scope: string
+}
+
+export function useSkipFlow() {
+  const queryClient = useQueryClient()
+
+  return useMutation<SkipResponse, Error, SkipFlowPayload>({
+    mutationFn: (payload) =>
+      apiFetch<SkipResponse>('/api/v1/bw-mapping/skip', {
+        method: 'POST',
+        body: JSON.stringify({ scope: 'all', ...payload }),
+      }),
+    onSuccess: () => {
+      toast.success('Flow skipped — will export as-is')
+      queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'revision'] })
+      queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'bulk-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['validation'] })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 7. useUnskipFlow
+// ---------------------------------------------------------------------------
+
+export function useUnskipFlow() {
+  const queryClient = useQueryClient()
+
+  return useMutation<UnmapResponse, Error, UnmapPayload>({
+    mutationFn: (payload) =>
+      apiFetch<UnmapResponse>('/api/v1/bw-mapping/skip', {
+        method: 'DELETE',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      toast.success('Skip removed — flow is pending again')
+      queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'revision'] })
+      queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'bulk-summary'] })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 8. useBulkMappingSummary
+// ---------------------------------------------------------------------------
+
+export function useBulkMappingSummary(revisionIds: string[]) {
+  const joined = revisionIds.join(',')
+
+  return useQuery<RevisionMappingSummary[]>({
+    queryKey: ['bw-mapping', 'bulk-summary', joined],
+    queryFn: () =>
+      apiFetch<RevisionMappingSummary[]>(
+        `/api/v1/bw-mapping/bulk-summary?revision_ids=${encodeURIComponent(joined)}`,
+      ),
+    enabled: revisionIds.length > 0,
+  })
 }

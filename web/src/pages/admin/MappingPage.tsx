@@ -16,7 +16,7 @@ import { cn } from '../../lib/utils'
 import { useRevisionMappingStatus, type FlowMappingGroup } from '../../hooks/useBwMapping'
 import { FlowMappingDialog } from '../../components/admin/FlowMappingDialog'
 
-type Filter = 'all' | 'pending' | 'mapped'
+type Filter = 'all' | 'pending' | 'mapped' | 'skipped'
 
 export default function MappingPage() {
   const { revisionId } = useParams<{
@@ -33,14 +33,15 @@ export default function MappingPage() {
 
   const filteredFlows = useMemo(() => {
     if (!data) return []
-    if (filter === 'pending') return data.flows.filter((f) => f.mapping_status !== 'mapped')
+    if (filter === 'pending') return data.flows.filter((f) => f.mapping_status === 'pending')
     if (filter === 'mapped') return data.flows.filter((f) => f.mapping_status === 'mapped')
+    if (filter === 'skipped') return data.flows.filter((f) => f.mapping_status === 'skipped')
     return data.flows
   }, [data, filter])
 
   const progressPct =
     data && data.total_input_flows > 0
-      ? Math.round((data.mapped_flows / data.total_input_flows) * 100)
+      ? Math.round(((data.mapped_flows + (data.skipped_flows ?? 0)) / data.total_input_flows) * 100)
       : 0
 
   function openDialog(flow: FlowMappingGroup) {
@@ -52,6 +53,7 @@ export default function MappingPage() {
     all: data?.total_input_flows ?? 0,
     pending: data?.pending_flows ?? 0,
     mapped: data?.mapped_flows ?? 0,
+    skipped: data?.skipped_flows ?? 0,
   }
 
   return (
@@ -100,7 +102,7 @@ export default function MappingPage() {
 
           {/* Filter pills */}
           <div className="flex gap-1.5">
-            {(['all', 'pending', 'mapped'] as const).map((f) => (
+            {(['all', 'pending', 'mapped', 'skipped'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -170,6 +172,7 @@ export default function MappingPage() {
                 <TableBody>
                   {filteredFlows.map((flow, i) => {
                     const isMapped = flow.mapping_status === 'mapped'
+                    const isSkipped = flow.mapping_status === 'skipped'
                     return (
                       <TableRow
                         key={`${flow.raw_name ?? ''}-${flow.unit ?? ''}-${i}`}
@@ -194,24 +197,24 @@ export default function MappingPage() {
                         </TableCell>
                         <TableCell>
                           {isMapped ? (
-                            <Badge
-                              variant="outline"
-                              className="border-green-200 bg-green-50 text-green-700 text-xs gap-1"
-                            >
+                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 text-xs gap-1">
                               <CheckCircle2 className="h-3 w-3" />
                               Mapped
                             </Badge>
+                          ) : isSkipped ? (
+                            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-500 text-xs">
+                              Skipped
+                            </Badge>
                           ) : (
-                            <Badge
-                              variant="outline"
-                              className="border-amber-200 bg-amber-50 text-amber-700 text-xs"
-                            >
+                            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs">
                               Pending
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell className="max-w-[220px]">
-                          {flow.mapping ? (
+                          {isSkipped ? (
+                            <span className="text-xs text-slate-400 italic">exports as-is</span>
+                          ) : flow.mapping ? (
                             <div className="flex items-center gap-1.5 truncate">
                               <span className="truncate text-xs font-medium text-slate-700">
                                 {flow.mapping.confirmed_activity_name}

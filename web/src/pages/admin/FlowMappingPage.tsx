@@ -12,6 +12,7 @@ import {
   TableRow,
 } from '../../components/ui/table'
 import { useMappingRevisions } from '../../hooks/useMappingRevisions'
+import { useBulkMappingSummary } from '../../hooks/useBwMapping'
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
@@ -48,6 +49,13 @@ function ValidationBadge({ status }: { status: string | null }) {
 export default function FlowMappingPage() {
   const navigate = useNavigate()
   const { data: revisions, isLoading, error } = useMappingRevisions()
+
+  const revisionIds = revisions?.map((r) => r.revision_id) ?? []
+  const { data: summaries } = useBulkMappingSummary(revisionIds)
+
+  const summaryByRevId = Object.fromEntries(
+    (summaries ?? []).map((s) => [s.revision_id, s]),
+  )
 
   function mappingHref(projectId: string, modelId: string, revisionId: string) {
     return `/admin/projects/${projectId}/models/${modelId}/revisions/${revisionId}/mapping`
@@ -107,9 +115,20 @@ export default function FlowMappingPage() {
                 </TableHeader>
                 <TableBody>
                   {revisions.map((rev) => {
-                    const isMapped = rev.status === 'validated'
                     const revLabel = rev.label ?? `Rev ${rev.revision_number}`
                     const href = mappingHref(rev.project_id, rev.model_id, rev.revision_id)
+                    const summary = summaryByRevId[rev.revision_id]
+                    const total = summary?.total_input_flows ?? 0
+                    const pending = summary?.pending_flows ?? total
+                    const resolved = total - pending
+
+                    const mappingState: 'none' | 'partial' | 'complete' =
+                      !summary || total === 0 || pending === total
+                        ? 'none'
+                        : pending === 0
+                        ? 'complete'
+                        : 'partial'
+
                     return (
                       <TableRow key={rev.revision_id} className="hover:bg-slate-50">
                         <TableCell className="text-sm font-medium text-slate-800 max-w-[160px] truncate">
@@ -122,23 +141,20 @@ export default function FlowMappingPage() {
                           {revLabel}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              isMapped
-                                ? 'border-green-200 bg-green-50 text-green-700 text-xs gap-1'
-                                : 'border-amber-200 bg-amber-50 text-amber-700 text-xs'
-                            }
-                          >
-                            {isMapped ? (
-                              <>
-                                <CheckCircle2 className="h-3 w-3" />
-                                Mapped
-                              </>
-                            ) : (
-                              'Unmapped'
-                            )}
-                          </Badge>
+                          {mappingState === 'complete' ? (
+                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 text-xs gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Complete
+                            </Badge>
+                          ) : mappingState === 'partial' ? (
+                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-xs">
+                              {resolved}/{total} mapped
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs">
+                              Unmapped
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-0.5">
@@ -153,15 +169,24 @@ export default function FlowMappingPage() {
                           {fmtDate(rev.created_at)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isMapped ? (
+                          {mappingState === 'complete' ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-xs"
+                              className="text-xs border-green-300 text-green-700 hover:bg-green-50"
                               onClick={() => navigate(href)}
                             >
                               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                               Double Check
+                            </Button>
+                          ) : mappingState === 'partial' ? (
+                            <Button
+                              size="sm"
+                              className="text-xs bg-blue-600 text-white hover:bg-blue-700"
+                              onClick={() => navigate(href)}
+                            >
+                              <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
+                              Continue Mapping
                             </Button>
                           ) : (
                             <Button

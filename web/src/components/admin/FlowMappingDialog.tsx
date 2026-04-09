@@ -22,6 +22,8 @@ import {
   useBwSuggest,
   useConfirmMapping,
   useUnmapFlow,
+  useSkipFlow,
+  useUnskipFlow,
   type BwCatalogRow,
   type ConfirmMappingPayload,
   type FlowMappingGroup,
@@ -133,8 +135,11 @@ export function FlowMappingDialog({
   const suggest = useBwSuggest()
   const confirmMutation = useConfirmMapping()
   const unmapMutation = useUnmapFlow()
+  const skipMutation = useSkipFlow()
+  const unskipMutation = useUnskipFlow()
 
   const isAlreadyMapped = !!flow?.mapping
+  const isSkipped = flow?.mapping_status === 'skipped'
 
   // Best match: top catalog result with score > 0.3, shown only for catalog search
   const bestMatch =
@@ -204,7 +209,21 @@ export function FlowMappingDialog({
     )
   }
 
-  const isBusy = confirmMutation.isPending || unmapMutation.isPending
+  function handleSkip() {
+    skipMutation.mutate(
+      { revision_id: revisionId, raw_name: flow.raw_name!, unit: flow.unit, direction: flow.direction },
+      { onSuccess: () => onOpenChange(false) },
+    )
+  }
+
+  function handleUnskip() {
+    unskipMutation.mutate(
+      { raw_name: flow.raw_name!, unit: flow.unit, direction: flow.direction },
+      { onSuccess: () => onOpenChange(false) },
+    )
+  }
+
+  const isBusy = confirmMutation.isPending || unmapMutation.isPending || skipMutation.isPending || unskipMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,6 +243,25 @@ export function FlowMappingDialog({
               <span>used in {flow.exchange_count} exchange{flow.exchange_count !== 1 ? 's' : ''}</span>
             </DialogDescription>
           </DialogHeader>
+
+          {/* Skipped card */}
+          {isSkipped && !isAlreadyMapped && (
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+              <p className="text-sm text-slate-600">
+                <span className="font-medium">Skipped</span> — will export as-is (manufacturer value, no BW activity linked)
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 gap-1 text-xs text-slate-500 hover:bg-slate-100"
+                onClick={handleUnskip}
+                disabled={isBusy}
+              >
+                {unskipMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                Undo skip
+              </Button>
+            </div>
+          )}
 
           {/* Current mapping card */}
           {isAlreadyMapped && flow.mapping && (
@@ -485,9 +523,37 @@ export function FlowMappingDialog({
                 Cancel
               </Button>
             </>
+          ) : isSkipped ? (
+            <>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canConfirm || isBusy}
+                  onClick={() => handleConfirm('all')}
+                >
+                  {confirmMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+                  Map instead
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isBusy}>
+                Close
+              </Button>
+            </>
           ) : (
             <>
-              <div />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-slate-400 hover:text-slate-600"
+                disabled={isBusy}
+                onClick={handleSkip}
+              >
+                {skipMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                Skip this flow
+              </Button>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isBusy}>
                   Cancel

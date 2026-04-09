@@ -561,7 +561,7 @@ class FlowMappingGroup(BaseModel):
     unit: str | None
     direction: str
     exchange_count: int
-    mapping_status: str           # 'mapped' | 'pending'
+    mapping_status: str           # 'mapped' | 'pending' | 'skipped'
     mapping: MappingRow | None
     also_mapped_in_other_revisions: bool
 
@@ -570,6 +570,7 @@ class RevisionMappingResponse(BaseModel):
     revision_id: UUID
     total_input_flows: int
     mapped_flows: int
+    skipped_flows: int
     pending_flows: int
     ready_for_export: bool
     flows: list[FlowMappingGroup]
@@ -613,14 +614,15 @@ async def _get_revision_mapping_inner(
                 pe.user_unit                                       AS unit,
                 pe.exchange_direction                              AS direction,
                 COUNT(*)                                           AS exchange_count,
-                BOOL_AND(pe.mapping_status = 'mapped')            AS all_mapped,
+                BOOL_AND(pe.mapping_status IN ('mapped', 'unmappable')) AS all_resolved,
+                BOOL_AND(pe.mapping_status = 'unmappable')        AS all_skipped,
                 MIN(pe.exchange_id::text)                         AS sample_exchange_id
             FROM process_exchange pe
             JOIN process_instance pi ON pi.process_id = pe.process_id
             WHERE pi.revision_id = :rid
               AND pe.exchange_direction = 'input'
             GROUP BY pe.raw_name, pe.user_unit, pe.exchange_direction
-            ORDER BY all_mapped ASC, pe.raw_name
+            ORDER BY all_resolved ASC, pe.raw_name
         """),
         {"rid": str(revision_id)},
     )).mappings().all()
@@ -630,6 +632,7 @@ async def _get_revision_mapping_inner(
             revision_id=revision_id,
             total_input_flows=0,
             mapped_flows=0,
+            skipped_flows=0,
             pending_flows=0,
             ready_for_export=True,
             flows=[],
@@ -681,13 +684,18 @@ async def _get_revision_mapping_inner(
     # ── 5. Assemble response ──────────────────────────────────────────────
     flows: list[FlowMappingGroup] = []
     mapped_count = 0
+    skipped_count = 0
     pending_count = 0
 
     for row in group_rows:
-        group_status = "mapped" if row["all_mapped"] else "pending"
-        if group_status == "mapped":
+        if row["all_skipped"]:
+            group_status = "skipped"
+            skipped_count += 1
+        elif row["all_resolved"]:
+            group_status = "mapped"
             mapped_count += 1
         else:
+            group_status = "pending"
             pending_count += 1
 
         sample_id = str(row["sample_exchange_id"]) if row["sample_exchange_id"] else None
@@ -727,10 +735,222 @@ async def _get_revision_mapping_inner(
         revision_id=revision_id,
         total_input_flows=total,
         mapped_flows=mapped_count,
+        skipped_flows=skipped_count,
         pending_flows=pending_count,
         ready_for_export=(pending_count == 0),
         flows=flows,
     )
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 6 — POST /api/v1/bw-mapping/skip
+# ---------------------------------------------------------------------------
+
+
+class SkipFlowRequest(BaseModel):
+    revision_id: UUID
+    raw_name: str
+    unit: str | None = None
+    direction: str | None = None
+    scope: Literal["all", "revision"] = "all"
+
+
+class SkipFlowResponse(BaseModel):
+    exchanges_updated: int
+    scope: str
+
+
+@mapping_router.post("/skip", response_model=SkipFlowResponse)
+async def skip_flow(
+    body: SkipFlowRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin_id: UUID = Depends(get_admin_user_id),
+) -> SkipFlowResponse:
+    """Mark all matching input exchanges as 'unmappable' so they are included
+    in the export as-is (manufacturer value) without a Brightway activity link.
+    They count as resolved for the purpose of ready_for_export."""
+    exc_filters = ["lower(pe.raw_name) = lower(:raw_name)"]
+    exc_params: dict = {"raw_name": body.raw_name}
+
+    if body.unit is not None:
+        exc_filters.append("lower(pe.user_unit) = lower(:unit)")
+        exc_params["unit"] = body.unit
+
+    if body.direction is not None:
+        exc_filters.append("pe.exchange_direction = :direction")
+        exc_params["direction"] = body.direction
+
+    if body.scope == "revision":
+        exc_filters.append("pi.revision_id = :revision_id")
+        exc_params["revision_id"] = str(body.revision_id)
+
+    where_exc = " AND ".join(exc_filters)
+
+    exc_rows = (await db.execute(
+        text(f"""
+            SELECT pe.exchange_id
+            FROM process_exchange pe
+            JOIN process_instance pi ON pi.process_id = pe.process_id
+            WHERE {where_exc}
+        """),
+        exc_params,
+    )).fetchall()
+
+    if not exc_rows:
+        raise HTTPException(
+            status_code=404,
+            detail="No matching exchanges found.",
+        )
+
+    exchange_ids = [str(r[0]) for r in exc_rows]
+
+    # Remove any existing bw_mapping_selection rows so the flow is cleanly skipped
+    await db.execute(
+        text("DELETE FROM bw_mapping_selection WHERE exchange_id::text = ANY(:ids)"),
+        {"ids": exchange_ids},
+    )
+
+    await db.execute(
+        text("""
+            UPDATE process_exchange
+            SET mapping_status = 'unmappable'
+            WHERE exchange_id::text = ANY(:ids)
+        """),
+        {"ids": exchange_ids},
+    )
+
+    await db.commit()
+
+    return SkipFlowResponse(exchanges_updated=len(exchange_ids), scope=body.scope)
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 7 — DELETE /api/v1/bw-mapping/skip  (un-skip → reset to pending)
+# ---------------------------------------------------------------------------
+
+
+@mapping_router.delete("/skip", response_model=DeleteMappingResponse)
+async def unskip_flow(
+    body: DeleteMappingRequest = Body(...),
+    db: AsyncSession = Depends(get_db),
+    _admin_id: UUID = Depends(get_admin_user_id),
+) -> DeleteMappingResponse:
+    exc_filters = ["lower(pe.raw_name) = lower(:raw_name)"]
+    exc_params: dict = {"raw_name": body.raw_name}
+
+    if body.unit is not None:
+        exc_filters.append("lower(pe.user_unit) = lower(:unit)")
+        exc_params["unit"] = body.unit
+
+    if body.direction is not None:
+        exc_filters.append("pe.exchange_direction = :direction")
+        exc_params["direction"] = body.direction
+
+    where_exc = " AND ".join(exc_filters)
+
+    exc_rows = (await db.execute(
+        text(f"""
+            SELECT pe.exchange_id FROM process_exchange pe
+            WHERE {where_exc}
+        """),
+        exc_params,
+    )).fetchall()
+
+    if not exc_rows:
+        return DeleteMappingResponse(exchanges_updated=0)
+
+    exchange_ids = [str(r[0]) for r in exc_rows]
+
+    await db.execute(
+        text("""
+            UPDATE process_exchange
+            SET mapping_status = 'pending'
+            WHERE exchange_id::text = ANY(:ids)
+        """),
+        {"ids": exchange_ids},
+    )
+
+    await db.commit()
+    return DeleteMappingResponse(exchanges_updated=len(exchange_ids))
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 8 — GET /api/v1/bw-mapping/bulk-summary
+# ---------------------------------------------------------------------------
+
+
+class RevisionMappingSummary(BaseModel):
+    revision_id: UUID
+    total_input_flows: int
+    mapped_flows: int
+    skipped_flows: int
+    pending_flows: int
+    ready_for_export: bool
+
+
+@mapping_router.get("/bulk-summary", response_model=list[RevisionMappingSummary])
+async def bulk_mapping_summary(
+    revision_ids: str = Query(..., description="Comma-separated revision UUIDs"),
+    db: AsyncSession = Depends(get_db),
+    _admin_id: UUID = Depends(get_admin_user_id),
+) -> list[RevisionMappingSummary]:
+    """Return per-revision mapping progress counts for a list of revisions.
+    Used by the FlowMappingPage to show Begin / Continue / Double Check state."""
+    ids = [r.strip() for r in revision_ids.split(",") if r.strip()]
+    if not ids:
+        return []
+
+    rows = (await db.execute(
+        text("""
+            SELECT
+                pi.revision_id,
+                COUNT(DISTINCT (pe.raw_name, pe.user_unit, pe.exchange_direction)) AS total_groups,
+                COUNT(DISTINCT CASE
+                    WHEN pe.mapping_status = 'mapped'
+                    THEN (pe.raw_name, pe.user_unit, pe.exchange_direction)
+                END) AS mapped_groups,
+                COUNT(DISTINCT CASE
+                    WHEN pe.mapping_status = 'unmappable'
+                    THEN (pe.raw_name, pe.user_unit, pe.exchange_direction)
+                END) AS skipped_groups,
+                COUNT(DISTINCT CASE
+                    WHEN pe.mapping_status = 'pending'
+                    THEN (pe.raw_name, pe.user_unit, pe.exchange_direction)
+                END) AS pending_groups
+            FROM process_exchange pe
+            JOIN process_instance pi ON pi.process_id = pe.process_id
+            WHERE pi.revision_id::text = ANY(:ids)
+              AND pe.exchange_direction = 'input'
+            GROUP BY pi.revision_id
+        """),
+        {"ids": ids},
+    )).mappings().all()
+
+    by_rev = {str(r["revision_id"]): r for r in rows}
+
+    result = []
+    for rid in ids:
+        r = by_rev.get(rid)
+        if r is None:
+            result.append(RevisionMappingSummary(
+                revision_id=UUID(rid),
+                total_input_flows=0,
+                mapped_flows=0,
+                skipped_flows=0,
+                pending_flows=0,
+                ready_for_export=True,
+            ))
+        else:
+            pending = int(r["pending_groups"])
+            result.append(RevisionMappingSummary(
+                revision_id=UUID(rid),
+                total_input_flows=int(r["total_groups"]),
+                mapped_flows=int(r["mapped_groups"]),
+                skipped_flows=int(r["skipped_groups"]),
+                pending_flows=pending,
+                ready_for_export=(pending == 0),
+            ))
+    return result
 
 
 # =============================================================================
