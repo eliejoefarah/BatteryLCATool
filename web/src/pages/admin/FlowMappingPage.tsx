@@ -23,7 +23,7 @@ function fmtDate(iso: string | null) {
   })
 }
 
-function ValidationBadge({ status }: { status: string | null }) {
+function ValidationBadge({ status, issueCount }: { status: string | null; issueCount?: number | null }) {
   if (!status) return <span className="text-slate-400 text-xs">—</span>
   if (status === 'pass')
     return (
@@ -36,7 +36,7 @@ function ValidationBadge({ status }: { status: string | null }) {
     return (
       <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs gap-1">
         <AlertTriangle className="h-3 w-3" />
-        Warnings
+        {issueCount != null ? `${issueCount} Warnings` : 'Warnings'}
       </Badge>
     )
   return (
@@ -156,12 +156,7 @@ export default function FlowMappingPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <ValidationBadge status={rev.last_run_status} />
-                              {rev.last_issue_count != null && rev.last_issue_count > 0 && (
-                                <span className="text-xs text-slate-400">{rev.last_issue_count} issues</span>
-                              )}
-                            </div>
+                            <ValidationBadge status={rev.last_run_status} issueCount={rev.last_issue_count} />
                             <span className="text-xs text-slate-400">{fmtDate(rev.last_run_at)}</span>
                           </div>
                         </TableCell>
