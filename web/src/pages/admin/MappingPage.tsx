@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CheckCircle2, ChevronRight, Link2, Loader2 } from 'lucide-react'
+import { CheckCircle2, Link2, Loader2 } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
 import { Skeleton } from '../../components/ui/skeleton'
@@ -58,21 +58,18 @@ export default function MappingPage() {
     <div className="flex h-screen flex-col bg-slate-50">
       <TopBar />
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-slate-800">Admin</Link>
-        <ChevronRight className="h-3 w-3" />
-        <Link to="/admin/projects" className="hover:text-slate-800">Projects</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="font-medium text-slate-700">Flow Mapping</span>
-      </div>
-
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-5xl space-y-4">
 
           {/* Header + progress summary */}
           <div className="flex items-start justify-between gap-4">
             <div>
+              <Link
+                to="/admin/mapping"
+                className="mb-1 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
+              >
+                ← All revisions
+              </Link>
               <h1 className="text-xl font-semibold text-slate-800">Flow Mapping</h1>
               <p className="mt-0.5 text-sm text-slate-500">
                 Map foreground input flows to Brightway background activities.
