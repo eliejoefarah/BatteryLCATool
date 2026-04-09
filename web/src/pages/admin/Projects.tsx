@@ -106,6 +106,7 @@ interface RevisionWithCreator {
   revision_number: number
   label: string | null
   status: string | null
+  frozen_at: string | null
   created_at: string
   created_by: string | null
   creator: { email: string; display_name: string | null } | null
@@ -126,6 +127,7 @@ function RevisionRow({
   const href = `/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}`
   const mappingHref = `/admin/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}/mapping`
   const isUnmapped = revision.status === 'unmapped'
+  const showMapFlows = revision.status === 'validated' && revision.frozen_at === null
 
   return (
     <div className="flex items-center gap-3 rounded px-2 py-1.5 text-xs hover:bg-slate-50">
@@ -157,6 +159,17 @@ function RevisionRow({
           Begin Mapping
         </button>
       )}
+      {showMapFlows && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate(mappingHref)}
+          className="h-6 gap-1 px-2 text-xs"
+        >
+          <Link2 className="h-3 w-3" />
+          Map Flows
+        </Button>
+      )}
       <span className="text-slate-400">
         {exchangeCount ?? '—'} exchanges · {paramCount ?? '—'} params
       </span>
@@ -175,7 +188,7 @@ function ModelDrillDown({ modelId, projectId }: { modelId: string; projectId: st
     queryFn: async () => {
       const { data, error } = await supabase
         .from('battery_model_revision')
-        .select('revision_id, revision_number, label, status, created_at, created_by, creator:app_user!created_by(email, display_name)')
+        .select('revision_id, revision_number, label, status, frozen_at, created_at, created_by, creator:app_user!created_by(email, display_name)')
         .eq('model_id', modelId)
         .order('revision_number')
       if (error) throw error

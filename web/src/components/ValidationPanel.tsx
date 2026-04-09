@@ -147,6 +147,11 @@ function IssueRow({
           {issue.suggestion && (
             <p className="mt-1 text-slate-400 italic">{issue.suggestion}</p>
           )}
+          {issue.code === 'UNMAPPED_FLOW' && (
+            <p className="mt-1 text-slate-400">
+              Background mapping is handled by the admin before export. No action required.
+            </p>
+          )}
         </div>
         {processPath && (
           <Button
