@@ -604,7 +604,7 @@ async def _get_revision_mapping_inner(
                 pe.exchange_direction                              AS direction,
                 COUNT(*)                                           AS exchange_count,
                 BOOL_AND(pe.mapping_status = 'mapped')            AS all_mapped,
-                MIN(pe.exchange_id)                               AS sample_exchange_id
+                MIN(pe.exchange_id::text)                         AS sample_exchange_id
             FROM process_exchange pe
             JOIN process_instance pi ON pi.process_id = pe.process_id
             WHERE pi.revision_id = :rid
