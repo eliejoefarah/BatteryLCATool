@@ -571,6 +571,19 @@ async def get_revision_mapping(
     db: AsyncSession = Depends(get_db),
     _admin_id: UUID = Depends(get_admin_user_id),
 ) -> RevisionMappingResponse:
+    try:
+        return await _get_revision_mapping_inner(revision_id, db)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        log.exception("get_revision_mapping failed for %s: %s", revision_id, exc)
+        raise HTTPException(status_code=500, detail=f"Revision mapping failed: {exc!r}") from exc
+
+
+async def _get_revision_mapping_inner(
+    revision_id: UUID,
+    db: AsyncSession,
+) -> RevisionMappingResponse:
     # ── 1. Verify revision exists ─────────────────────────────────────────
     rev_row = (await db.execute(
         text("SELECT 1 FROM battery_model_revision WHERE revision_id = :rid"),
