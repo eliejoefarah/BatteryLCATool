@@ -27,20 +27,20 @@ function ValidationBadge({ status, issueCount }: { status: string | null; issueC
   if (!status) return <span className="text-slate-400 text-xs">—</span>
   if (status === 'pass')
     return (
-      <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 text-xs gap-1">
+      <Badge variant="outline" className="w-fit border-green-200 bg-green-50 text-green-700 text-xs gap-1">
         <CheckCircle2 className="h-3 w-3" />
         Pass
       </Badge>
     )
   if (status === 'warning')
     return (
-      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs gap-1">
+      <Badge variant="outline" className="w-fit border-amber-200 bg-amber-50 text-amber-700 text-xs gap-1">
         <AlertTriangle className="h-3 w-3" />
         {issueCount != null ? `${issueCount} Warnings` : 'Warnings'}
       </Badge>
     )
   return (
-    <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 text-xs">
+    <Badge variant="outline" className="w-fit border-red-200 bg-red-50 text-red-700 text-xs">
       Fail
     </Badge>
   )
