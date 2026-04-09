@@ -107,9 +107,7 @@ export default function FlowMappingPage() {
                     <TableHead className="text-xs font-semibold text-slate-600">Model</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600">Revision</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600">Mapping</TableHead>
-                    <TableHead className="text-xs font-semibold text-slate-600">Last Validation</TableHead>
-                    <TableHead className="text-xs font-semibold text-slate-600 text-right">Issues</TableHead>
-                    <TableHead className="text-xs font-semibold text-slate-600">Validated</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600">Validation</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -158,15 +156,14 @@ export default function FlowMappingPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-0.5">
-                            <ValidationBadge status={rev.last_run_status} />
+                            <div className="flex items-center gap-1.5">
+                              <ValidationBadge status={rev.last_run_status} />
+                              {rev.last_issue_count != null && rev.last_issue_count > 0 && (
+                                <span className="text-xs text-slate-400">{rev.last_issue_count} issues</span>
+                              )}
+                            </div>
                             <span className="text-xs text-slate-400">{fmtDate(rev.last_run_at)}</span>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right text-sm text-slate-600">
-                          {rev.last_issue_count ?? '—'}
-                        </TableCell>
-                        <TableCell className="text-xs text-slate-400">
-                          {fmtDate(rev.created_at)}
                         </TableCell>
                         <TableCell className="text-right">
                           {mappingState === 'complete' ? (
