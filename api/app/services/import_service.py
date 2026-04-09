@@ -855,7 +855,7 @@ async def _auto_apply_bw_mappings(
             text("""
                 UPDATE process_exchange
                 SET mapping_status = 'mapped'
-                WHERE exchange_id = ANY(:ids::uuid[])
+                WHERE exchange_id::text = ANY(:ids)
             """),
             {"ids": inserted_ids},
         )
