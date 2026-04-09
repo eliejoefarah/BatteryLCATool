@@ -470,11 +470,7 @@ export default function ProjectsPage() {
   return (
     <div className="flex h-screen flex-col bg-slate-50">
       <TopBar adminBreadcrumb={[{ label: 'Projects', to: '/admin/projects' }]} />
-      <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-slate-800">Admin</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="font-medium text-slate-700">Projects</span>
-      </div>
+
     <div className="flex-1 overflow-auto space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-800">Projects</h1>

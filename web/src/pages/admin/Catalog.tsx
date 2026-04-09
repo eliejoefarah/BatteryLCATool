@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueries } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { ChevronRight, RefreshCw, Search } from 'lucide-react'
+import { RefreshCw, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
 import type { Database } from '../../types/database.types'
@@ -514,11 +513,7 @@ export default function CatalogPage() {
   return (
     <div className="flex h-screen flex-col bg-slate-50">
       <TopBar adminBreadcrumb={[{ label: 'Catalog', to: '/admin/catalog' }]} />
-      <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-slate-800">Admin</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="font-medium text-slate-700">Catalog</span>
-      </div>
+
 
       <div className="flex-1 overflow-auto space-y-6 p-6">
         <div>

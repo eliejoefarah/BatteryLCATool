@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRight, ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
@@ -175,14 +175,7 @@ export default function GlobalDataView() {
     <div className="flex h-screen flex-col bg-slate-50">
       <TopBar adminBreadcrumb={[{ label: 'Global Data', to: '/admin/global' }]} />
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 border-b bg-white px-6 py-2 text-xs text-slate-500">
-        <Link to="/admin" className="hover:text-slate-800">
-          Admin
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="font-medium text-slate-700">Global Data View</span>
-      </div>
+
 
       <div className="flex-1 overflow-auto space-y-4 p-6">
         {/* Header */}
