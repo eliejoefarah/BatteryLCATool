@@ -34,6 +34,7 @@ from __future__ import annotations
 import logging
 import uuid as _uuid
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -256,6 +257,7 @@ class ConfirmMappingRequest(BaseModel):
     catalog_id: UUID | None = None
     manual_override: ManualOverride | None = None
     mapping_notes: str | None = None
+    scope: Literal["all", "revision"] = "all"
 
     @model_validator(mode="after")
     def _exactly_one_source(self) -> "ConfirmMappingRequest":
@@ -270,6 +272,7 @@ class ConfirmMappingRequest(BaseModel):
 
 class ConfirmMappingResponse(BaseModel):
     exchanges_updated: int
+    scope: str
     mapping: MappingRow
 
 
@@ -312,7 +315,7 @@ async def confirm_mapping(
         c_model      = ov.system_model
         bw_catalog_id = None
 
-    # ── 2. Find all matching exchanges (system-wide) ──────────────────────
+    # ── 2. Find matching exchanges — scope controls which revisions ──────────
     exc_filters = ["lower(pe.raw_name) = lower(:raw_name)"]
     exc_params: dict = {"raw_name": body.raw_name}
 
@@ -323,6 +326,10 @@ async def confirm_mapping(
     if body.direction is not None:
         exc_filters.append("pe.exchange_direction = :direction")
         exc_params["direction"] = body.direction
+
+    if body.scope == "revision":
+        exc_filters.append("pi.revision_id = :revision_id")
+        exc_params["revision_id"] = str(body.revision_id)
 
     where_exc = " AND ".join(exc_filters)
 
@@ -450,6 +457,7 @@ async def confirm_mapping(
 
     return ConfirmMappingResponse(
         exchanges_updated=len(exc_rows),
+        scope=body.scope,
         mapping=MappingRow(
             mapping_id=saved["mapping_id"],
             exchange_id=saved["exchange_id"],

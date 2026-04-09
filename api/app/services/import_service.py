@@ -771,6 +771,99 @@ async def _resolve_flow(
 
 
 # ---------------------------------------------------------------------------
+# Auto-apply existing Brightway mappings
+# ---------------------------------------------------------------------------
+
+
+async def _auto_apply_bw_mappings(
+    db: AsyncSession,
+    revision_id: UUID,
+) -> int:
+    """Copy confirmed Brightway mappings from other revisions to new exchanges.
+
+    For every process_exchange row just inserted for *revision_id*, look for a
+    confirmed mapping (mapping_status = 'mapped') on any exchange from a
+    *different* revision that shares the same (raw_name, user_unit,
+    exchange_direction).  When found, insert a new bw_mapping_selection row for
+    the new exchange copying all confirmed_* columns, and flip the exchange's
+    mapping_status to 'mapped'.
+
+    Returns the number of new mapping rows inserted (skips exchanges that are
+    already mapped via ON CONFLICT DO NOTHING).
+    """
+    # Step 1: insert mapping rows for newly imported exchanges that have a
+    # matching confirmed mapping from any other revision.
+    # DISTINCT ON (new_pe.exchange_id) picks the most-recently-confirmed
+    # source mapping when multiple candidates exist.
+    insert_result = await db.execute(
+        text("""
+            WITH source AS (
+                SELECT DISTINCT ON (new_pe.exchange_id)
+                    new_pe.exchange_id              AS new_exchange_id,
+                    src.candidate_id,
+                    src.bw_catalog_id,
+                    src.confirmed_activity_name,
+                    src.confirmed_reference_product,
+                    src.confirmed_location,
+                    src.confirmed_unit,
+                    src.confirmed_ecoinvent_version,
+                    src.confirmed_system_model,
+                    src.confirmed_by,
+                    src.confirmed_at,
+                    src.mapping_notes
+                FROM process_exchange  new_pe
+                JOIN process_instance  new_pi  ON new_pi.process_id   = new_pe.process_id
+                JOIN process_exchange  old_pe  ON
+                    old_pe.raw_name            = new_pe.raw_name
+                    AND old_pe.user_unit        IS NOT DISTINCT FROM new_pe.user_unit
+                    AND old_pe.exchange_direction = new_pe.exchange_direction
+                JOIN process_instance  old_pi  ON old_pi.process_id   = old_pe.process_id
+                JOIN bw_mapping_selection src   ON src.exchange_id     = old_pe.exchange_id
+                WHERE new_pi.revision_id  = :rid
+                  AND old_pi.revision_id != :rid
+                  AND src.mapping_status  = 'mapped'
+                  AND src.confirmed_by   IS NOT NULL
+                ORDER BY new_pe.exchange_id, src.confirmed_at DESC
+            )
+            INSERT INTO bw_mapping_selection
+                (exchange_id, candidate_id, bw_catalog_id,
+                 confirmed_activity_name, confirmed_reference_product,
+                 confirmed_location, confirmed_unit,
+                 confirmed_ecoinvent_version, confirmed_system_model,
+                 confirmed_by, confirmed_at, mapping_notes,
+                 mapping_status)
+            SELECT
+                new_exchange_id,
+                candidate_id, bw_catalog_id,
+                confirmed_activity_name, confirmed_reference_product,
+                confirmed_location, confirmed_unit,
+                confirmed_ecoinvent_version, confirmed_system_model,
+                confirmed_by, confirmed_at, mapping_notes,
+                'mapped'
+            FROM source
+            ON CONFLICT (exchange_id) WHERE exchange_id IS NOT NULL DO NOTHING
+            RETURNING exchange_id
+        """),
+        {"rid": str(revision_id)},
+    )
+    inserted_ids = [str(row[0]) for row in insert_result.fetchall()]
+    count = len(inserted_ids)
+
+    if count > 0:
+        # Step 2: mark the newly mapped exchanges on process_exchange itself.
+        await db.execute(
+            text("""
+                UPDATE process_exchange
+                SET mapping_status = 'mapped'
+                WHERE exchange_id = ANY(:ids::uuid[])
+            """),
+            {"ids": inserted_ids},
+        )
+
+    return count
+
+
+# ---------------------------------------------------------------------------
 # Main service entry point
 # ---------------------------------------------------------------------------
 
@@ -1106,6 +1199,14 @@ async def run_import(
                 },
             )
             result.parameters_created += 1
+
+        # ── 7b. Auto-apply existing Brightway mappings ────────────────────
+        auto_count = await _auto_apply_bw_mappings(db, revision_id)
+        if auto_count > 0:
+            result.add_warning(
+                f"Auto-applied {auto_count} existing Brightway "
+                f"mapping{'s' if auto_count != 1 else ''} from previous revisions."
+            )
 
         # ── 8. Commit ─────────────────────────────────────────────────────
         await db.commit()
