@@ -32,11 +32,13 @@ from __future__ import annotations
 # =============================================================================
 
 import logging
+import os
 import uuid as _uuid
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
+import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, model_validator
 from sqlalchemy import text
@@ -728,4 +730,166 @@ async def _get_revision_mapping_inner(
         pending_flows=pending_count,
         ready_for_export=(pending_count == 0),
         flows=flows,
+    )
+
+
+# =============================================================================
+# ROUTER 3 — bw-suggest  (admin only, requires ANTHROPIC_API_KEY)
+# =============================================================================
+
+suggest_router = APIRouter(prefix="/bw-suggest", tags=["bw-mapping"])
+
+_ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+_SUGGEST_CATALOG_LIMIT = 20
+
+
+class BwSuggestRequest(BaseModel):
+    raw_name: str
+    unit: str | None = None
+    direction: str | None = None
+    revision_id: str | None = None
+
+
+class BwSuggestResponse(BaseModel):
+    results: list[BwActivityResult]
+    suggested_queries: list[str] | None = None
+
+
+@suggest_router.post("", response_model=BwSuggestResponse)
+async def bw_suggest(
+    body: BwSuggestRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin_id: UUID = Depends(get_admin_user_id),
+) -> BwSuggestResponse:
+    """AI-powered mapping suggestions using Claude.
+    Returns 503 when ANTHROPIC_API_KEY is not configured so the frontend
+    can hide the AI Suggest button gracefully.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="AI suggestions are not available (ANTHROPIC_API_KEY not configured).",
+        )
+
+    # ── 1. Fetch top catalog candidates via similarity search ─────────────
+    count_row = (await db.execute(text("SELECT COUNT(*) FROM bw_activity_catalog"))).fetchone()
+    total_in_catalog: int = count_row[0] if count_row else 0
+
+    if total_in_catalog == 0:
+        raise HTTPException(status_code=503, detail="Brightway activity catalog is not seeded.")
+
+    combined = (
+        "activity_name || ' ' || coalesce(reference_product, '') || ' ' || coalesce(location, '')"
+    )
+    params: dict = {"q": body.raw_name, "threshold": 0.05, "limit": _SUGGEST_CATALOG_LIMIT}
+
+    cand_rows = (await db.execute(
+        text(f"""
+            SELECT id, activity_name, reference_product, location, unit,
+                   category, ecoinvent_version, system_model,
+                   similarity({combined}, :q) AS similarity_score
+            FROM bw_activity_catalog
+            WHERE similarity({combined}, :q) > :threshold
+            ORDER BY similarity_score DESC
+            LIMIT :limit
+        """),
+        params,
+    )).mappings().all()
+
+    if not cand_rows:
+        return BwSuggestResponse(results=[], suggested_queries=None)
+
+    # ── 2. Ask Claude to rank and explain the best matches ────────────────
+    catalog_lines = "\n".join(
+        f"{i + 1}. [{r['id']}] {r['activity_name']}"
+        f"{' | ' + r['reference_product'] if r['reference_product'] else ''}"
+        f"{' | ' + r['location'] if r['location'] else ''}"
+        f"{' | ' + r['unit'] if r['unit'] else ''}"
+        f" (score={r['similarity_score']:.2f})"
+        for i, r in enumerate(cand_rows)
+    )
+
+    unit_hint = f" measured in {body.unit}" if body.unit else ""
+    direction_hint = f" ({body.direction} flow)" if body.direction else ""
+
+    prompt = (
+        f"I am mapping foreground LCA flows to Brightway ecoinvent background activities.\n\n"
+        f"Flow to map: \"{body.raw_name}\"{unit_hint}{direction_hint}\n\n"
+        f"Candidate activities from the catalog (ranked by text similarity):\n"
+        f"{catalog_lines}\n\n"
+        f"Task:\n"
+        f"1. Return the IDs of the top 5 best-matching activities, best first. "
+        f"Only include genuinely good matches; fewer is fine if the rest are poor.\n"
+        f"2. Suggest up to 3 alternative search queries (short phrases, no explanation) "
+        f"that might find better matches if none of the above are ideal.\n\n"
+        f"Respond ONLY with valid JSON in this exact shape (no markdown, no extra text):\n"
+        f'{{"ranked_ids": ["<uuid>", ...], "suggested_queries": ["...", ...]}}'
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(
+                _ANTHROPIC_API_URL,
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 256,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+            )
+            resp.raise_for_status()
+            claude_body = resp.json()
+    except httpx.HTTPStatusError as exc:
+        log.exception("Claude API returned %s", exc.response.status_code)
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI service returned an error ({exc.response.status_code}).",
+        ) from exc
+    except Exception as exc:
+        log.exception("Claude API call failed: %s", exc)
+        raise HTTPException(status_code=502, detail="AI service unavailable.") from exc
+
+    # ── 3. Parse Claude's response ────────────────────────────────────────
+    import json as _json
+
+    raw_text = claude_body.get("content", [{}])[0].get("text", "")
+    try:
+        parsed = _json.loads(raw_text)
+        ranked_ids: list[str] = parsed.get("ranked_ids", [])
+        suggested_queries: list[str] = parsed.get("suggested_queries", [])
+    except Exception:
+        log.warning("bw_suggest: could not parse Claude response: %r", raw_text)
+        # Fall back to returning the top similarity results
+        ranked_ids = [str(r["id"]) for r in cand_rows[:5]]
+        suggested_queries = []
+
+    # ── 4. Return catalog rows in Claude's ranked order ───────────────────
+    cand_by_id = {str(r["id"]): r for r in cand_rows}
+    results: list[BwActivityResult] = []
+
+    for rid in ranked_ids:
+        row = cand_by_id.get(rid)
+        if row:
+            results.append(
+                BwActivityResult(
+                    id=row["id"],
+                    activity_name=row["activity_name"],
+                    reference_product=row["reference_product"],
+                    location=row["location"],
+                    unit=row["unit"],
+                    category=row["category"],
+                    ecoinvent_version=row["ecoinvent_version"],
+                    system_model=row["system_model"],
+                    similarity_score=float(row["similarity_score"]),
+                )
+            )
+
+    return BwSuggestResponse(
+        results=results,
+        suggested_queries=suggested_queries if suggested_queries else None,
     )
