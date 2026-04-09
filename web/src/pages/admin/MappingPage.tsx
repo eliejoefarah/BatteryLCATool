@@ -19,7 +19,7 @@ import { FlowMappingDialog } from '../../components/admin/FlowMappingDialog'
 type Filter = 'all' | 'pending' | 'mapped'
 
 export default function MappingPage() {
-  const { projectId, modelId, revisionId } = useParams<{
+  const { revisionId } = useParams<{
     projectId: string
     modelId: string
     revisionId: string
