@@ -77,7 +77,7 @@ export default function MappingPage() {
             {data && (
               <div className="text-right shrink-0">
                 <p className="text-sm font-medium text-slate-700">
-                  {data.mapped_flows} / {data.total_input_flows} mapped
+                  {data.mapped_flows + (data.skipped_flows ?? 0)} / {data.total_input_flows} mapped
                 </p>
                 <p className="text-xs text-slate-400">{progressPct}% complete</p>
                 {data.ready_for_export && (
