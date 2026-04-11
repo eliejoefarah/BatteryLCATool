@@ -1286,7 +1286,7 @@ export type Database = {
         | "service"
         | "infrastructure"
       mapping_status_enum: "mapped" | "foreground" | "unmappable" | "pending"
-      model_status_enum: "draft" | "frozen" | "validated" | "unmapped"
+      model_status_enum: "draft" | "frozen" | "validated" | "unmapped" | "mapped"
       output_type_enum: "reference" | "coproduct" | "waste_output" | "stock"
       param_type_enum: "scalar" | "lookup"
       project_member_role_enum: "manufacturer" | "reviewer" | "admin"
@@ -1446,7 +1446,7 @@ export const Constants = {
         "infrastructure",
       ],
       mapping_status_enum: ["mapped", "foreground", "unmappable", "pending"],
-      model_status_enum: ["draft", "frozen", "validated", "unmapped"],
+      model_status_enum: ["draft", "frozen", "validated", "unmapped", "mapped"],
       output_type_enum: ["reference", "coproduct", "waste_output", "stock"],
       param_type_enum: ["scalar", "lookup"],
       project_member_role_enum: ["manufacturer", "reviewer", "admin"],
