@@ -54,6 +54,63 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
+async def _update_revision_mapped_status(
+    db: AsyncSession, exchange_ids: list[str]
+) -> None:
+    """Sync battery_model_revision.status for all revisions touched by these exchanges.
+
+    After any mapping change (confirm / delete / skip / unskip) call this helper
+    before the final db.commit().  It:
+      • sets status = 'mapped'   when pending_count == 0 and status was 'unmapped'
+      • sets status = 'unmapped' when pending_count  > 0 and status was 'mapped'
+    """
+    if not exchange_ids:
+        return
+
+    rev_rows = (await db.execute(
+        text("""
+            SELECT DISTINCT pi.revision_id
+            FROM process_exchange pe
+            JOIN process_instance pi ON pi.process_id = pe.process_id
+            WHERE pe.exchange_id::text = ANY(:ids)
+        """),
+        {"ids": exchange_ids},
+    )).fetchall()
+
+    for (rid,) in rev_rows:
+        pending_row = (await db.execute(
+            text("""
+                SELECT COUNT(*)
+                FROM process_exchange pe
+                JOIN process_instance pi ON pi.process_id = pe.process_id
+                WHERE pi.revision_id = :rid
+                  AND pe.exchange_direction = 'input'
+                  AND pe.mapping_status = 'pending'
+            """),
+            {"rid": str(rid)},
+        )).fetchone()
+        pending_count = pending_row[0] if pending_row else 0
+
+        if pending_count == 0:
+            await db.execute(
+                text("""
+                    UPDATE battery_model_revision
+                    SET status = 'mapped'
+                    WHERE revision_id = :rid AND status = 'unmapped'
+                """),
+                {"rid": str(rid)},
+            )
+        else:
+            await db.execute(
+                text("""
+                    UPDATE battery_model_revision
+                    SET status = 'unmapped'
+                    WHERE revision_id = :rid AND status = 'mapped'
+                """),
+                {"rid": str(rid)},
+            )
+
+
 async def get_admin_user_id(
     db: AsyncSession = Depends(get_db),
     user_id: UUID = Depends(get_current_user_id),
@@ -438,6 +495,9 @@ async def confirm_mapping(
         {"ids": exchange_ids},
     )
 
+    # ── 4b. Sync revision status (unmapped → mapped if all resolved) ───────
+    await _update_revision_mapped_status(db, exchange_ids)
+
     await db.commit()
 
     # ── 5. Fetch the saved mapping row to return ──────────────────────────
@@ -545,6 +605,9 @@ async def delete_mapping(
         """),
         {"ids": exchange_ids},
     )
+
+    # ── 3b. Sync revision status (mapped → unmapped if no longer all resolved)
+    await _update_revision_mapped_status(db, exchange_ids)
 
     await db.commit()
 
@@ -819,6 +882,9 @@ async def skip_flow(
         {"ids": exchange_ids},
     )
 
+    # Sync revision status (unmapped → mapped if all resolved)
+    await _update_revision_mapped_status(db, exchange_ids)
+
     await db.commit()
 
     return SkipFlowResponse(exchanges_updated=len(exchange_ids), scope=body.scope)
@@ -869,6 +935,9 @@ async def unskip_flow(
         """),
         {"ids": exchange_ids},
     )
+
+    # Sync revision status (mapped → unmapped if no longer all resolved)
+    await _update_revision_mapped_status(db, exchange_ids)
 
     await db.commit()
     return DeleteMappingResponse(exchanges_updated=len(exchange_ids))
