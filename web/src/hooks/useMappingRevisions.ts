@@ -41,7 +41,7 @@ async function fetchMappingRevisions(): Promise<MappingRevision[]> {
         issue_count
       )
     `)
-    .in('status', ['unmapped', 'validated'])
+    .in('status', ['unmapped', 'validated', 'mapped'])
     .order('created_at', { ascending: false })
 
   if (error) throw error
