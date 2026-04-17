@@ -19,7 +19,6 @@ import { Textarea } from '../ui/textarea'
 import { cn } from '../../lib/utils'
 import {
   useBwSearch,
-  useBwSuggest,
   useConfirmMapping,
   useUnmapFlow,
   useSkipFlow,
@@ -114,10 +113,6 @@ export function FlowMappingDialog({
   const [activeTab, setActiveTab] = useState<'search' | 'manual'>('search')
   const [searchQuery, setSearchQuery] = useState(flow?.raw_name ?? '')
   const [selectedRow, setSelectedRow] = useState<BwCatalogRow | null>(null)
-  const [aiState, setAiState] = useState<{
-    results: BwCatalogRow[]
-    suggested_queries?: string[]
-  } | null>(null)
   const [manualForm, setManualForm] = useState<ManualForm>(EMPTY_MANUAL)
 
   // Reset all state when dialog opens for a (possibly different) flow
@@ -125,14 +120,12 @@ export function FlowMappingDialog({
     if (open) {
       setSearchQuery(flow?.raw_name ?? '')
       setSelectedRow(null)
-      setAiState(null)
       setActiveTab('search')
       setManualForm(EMPTY_MANUAL)
     }
   }, [open, flow?.raw_name])
 
   const { data: searchData, isLoading: searchLoading } = useBwSearch(searchQuery)
-  const suggest = useBwSuggest()
   const confirmMutation = useConfirmMapping()
   const unmapMutation = useUnmapFlow()
   const skipMutation = useSkipFlow()
@@ -141,15 +134,14 @@ export function FlowMappingDialog({
   const isAlreadyMapped = !!flow?.mapping
   const isSkipped = flow?.mapping_status === 'skipped'
 
-  // Best match: top catalog result with score > 0.3, shown only for catalog search
+  // Best match: top catalog result with score > 0.3
   const bestMatch =
-    !aiState &&
     searchData?.results[0] &&
     searchData.results[0].similarity_score > 0.3
       ? searchData.results[0]
       : null
 
-  const displayResults = aiState?.results ?? searchData?.results ?? []
+  const displayResults = searchData?.results ?? []
 
   const canConfirm =
     activeTab === 'search'
@@ -193,17 +185,6 @@ export function FlowMappingDialog({
         onSuccess: () => {
           toast.success('Mapping removed')
           onOpenChange(false)
-        },
-      },
-    )
-  }
-
-  function handleAiSuggest() {
-    suggest.mutate(
-      { raw_name: flow.raw_name!, unit: flow.unit, direction: flow.direction, revision_id: revisionId },
-      {
-        onSuccess: (data) => {
-          setAiState({ results: data.results, suggested_queries: data.suggested_queries })
         },
       },
     )
@@ -314,49 +295,16 @@ export function FlowMappingDialog({
               </div>
             )}
 
-            {/* Search input + AI button */}
+            {/* Search input */}
             <div className="flex gap-2 shrink-0">
               <Input
                 placeholder="Search activities…"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setAiState(null) // clear AI results when user types
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 disabled={searchData?.catalog_seeded === false}
                 className="flex-1"
               />
-              {!suggest.isUnavailable && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="shrink-0 gap-1.5 text-xs"
-                  onClick={handleAiSuggest}
-                  disabled={suggest.isPending || searchData?.catalog_seeded === false}
-                >
-                  {suggest.isPending ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Asking Claude…</>
-                  ) : (
-                    <>✦ AI Suggest</>
-                  )}
-                </Button>
-              )}
             </div>
-
-            {/* AI suggested query pills */}
-            {aiState?.suggested_queries && aiState.suggested_queries.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 shrink-0">
-                {aiState.suggested_queries.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => { setSearchQuery(q); setAiState(null) }}
-                    className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-500 hover:bg-slate-200 transition-colors"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* Best match card (catalog results only, first result > 0.3) */}
             {bestMatch && (

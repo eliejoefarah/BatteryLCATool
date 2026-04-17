@@ -20,7 +20,8 @@ export default function ProcessPage() {
   const revision = revisions?.find((r) => r.revision_id === revisionId)
 
   const isFrozen = !!revision?.frozen_at
-  const canEdit = role === 'manufacturer' && (!!user && revision?.created_by === user.id) && !isFrozen
+  const isAdmin = role === 'admin'
+  const canEdit = (role === 'manufacturer' && (!!user && revision?.created_by === user.id) && !isFrozen) || isAdmin
 
   return (
     <AppLayout>
@@ -51,9 +52,7 @@ export default function ProcessPage() {
 
       {!canEdit && revision && (
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          {isFrozen
-            ? 'This revision is frozen and cannot be edited.'
-            : 'This revision was created by another team member — viewing in read-only mode.'}
+          This revision was created by another team member — viewing in read-only mode.
         </div>
       )}
 

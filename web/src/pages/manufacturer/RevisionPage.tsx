@@ -123,10 +123,11 @@ export default function RevisionPage() {
   const isFrozen = !!revision?.frozen_at
   const isMapped = revision?.status === 'mapped'
   const isCreator = role === 'manufacturer' && !!user && revision?.created_by === user.id
-  const canEdit = isCreator && !isFrozen && !isMapped
+  const isAdmin = role === 'admin'
+  const canEdit = (isCreator && !isFrozen && !isMapped) || isAdmin
   const canValidate = canEdit
   const canFreeze = isCreator && !isFrozen && !isMapped
-  const canUnfreeze = role === 'admin' && isFrozen
+  const canUnfreeze = isAdmin && isFrozen
 
   async function handleFreeze() {
     if (!revisionId) return
@@ -239,12 +240,8 @@ export default function RevisionPage() {
 
       {!canEdit && revision && (
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          {isFrozen
-            ? 'This revision is frozen and cannot be edited.'
-            : isMapped
-            ? 'This revision has been fully mapped by an admin and is now read-only.'
-            : role === 'admin'
-            ? 'Viewing in read-only mode — admins cannot edit revisions.'
+          {isMapped
+            ? 'This revision has been fully mapped and is now read-only.'
             : role === 'reviewer'
             ? 'You have reviewer access — viewing in read-only mode.'
             : 'This revision was created by another team member — viewing in read-only mode.'}
