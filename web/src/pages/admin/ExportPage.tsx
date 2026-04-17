@@ -74,7 +74,7 @@ async function fetchExportableRevisions(): Promise<ExportableRevision[]> {
         )
       )
     `)
-    .in('status', ['frozen', 'mapped'])
+    .eq('status', 'mapped')
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -315,14 +315,9 @@ function ExportRow({
         <TableCell>
           <Badge
             variant="outline"
-            className={cn(
-              'text-xs',
-              revision.status === 'mapped'
-                ? 'border-green-200 bg-green-50 text-green-700'
-                : 'border-blue-200 bg-blue-50 text-blue-700',
-            )}
+            className="text-xs border-green-200 bg-green-50 text-green-700"
           >
-            {revision.status === 'mapped' ? 'Mapped' : 'Frozen'}
+            Mapped
           </Badge>
         </TableCell>
 
@@ -495,7 +490,7 @@ export default function ExportPage() {
               </p>
               <p className="mt-1 text-xs text-slate-400">
                 Revisions appear here once all input flows have been mapped or
-                marked as skipped (status: mapped).
+                marked as skipped by admin (status: Mapped).
               </p>
             </div>
           )}

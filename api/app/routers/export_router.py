@@ -215,10 +215,10 @@ async def trigger_export(
     if rev_row is None:
         raise HTTPException(status_code=404, detail="Revision not found.")
 
-    if rev_row[0] not in ("mapped", "frozen"):
+    if rev_row[0] != "mapped":
         raise HTTPException(
             status_code=422,
-            detail="Revision is not ready for export. It must have status 'mapped' or 'frozen'.",
+            detail="Revision is not ready for export. It must have status 'mapped'.",
         )
 
     # ── 2. Check ready_for_export (pending_count == 0) ────────────────────
