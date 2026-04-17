@@ -55,6 +55,59 @@ const SEVERITIES: ValidationSeverity[] = ['error', 'warning', 'info']
 const PAGE_SIZE = 100
 const DEFAULT_CATALOG_SET_ID = '00000000-0000-0000-0001-000000000001'
 
+// ── error handling ─────────────────────────────────────────────────────────────
+
+/**
+ * Returns a user-friendly message for any Supabase / PostgREST error that can
+ * occur when adding or deleting catalog entries.
+ *
+ * @param err   The caught error (PostgrestError shape: { code, message, details, hint })
+ * @param op    'add' | 'delete'
+ * @param label Human-readable name of the entity, e.g. 'flow' or 'unit'
+ */
+function catalogOpError(err: unknown, op: 'add' | 'delete', label: string): string {
+  const e = err as { code?: string; message?: string; details?: string; hint?: string }
+  const code = e.code ?? ''
+
+  switch (code) {
+    // ── constraint violations ────────────────────────────────────────────────
+    case '23505':
+      // unique_violation — most common on add
+      return `Duplicate entry: a ${label} with that identifier already exists. Use a different value.`
+
+    case '23503':
+      // foreign_key_violation
+      if (op === 'delete') {
+        return `Cannot delete: this ${label} is still referenced by other data (exchanges, mappings, or templates). Remove those references first, then try again.`
+      }
+      return `Invalid reference: a field value does not match any existing record. Check the data and try again.`
+
+    case '23514':
+      // check_violation
+      return `Value out of range: one of the fields failed a database constraint. ${e.hint ? e.hint : 'Check that all values are valid.'}`
+
+    case '23502':
+      // not_null_violation
+      return `Missing required field: a required value was not provided. ${e.details ?? ''}`
+
+    // ── permission errors ────────────────────────────────────────────────────
+    case '42501':
+    case 'PGRST301':
+      return `Permission denied: your account does not have the rights to ${op} this ${label}. Contact a superadmin if this is unexpected.`
+
+    // ── PostgREST-level errors ───────────────────────────────────────────────
+    case 'PGRST204':
+      // no rows matched for update/delete — not an error we surface here, but guard anyway
+      return `No matching record found. It may have already been removed.`
+
+    default:
+      // fallback: show the raw message if available, else a generic string
+      return e.message
+        ? `${op === 'add' ? 'Failed to add' : 'Failed to delete'} ${label}: ${e.message}`
+        : `An unexpected error occurred while trying to ${op} this ${label}. Please try again.`
+  }
+}
+
 // ── kind styling ─────────────────────────────────────────────────────────────
 
 const KIND_STYLE: Record<FlowKind, { bg: string; text: string; border: string }> = {
@@ -189,8 +242,8 @@ function DeleteConfirmDialog({
         <DialogHeader>
           <DialogTitle>Delete entry?</DialogTitle>
           <DialogDescription>
-            This will permanently remove <strong>{name}</strong>. This cannot be undone
-            and may break existing data referencing this entry.
+            This will permanently remove <strong>{name}</strong>. This cannot be undone.
+            Deletion will be blocked if other data (exchanges, mappings, or templates) still references this entry.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -266,7 +319,7 @@ function UnitsTab() {
       setForm(EMPTY_UNIT_FORM)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'units'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add unit')
+      toast.error(catalogOpError(err, 'add', 'unit'))
     } finally {
       setAddBusy(false)
     }
@@ -285,7 +338,7 @@ function UnitsTab() {
       setDeleteTarget(null)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'units'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete unit')
+      toast.error(catalogOpError(err, 'delete', 'unit'))
     } finally {
       setDeleteBusy(false)
     }
@@ -435,7 +488,7 @@ function DataOriginsTab() {
       setForm(EMPTY_ORIGIN_FORM)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add data origin')
+      toast.error(catalogOpError(err, 'add', 'data origin'))
     } finally {
       setAddBusy(false)
     }
@@ -454,7 +507,7 @@ function DataOriginsTab() {
       setDeleteTarget(null)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete data origin')
+      toast.error(catalogOpError(err, 'delete', 'data origin'))
     } finally {
       setDeleteBusy(false)
     }
@@ -592,7 +645,7 @@ function ValidationRulesTab() {
       setForm(EMPTY_RULE_FORM)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add rule')
+      toast.error(catalogOpError(err, 'add', 'validation rule'))
     } finally {
       setAddBusy(false)
     }
@@ -611,7 +664,7 @@ function ValidationRulesTab() {
       setDeleteTarget(null)
       queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete rule')
+      toast.error(catalogOpError(err, 'delete', 'validation rule'))
     } finally {
       setDeleteBusy(false)
     }
@@ -782,7 +835,7 @@ function FlowsTab() {
       setForm(EMPTY_FLOW_FORM)
       queryClient.invalidateQueries({ queryKey: ['flows'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add flow')
+      toast.error(catalogOpError(err, 'add', 'flow'))
     } finally {
       setAddBusy(false)
     }
@@ -801,7 +854,7 @@ function FlowsTab() {
       setDeleteTarget(null)
       queryClient.invalidateQueries({ queryKey: ['flows'] })
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete flow')
+      toast.error(catalogOpError(err, 'delete', 'flow'))
     } finally {
       setDeleteBusy(false)
     }
