@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FolderOpen, Users, BookOpen, LayoutGrid, Link2 } from 'lucide-react'
+import { FolderOpen, Users, BookOpen, LayoutGrid, Link2, Download } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
 import TopBar from '../../components/TopBar'
 
@@ -33,6 +33,12 @@ const CARDS = [
     title: 'Flow Mapping',
     description: 'Map validated revision flows to ecoinvent activities. Begin mapping for unmapped revisions or review existing mappings.',
     href: '/admin/mapping',
+  },
+  {
+    icon: Download,
+    title: 'Export',
+    description: 'Export frozen revisions as LCI spreadsheets.',
+    href: '/admin/export',
   },
 ]
 
