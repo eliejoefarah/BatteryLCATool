@@ -459,7 +459,7 @@ export default function ExportPage() {
             <div>
               <h1 className="text-xl font-semibold text-slate-800">Export</h1>
               <p className="mt-1 text-sm text-slate-500">
-                Export frozen, fully-mapped revisions as VUB LCI templates.
+                Export fully-mapped revisions as VUB LCI templates.
               </p>
             </div>
             <Button
@@ -498,8 +498,8 @@ export default function ExportPage() {
                 No revisions ready for export
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Revisions appear here once they are frozen and all input flows have been
-                mapped or marked as skipped.
+                Revisions appear here once all input flows have been mapped or
+                marked as skipped (status: mapped).
               </p>
             </div>
           )}

@@ -37,7 +37,7 @@ const CARDS = [
   {
     icon: Download,
     title: 'Export',
-    description: 'Export frozen revisions as LCI spreadsheets.',
+    description: 'Export fully-mapped revisions as LCI spreadsheets.',
     href: '/admin/export',
   },
 ]
