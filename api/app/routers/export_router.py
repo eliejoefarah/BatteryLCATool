@@ -246,7 +246,7 @@ async def trigger_export(
     # ── 3. Check for an existing completed export_job ─────────────────────
     existing_row = (await db.execute(
         text("""
-            SELECT export_job_id, file_path
+            SELECT export_id, file_path
             FROM export_job
             WHERE revision_id = :rid
               AND status = 'completed'
@@ -278,14 +278,16 @@ async def trigger_export(
     await db.execute(
         text("""
             INSERT INTO export_job
-              (export_job_id, revision_id, status, partner_responsible, created_at)
+              (export_id, revision_id, status, partner_responsible,
+               exported_by, format)
             VALUES
-              (:jid, :rid, 'running', :partner, NOW())
+              (:jid, :rid, 'running', :partner, :uid, 'vub_xlsx')
         """),
         {
             "jid":     str(job_id),
             "rid":     rid,
             "partner": body.partner_responsible,
+            "uid":     str(admin_id),
         },
     )
     await db.commit()
@@ -306,7 +308,7 @@ async def trigger_export(
                 SET status = 'failed',
                     error_message = :err,
                     completed_at = NOW()
-                WHERE export_job_id = :jid
+                WHERE export_id = :jid
             """),
             {"err": err_msg, "jid": str(job_id)},
         )
@@ -337,7 +339,7 @@ async def trigger_export(
                 SET status = 'failed',
                     error_message = :err,
                     completed_at = NOW()
-                WHERE export_job_id = :jid
+                WHERE export_id = :jid
             """),
             {"err": f"Storage upload failed: {exc}", "jid": str(job_id)},
         )
@@ -355,7 +357,7 @@ async def trigger_export(
                 file_path       = :path,
                 file_size_bytes = :size,
                 completed_at    = NOW()
-            WHERE export_job_id = :jid
+            WHERE export_id = :jid
         """),
         {
             "path": storage_path,
@@ -406,7 +408,7 @@ async def list_exports(
     rows = (await db.execute(
         text("""
             SELECT
-                export_job_id,
+                export_id,
                 status,
                 partner_responsible,
                 completed_at,

@@ -382,39 +382,54 @@ export type Database = {
         Row: {
           activities_exported: number | null
           artifact_id: string | null
+          completed_at: string | null
           created_at: string
           error_log: string | null
+          error_message: string | null
           exchanges_exported: number | null
           export_id: string
           exported_at: string
           exported_by: string
+          file_path: string | null
+          file_size_bytes: number | null
           format: string
+          partner_responsible: string | null
           revision_id: string
           status: string
         }
         Insert: {
           activities_exported?: number | null
           artifact_id?: string | null
+          completed_at?: string | null
           created_at?: string
           error_log?: string | null
+          error_message?: string | null
           exchanges_exported?: number | null
           export_id?: string
           exported_at?: string
           exported_by: string
+          file_path?: string | null
+          file_size_bytes?: number | null
           format?: string
+          partner_responsible?: string | null
           revision_id: string
           status?: string
         }
         Update: {
           activities_exported?: number | null
           artifact_id?: string | null
+          completed_at?: string | null
           created_at?: string
           error_log?: string | null
+          error_message?: string | null
           exchanges_exported?: number | null
           export_id?: string
           exported_at?: string
           exported_by?: string
+          file_path?: string | null
+          file_size_bytes?: number | null
           format?: string
+          partner_responsible?: string | null
           revision_id?: string
           status?: string
         }

@@ -46,7 +46,7 @@ interface ExportableRevision {
 
 interface LatestExportJob {
   revision_id: string
-  export_job_id: string
+  export_id: string
   completed_at: string
   partner_responsible: string | null
   file_size_bytes: number | null
@@ -104,7 +104,7 @@ async function fetchLatestExportJobs(
 
   const { data, error } = await supabase
     .from('export_job')
-    .select('revision_id, export_job_id, completed_at, partner_responsible, file_size_bytes')
+    .select('revision_id, export_id, completed_at, partner_responsible, file_size_bytes')
     .in('revision_id', revisionIds)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false })
@@ -119,7 +119,7 @@ async function fetchLatestExportJobs(
       seen.add(row.revision_id)
       result.push({
         revision_id: row.revision_id,
-        export_job_id: row.export_job_id,
+        export_id: row.export_id,
         completed_at: row.completed_at!,
         partner_responsible: row.partner_responsible ?? null,
         file_size_bytes: row.file_size_bytes ?? null,
