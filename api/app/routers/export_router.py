@@ -182,6 +182,7 @@ def _make_signed_url(storage_path: str) -> str | None:
 async def trigger_export(
     revision_id: UUID,
     body: ExportRequest,
+    force: bool = False,
     db: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id),
 ) -> ExportResponse:
@@ -243,35 +244,36 @@ async def trigger_export(
             ),
         )
 
-    # ── 3. Check for an existing completed export_job ─────────────────────
-    existing_row = (await db.execute(
-        text("""
-            SELECT export_id, file_path
-            FROM export_job
-            WHERE revision_id = :rid
-              AND status = 'completed'
-            ORDER BY completed_at DESC
-            LIMIT 1
-        """),
-        {"rid": rid},
-    )).fetchone()
+    # ── 3. Check for an existing completed export_job (skip when force=True) ──
+    if not force:
+        existing_row = (await db.execute(
+            text("""
+                SELECT export_id, file_path
+                FROM export_job
+                WHERE revision_id = :rid
+                  AND status = 'completed'
+                ORDER BY completed_at DESC
+                LIMIT 1
+            """),
+            {"rid": rid},
+        )).fetchone()
 
-    if existing_row is not None:
-        existing_job_id = existing_row[0]
-        existing_path = existing_row[1]
-        download_url = _make_signed_url(existing_path) if existing_path else None
-        if download_url is None:
-            # Storage unavailable in local dev — fall through to regenerate
-            log.info(
-                "Existing export_job %s has no signed URL; regenerating.",
-                existing_job_id,
-            )
-        else:
-            return ExportResponse(
-                export_job_id=UUID(str(existing_job_id)),
-                download_url=download_url,
-                already_existed=True,
-            )
+        if existing_row is not None:
+            existing_job_id = existing_row[0]
+            existing_path = existing_row[1]
+            download_url = _make_signed_url(existing_path) if existing_path else None
+            if download_url is None:
+                # Storage unavailable in local dev — fall through to regenerate
+                log.info(
+                    "Existing export_job %s has no signed URL; regenerating.",
+                    existing_job_id,
+                )
+            else:
+                return ExportResponse(
+                    export_job_id=UUID(str(existing_job_id)),
+                    download_url=download_url,
+                    already_existed=True,
+                )
 
     # ── 4. Create export_job row (status='running') ───────────────────────
     job_id = uuid.uuid4()

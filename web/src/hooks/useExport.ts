@@ -24,6 +24,7 @@ export interface ExportResponse {
 export interface TriggerExportPayload {
   revisionId: string
   partner_responsible: string
+  force?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -89,20 +90,18 @@ export function useTriggerExport() {
   const queryClient = useQueryClient()
 
   return useMutation<ExportResponse, Error, TriggerExportPayload>({
-    mutationFn: ({ revisionId, partner_responsible }) =>
-      apiFetch<ExportResponse>(`/api/v1/export/${revisionId}`, {
+    mutationFn: ({ revisionId, partner_responsible, force = false }) => {
+      const qs = force ? '?force=true' : ''
+      return apiFetch<ExportResponse>(`/api/v1/export/${revisionId}${qs}`, {
         method: 'POST',
         body: JSON.stringify({ partner_responsible }),
-      }),
+      })
+    },
     onSuccess: (data, variables) => {
       const filename = `export_${variables.revisionId}.xlsx`
-      if (data.already_existed) {
-        toast.success('Using existing export — downloading…')
-      } else {
-        toast.success('Export generated — downloading…')
-      }
       triggerDownload(data.download_url, filename)
       queryClient.invalidateQueries({ queryKey: ['export-jobs', variables.revisionId] })
+      queryClient.invalidateQueries({ queryKey: ['export-latest-jobs'] })
     },
     onError: (err) => {
       toast.error(err.message ?? 'Export failed')

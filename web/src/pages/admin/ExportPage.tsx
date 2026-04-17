@@ -26,7 +26,7 @@ import {
   TableRow,
 } from '../../components/ui/table'
 import { useBulkMappingSummary } from '../../hooks/useBwMapping'
-import { useTriggerExport } from '../../hooks/useExport'
+import { triggerDownload, useTriggerExport } from '../../hooks/useExport'
 import { cn } from '../../lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -170,7 +170,7 @@ function ExportDialog({ open, onOpenChange, revision, defaultPartner }: ExportDi
       return
     }
     triggerExport.mutate(
-      { revisionId: revision.revision_id, partner_responsible: partner.trim() },
+      { revisionId: revision.revision_id, partner_responsible: partner.trim(), force: true },
       {
         onSuccess: () => {
           toast.success('Export complete — download started.')
@@ -266,26 +266,16 @@ function ExportRow({
   latestJob,
 }: ExportRowProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const triggerExport = useTriggerExport()
 
   const hasExported = !!latestJob
 
   function handleDownload() {
-    // Re-trigger via API — backend detects existing job and returns fresh signed URL
-    triggerExport.mutate(
-      {
-        revisionId: revision.revision_id,
-        partner_responsible: latestJob?.partner_responsible ?? '',
-      },
-      {
-        onSuccess: () => {
-          toast.success('Download started.')
-        },
-        onError: (err) => {
-          toast.error(err.message ?? 'Download failed.')
-        },
-      },
-    )
+    if (!latestJob?.download_url) {
+      toast.error('No download URL available. Try re-exporting.')
+      return
+    }
+    triggerDownload(latestJob.download_url, `export_${revision.revision_id}.xlsx`)
+    toast.success('Download started.')
   }
 
   return (
@@ -359,29 +349,23 @@ function ExportRow({
           <div className="flex items-center justify-end gap-2">
             {hasExported ? (
               <>
-                {/* Re-export */}
+                {/* Re-export — regenerates from scratch */}
                 <Button
                   size="sm"
                   variant="outline"
                   className="text-xs"
                   onClick={() => setDialogOpen(true)}
-                  disabled={triggerExport.isPending}
                 >
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                   Re-export
                 </Button>
-                {/* Download */}
+                {/* Download — uses the existing signed URL */}
                 <Button
                   size="sm"
                   className="text-xs bg-green-600 text-white hover:bg-green-700"
                   onClick={handleDownload}
-                  disabled={triggerExport.isPending}
                 >
-                  {triggerExport.isPending ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Download className="mr-1.5 h-3.5 w-3.5" />
-                  )}
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
                   Download
                 </Button>
               </>
