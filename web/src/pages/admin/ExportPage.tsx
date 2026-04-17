@@ -50,6 +50,7 @@ interface LatestExportJob {
   completed_at: string
   partner_responsible: string | null
   file_size_bytes: number | null
+  download_url: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +105,7 @@ async function fetchLatestExportJobs(
 
   const { data, error } = await supabase
     .from('export_job')
-    .select('revision_id, export_id, completed_at, partner_responsible, file_size_bytes')
+    .select('revision_id, export_id, completed_at, partner_responsible, file_size_bytes, file_path')
     .in('revision_id', revisionIds)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false })
@@ -117,12 +118,23 @@ async function fetchLatestExportJobs(
   for (const row of data ?? []) {
     if (!seen.has(row.revision_id)) {
       seen.add(row.revision_id)
+
+      // Generate a fresh signed URL from the stored file_path
+      let download_url: string | null = null
+      if (row.file_path) {
+        const { data: signed } = await supabase.storage
+          .from('exports')
+          .createSignedUrl(row.file_path, 3600)
+        download_url = signed?.signedUrl ?? null
+      }
+
       result.push({
         revision_id: row.revision_id,
         export_id: row.export_id,
         completed_at: row.completed_at!,
         partner_responsible: row.partner_responsible ?? null,
         file_size_bytes: row.file_size_bytes ?? null,
+        download_url,
       })
     }
   }
