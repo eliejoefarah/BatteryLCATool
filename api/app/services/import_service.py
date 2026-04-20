@@ -800,7 +800,6 @@ async def _auto_apply_bw_mappings(
             WITH source AS (
                 SELECT DISTINCT ON (new_pe.exchange_id)
                     new_pe.exchange_id              AS new_exchange_id,
-                    src.candidate_id,
                     src.bw_catalog_id,
                     src.confirmed_activity_name,
                     src.confirmed_reference_product,
@@ -826,7 +825,7 @@ async def _auto_apply_bw_mappings(
                 ORDER BY new_pe.exchange_id, src.confirmed_at DESC
             )
             INSERT INTO bw_mapping_selection
-                (exchange_id, candidate_id, bw_catalog_id,
+                (exchange_id, bw_catalog_id,
                  confirmed_activity_name, confirmed_reference_product,
                  confirmed_location, confirmed_unit,
                  confirmed_ecoinvent_version, confirmed_system_model,
@@ -834,7 +833,7 @@ async def _auto_apply_bw_mappings(
                  mapping_status)
             SELECT
                 new_exchange_id,
-                candidate_id, bw_catalog_id,
+                bw_catalog_id,
                 confirmed_activity_name, confirmed_reference_product,
                 confirmed_location, confirmed_unit,
                 confirmed_ecoinvent_version, confirmed_system_model,

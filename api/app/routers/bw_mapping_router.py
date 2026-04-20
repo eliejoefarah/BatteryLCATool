@@ -433,8 +433,7 @@ async def confirm_mapping(
                     confirmed_by,
                     confirmed_at,
                     mapping_notes,
-                    mapping_status,
-                    candidate_id
+                    mapping_status
                 )
                 VALUES (
                     :mapping_id,
@@ -451,8 +450,7 @@ async def confirm_mapping(
                     :confirmed_by,
                     now(),
                     :mapping_notes,
-                    'mapped',
-                    NULL
+                    'mapped'
                 )
                 ON CONFLICT (exchange_id) WHERE exchange_id IS NOT NULL DO UPDATE SET
                     bw_catalog_id              = EXCLUDED.bw_catalog_id,
