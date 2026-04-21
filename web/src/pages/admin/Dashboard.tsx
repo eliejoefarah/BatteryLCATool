@@ -50,7 +50,7 @@ export default function AdminDashboard() {
     <div className="flex h-screen flex-col bg-slate-50">
       <TopBar adminBreadcrumb={[{ label: 'Dashboard', to: '/admin' }]} />
       <main className="flex flex-1 flex-col items-center justify-center p-8">
-        <div className="w-full max-w-2xl space-y-6">
+        <div className="w-full max-w-4xl space-y-6">
           <div>
             <h1 className="text-2xl font-semibold text-slate-800">Admin Dashboard</h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -58,22 +58,61 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {CARDS.map(({ icon: Icon, title, description, href }) => (
-              <button
-                key={href}
-                onClick={() => navigate(href)}
-                className="group flex flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700 transition-colors group-hover:bg-green-600 group-hover:text-white">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-800">{title}</p>
-                  <p className="mt-1 text-sm text-slate-500">{description}</p>
-                </div>
-              </button>
-            ))}
+          <div className="flex flex-col gap-4">
+            {/* Row 1: 3 cards */}
+            <div className="grid grid-cols-3 gap-4">
+              {CARDS.slice(0, 3).map(({ icon: Icon, title, description, href }) => (
+                <button
+                  key={href}
+                  onClick={() => navigate(href)}
+                  className="group flex flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700 transition-colors group-hover:bg-green-600 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {/* Row 2: 2 cards */}
+            <div className="grid grid-cols-2 gap-4 px-[calc(100%/6)]">
+              {CARDS.slice(3, 5).map(({ icon: Icon, title, description, href }) => (
+                <button
+                  key={href}
+                  onClick={() => navigate(href)}
+                  className="group flex flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700 transition-colors group-hover:bg-green-600 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {/* Row 3: 1 card (Export) */}
+            <div className="px-[calc(100%/3)]">
+              {CARDS.slice(5).map(({ icon: Icon, title, description, href }) => (
+                <button
+                  key={href}
+                  onClick={() => navigate(href)}
+                  className="group flex w-full flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700 transition-colors group-hover:bg-green-600 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </main>
