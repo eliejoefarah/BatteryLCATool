@@ -186,11 +186,11 @@ async def trigger_export(
     db: AsyncSession = Depends(get_db),
     admin_id: UUID = Depends(get_admin_user_id),
 ) -> ExportResponse:
-    """Generate (or retrieve) the xlsx export for a frozen, fully-mapped revision.
+    """Generate (or retrieve) the xlsx export for only a fully-mapped revision.
 
     Steps
     ─────
-    1. Verify the revision exists and is frozen.
+    1. Verify the revision exists and is mapped.
     2. Verify ready_for_export (no pending input exchanges).
     3. If a completed export_job already exists, regenerate a signed URL and
        return it immediately without re-generating the file.
