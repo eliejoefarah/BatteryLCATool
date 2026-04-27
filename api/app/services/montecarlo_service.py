@@ -140,20 +140,16 @@ _EXCHANGE_QUERY = text("""
         pe.quantity_user,
         pe.raw_name,
         pe.user_unit,
-        pe.exchange_direction,
-        COALESCE(fc.is_elementary_flow, FALSE) AS is_elementary_flow,
-        fc.canonical_name                      AS flow_canonical_name,
-        fc.default_unit                        AS flow_default_unit
+        pe.exchange_direction
     FROM process_exchange pe
     JOIN process_instance pi ON pi.process_id = pe.process_id
-    LEFT JOIN flow_catalog fc ON fc.flow_id = pe.flow_id
     WHERE pi.revision_id = :rid
 """)
 
 
 @dataclass
 class ExchangeRow:
-    """One process_exchange row with joined flow metadata."""
+    """One process_exchange row."""
 
     exchange_id: str
     formula_user: str | None
@@ -161,63 +157,25 @@ class ExchangeRow:
     raw_name: str | None
     user_unit: str | None
     direction: str          # 'input' | 'output'
-    is_elementary_flow: bool
-    flow_canonical_name: str | None
-    flow_default_unit: str | None
 
 
-@dataclass
-class ExchangeSet:
-    all_exchanges: list[ExchangeRow]
-    elementary_exchanges: list[ExchangeRow]
-
-
-async def load_exchanges(revision_id: UUID, db: AsyncSession) -> ExchangeSet:
-    """Fetch all process_exchange rows for a revision in a single JOIN query.
-
-    Returns an ExchangeSet with:
-      all_exchanges        — every exchange (used for formula re-evaluation)
-      elementary_exchanges — subset where is_elementary_flow is True
-                             (used for LCI output totals)
-    """
+async def load_exchanges(revision_id: UUID, db: AsyncSession) -> list[ExchangeRow]:
+    """Fetch all process_exchange rows for a revision."""
     rows = (
         await db.execute(_EXCHANGE_QUERY, {"rid": str(revision_id)})
     ).fetchall()
 
-    all_exchanges: list[ExchangeRow] = []
-    elementary_exchanges: list[ExchangeRow] = []
-
-    for row in rows:
-        (
-            exchange_id,
-            formula_user,
-            quantity_user,
-            raw_name,
-            user_unit,
-            exchange_direction,
-            is_elementary_flow,
-            flow_canonical_name,
-            flow_default_unit,
-        ) = row
-        exc = ExchangeRow(
-            exchange_id=str(exchange_id),
-            formula_user=formula_user,
-            quantity_user=float(quantity_user) if quantity_user is not None else None,
-            raw_name=raw_name,
-            user_unit=user_unit,
-            direction=exchange_direction,
-            is_elementary_flow=bool(is_elementary_flow),
-            flow_canonical_name=flow_canonical_name,
-            flow_default_unit=flow_default_unit,
+    return [
+        ExchangeRow(
+            exchange_id=str(row[0]),
+            formula_user=row[1],
+            quantity_user=float(row[2]) if row[2] is not None else None,
+            raw_name=row[3],
+            user_unit=row[4],
+            direction=row[5],
         )
-        all_exchanges.append(exc)
-        if exc.is_elementary_flow:
-            elementary_exchanges.append(exc)
-
-    return ExchangeSet(
-        all_exchanges=all_exchanges,
-        elementary_exchanges=elementary_exchanges,
-    )
+        for row in rows
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +188,7 @@ _FlowKey = tuple[str | None, str | None, str]
 
 def run_montecarlo_loop(
     parameters: list[SampledParameter],
-    elementary_exchanges: list[ExchangeRow],
+    exchanges: list[ExchangeRow],
     n_runs: int,
 ) -> tuple[list[dict], int, list[str], dict[str, np.ndarray]]:
     """Run the Monte Carlo sampling loop synchronously.
@@ -273,7 +231,7 @@ def run_montecarlo_loop(
         flow_totals: defaultdict[_FlowKey, float] = defaultdict(float)
         run_failed = False
 
-        for exc in elementary_exchanges:
+        for exc in exchanges:
             if exc.formula_user:
                 qty = aeval(exc.formula_user)
                 if aeval.error:

@@ -34,7 +34,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.routers.bw_mapping_router import get_admin_user_id
 from app.services.montecarlo_service import (
-    _FlowKey,
     aggregate_statistics,
     compute_sensitivity,
     load_exchanges,
@@ -198,19 +197,17 @@ async def trigger_montecarlo(
     # ── 4. Run computation (reuse pre-flight parameters — no second query) ─
     try:
         parameters = preflight_params
-        exchange_set = await load_exchanges(revision_id, db)
+        exchanges = await load_exchanges(revision_id, db)
 
         run_results, failed_runs, _failed_formulas, samples_successful = (
-            run_montecarlo_loop(parameters, exchange_set.elementary_exchanges, n_runs)
+            run_montecarlo_loop(parameters, exchanges, n_runs)
         )
 
-        all_flow_keys: list[_FlowKey] = list(
-            {key for run in run_results for key in run.keys()}
-        )
+        all_flow_keys = list({key for run in run_results for key in run.keys()})
 
         flows_stats = aggregate_statistics(run_results, all_flow_keys)
 
-        flow_arrays: dict[_FlowKey, np.ndarray] = {
+        flow_arrays = {
             key: np.array([run.get(key, 0.0) for run in run_results])
             for key in all_flow_keys
         }
