@@ -233,7 +233,8 @@ def run_montecarlo_loop(
 
         for exc in exchanges:
             if exc.formula_user:
-                qty = aeval(exc.formula_user)
+                formula = exc.formula_user.lstrip("=")
+                qty = aeval(formula)
                 if aeval.error:
                     failed_formulas.append(exc.formula_user)
                     run_failed = True
