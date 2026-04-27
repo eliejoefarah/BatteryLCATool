@@ -150,7 +150,34 @@ async def trigger_montecarlo(
             detail="Revision must be validated before running Monte Carlo.",
         )
 
-    # ── 2. Insert montecarlo_run with status='running' ────────────────────
+    # ── 2. Pre-flight: check parameters before creating any DB record ─────
+    preflight_params = await load_parameters(revision_id, db)
+
+    if not preflight_params:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "This revision has no model parameters. "
+                "Monte Carlo analysis requires at least one parameter with "
+                "an uncertainty distribution (normal, lognormal, uniform, or triangular). "
+                "Add parameters to the revision before running Monte Carlo."
+            ),
+        )
+
+    distributional_count = sum(1 for p in preflight_params if p.dist is not None)
+    if distributional_count == 0:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "None of this revision's parameters declare an uncertainty distribution. "
+                "At least one parameter must have a distribution set "
+                "(normal, lognormal, uniform, or triangular) for Monte Carlo "
+                "analysis to produce meaningful results. "
+                "Currently all parameters are treated as fixed constants."
+            ),
+        )
+
+    # ── 3. Insert montecarlo_run with status='running' (pre-flight passed) ─
     run_id = _uuid.uuid4()
     await db.execute(
         text("""
@@ -167,9 +194,9 @@ async def trigger_montecarlo(
     )
     await db.commit()
 
-    # ── 3. Run computation ────────────────────────────────────────────────
+    # ── 4. Run computation (reuse pre-flight parameters — no second query) ─
     try:
-        parameters = await load_parameters(revision_id, db)
+        parameters = preflight_params
         exchange_set = await load_exchanges(revision_id, db)
 
         run_results, failed_runs, _failed_formulas, samples_successful = (
