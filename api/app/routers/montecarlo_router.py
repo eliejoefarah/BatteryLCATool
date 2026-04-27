@@ -229,7 +229,7 @@ async def trigger_montecarlo(
                 UPDATE montecarlo_run
                 SET status       = 'completed',
                     completed_at = now(),
-                    results      = :results::jsonb
+                    results      = CAST(:results AS JSONB)
                 WHERE id = :run_id
             """),
             {"results": json.dumps(results_blob), "run_id": str(run_id)},

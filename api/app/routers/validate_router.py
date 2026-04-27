@@ -378,6 +378,12 @@ def _check_param_rules(
         except (InvalidOperation, TypeError):
             continue
 
+        # For normal/lognormal, min_value/max_value store distribution params
+        # (e.g. std dev), not physical range bounds — skip the range check.
+        dist_type = (param.get("distribution_type") or "").strip().lower()
+        if dist_type in ("normal", "lognormal"):
+            continue
+
         min_v = param.get("min_value")
         max_v = param.get("max_value")
 
@@ -509,7 +515,7 @@ async def run_validation(
         # ── 3b. Load model parameters ─────────────────────────────────────
         param_rows = (await db.execute(
             text("""
-                SELECT param_id, name, value, min_value, max_value
+                SELECT param_id, name, value, min_value, max_value, distribution_type
                 FROM model_parameter
                 WHERE revision_id = :rid
             """),
