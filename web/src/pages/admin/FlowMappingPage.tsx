@@ -121,10 +121,12 @@ export default function FlowMappingPage() {
                     const resolved = total - pending
 
                     const mappingState: 'none' | 'partial' | 'complete' =
-                      !summary || total === 0 || pending === total
+                      !summary
                         ? 'none'
-                        : pending === 0
+                        : total === 0 || pending === 0
                         ? 'complete'
+                        : pending === total
+                        ? 'none'
                         : 'partial'
 
                     return (

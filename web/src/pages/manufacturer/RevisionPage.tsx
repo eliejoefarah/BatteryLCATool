@@ -242,6 +242,8 @@ export default function RevisionPage() {
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
           {isMapped
             ? 'This revision has been fully mapped and is now read-only.'
+            : isFrozen && isCreator
+            ? 'This revision is frozen and cannot be edited.'
             : role === 'reviewer'
             ? 'You have reviewer access — viewing in read-only mode.'
             : 'This revision was created by another team member — viewing in read-only mode.'}
