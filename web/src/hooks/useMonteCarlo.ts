@@ -22,6 +22,7 @@ export interface MonteCarloFlowResult {
 export interface MonteCarloSensitivityRow {
   parameter_name: string
   flow_name: string | null
+  direction: string
   spearman_rho: number
   p_value: number
 }

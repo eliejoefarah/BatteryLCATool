@@ -23,10 +23,13 @@ import { getSession } from '../../lib/supabase'
 // Inline SVG histogram  (recharts is not in package.json)
 // ---------------------------------------------------------------------------
 
-function fmtBin(v: number, maxMid: number): string {
-  const absMax = Math.abs(maxMid)
-  if (absMax >= 0.01) return v.toFixed(2)
-  if (absMax >= 0.0001) return v.toFixed(4)
+function fmtBin(v: number): string {
+  const abs = Math.abs(v)
+  if (abs === 0) return '0'
+  if (abs >= 1) return v.toFixed(2)
+  if (abs >= 0.01) return v.toFixed(3)
+  if (abs >= 0.001) return v.toFixed(4)
+  if (abs >= 0.0001) return v.toFixed(5)
   return v.toExponential(2)
 }
 
@@ -48,13 +51,6 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
 
   const maxCount = Math.max(...counts, 1)
   const barW = innerW / counts.length
-
-  const maxMid = Math.max(
-    ...counts.map((_, i) =>
-      Math.abs(((bin_edges[i] ?? 0) + (bin_edges[i + 1] ?? bin_edges[i] ?? 0)) / 2),
-    ),
-    0,
-  )
 
   // Y-axis ticks (4 steps)
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * maxCount))
@@ -97,7 +93,7 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
                 rx={1}
               >
                 <title>
-                  [{fmtBin(bin_edges[i] ?? 0, maxMid)}, {fmtBin(bin_edges[i + 1] ?? 0, maxMid)}): {count}
+                  [{fmtBin(bin_edges[i] ?? 0)}, {fmtBin(bin_edges[i + 1] ?? 0)}): {count}
                 </title>
               </rect>
               {/* X-axis label — every ~5th bar to avoid crowding */}
@@ -109,7 +105,7 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
                   fontSize={9}
                   fill="#94a3b8"
                 >
-                  {fmtBin(mid, maxMid)}
+                  {fmtBin(mid)}
                 </text>
               )}
             </g>
@@ -211,6 +207,7 @@ function SensitivityTable({
       <TableHeader>
         <TableRow className="bg-slate-50">
           <TableHead className="text-xs font-semibold text-slate-600">Parameter</TableHead>
+          <TableHead className="text-xs font-semibold text-slate-600">Direction</TableHead>
           <TableHead className="text-xs font-semibold text-slate-600 text-right">
             Spearman ρ
           </TableHead>
@@ -219,10 +216,11 @@ function SensitivityTable({
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.parameter_name}>
+          <TableRow key={`${row.parameter_name}-${row.direction}`}>
             <TableCell className="text-sm font-medium text-slate-800">
               {row.parameter_name}
             </TableCell>
+            <TableCell className="text-xs text-slate-400 capitalize">{row.direction}</TableCell>
             <TableCell
               className={[
                 'text-sm font-mono text-right',
@@ -259,7 +257,7 @@ export default function MonteCarloResultPage() {
   const activeFlow = flows.find((f) => f.flow_name === activeFlowName) ?? flows[0] ?? null
 
   const sensitivityForFlow = (run?.sensitivity ?? []).filter(
-    (s) => s.flow_name === activeFlowName,
+    (s) => s.flow_name === activeFlow?.flow_name && s.direction === activeFlow?.direction,
   )
 
   // ── Export handler ──────────────────────────────────────────────────────

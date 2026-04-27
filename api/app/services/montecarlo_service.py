@@ -329,12 +329,13 @@ def compute_sensitivity(
         if np.std(param_arr) == 0:
             continue
         for flow_key, flow_arr in flow_arrays.items():
-            raw_name, _unit, _direction = flow_key
+            raw_name, _unit, direction = flow_key
             rho, pval = spearmanr(param_arr, flow_arr)
             if abs(rho) > 0.1:
                 sensitivity.append({
                     "parameter_name": param_name,
                     "flow_name": raw_name,
+                    "direction": direction,
                     "spearman_rho": round(float(rho), 4),
                     "p_value": round(float(pval), 6),
                 })

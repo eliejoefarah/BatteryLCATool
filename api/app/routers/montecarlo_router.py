@@ -67,6 +67,7 @@ class MonteCarloFlowResult(BaseModel):
 class MonteCarloSensitivityRow(BaseModel):
     parameter_name: str
     flow_name: Optional[str]
+    direction: str
     spearman_rho: float
     p_value: float
 
