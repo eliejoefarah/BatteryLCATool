@@ -13,15 +13,15 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
   validated: 'bg-green-100 text-green-700',
   mapped: 'bg-green-100 text-green-700',
+  unmapped: 'bg-green-100 text-green-700',
   frozen: 'bg-blue-100 text-blue-700',
-  unmapped: 'bg-amber-100 text-amber-700',
   archived: 'bg-amber-100 text-amber-700',
 }
 
 const STATUS_LABELS: Record<string, string> = {
   mapped: 'Mapped',
   frozen: 'Frozen',
-  unmapped: 'Unmapped',
+  unmapped: 'Validated',
 }
 
 function ValidationBadge({ revisionId }: { revisionId: string }) {
