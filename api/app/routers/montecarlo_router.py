@@ -145,7 +145,7 @@ async def trigger_montecarlo(
     if rev_row is None:
         raise HTTPException(status_code=404, detail="Revision not found.")
 
-    if rev_row[0] not in ("validated", "mapped"):
+    if rev_row[0] not in ("unmapped", "validated", "mapped"):
         raise HTTPException(
             status_code=422,
             detail="Revision must be validated before running Monte Carlo.",
@@ -305,7 +305,7 @@ async def list_validated_revisions(
                 ORDER BY run_at DESC
                 LIMIT 1
             ) latest_vr ON TRUE
-            WHERE bmr.status IN ('validated', 'mapped')
+            WHERE bmr.status IN ('unmapped', 'validated', 'mapped')
               AND (latest_vr.status IS NULL OR latest_vr.status != 'fail')
             ORDER BY bmr.created_at DESC
         """),

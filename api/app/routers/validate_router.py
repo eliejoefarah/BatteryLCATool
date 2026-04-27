@@ -450,7 +450,14 @@ async def run_validation(
     await db.commit()
 
     try:
-        # ── 2. Load processes ─────────────────────────────────────────────
+        # ── 2. Load current revision status (preserve it if already advanced) ─
+        current_rev = (await db.execute(
+            text("SELECT status FROM battery_model_revision WHERE revision_id = :rid"),
+            {"rid": str(revision_id)},
+        )).fetchone()
+        current_status = current_rev[0] if current_rev else "draft"
+
+        # ── 3. Load processes ─────────────────────────────────────────────
         proc_rows = (await db.execute(
             text("""
                 SELECT process_id, name, system_boundary
@@ -586,9 +593,13 @@ async def run_validation(
         )
 
         # Flip revision lifecycle status based on validation result.
-        # Both clean passes and passes-with-warnings advance to 'unmapped'
-        # (ready for flow mapping). Only errors send the revision back to 'draft'.
-        revision_status = "unmapped" if final_status in ("pass", "warning") else "draft"
+        # Only advance from 'draft' to 'unmapped'; preserve 'unmapped', 'mapped',
+        # or 'validated' if the revision is already further along the pipeline.
+        # Errors always regress to 'draft' regardless of current status.
+        if final_status in ("pass", "warning"):
+            revision_status = current_status if current_status != "draft" else "unmapped"
+        else:
+            revision_status = "draft"
         await db.execute(
             text("""
                 UPDATE battery_model_revision
