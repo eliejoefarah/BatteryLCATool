@@ -50,6 +50,7 @@ export interface ValidatedRevisionRow {
   frozen_at: string | null
   created_at: string
   created_by_email: string
+  last_validation_status: string | null
 }
 
 // ---------------------------------------------------------------------------

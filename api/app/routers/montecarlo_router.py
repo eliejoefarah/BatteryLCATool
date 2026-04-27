@@ -96,6 +96,7 @@ class ValidatedRevisionRow(BaseModel):
     frozen_at: Optional[datetime] = None
     created_at: datetime
     created_by_email: str
+    last_validation_status: Optional[str] = None  # 'pass' | 'warning' | 'fail'
 
 
 # ---------------------------------------------------------------------------
@@ -291,12 +292,21 @@ async def list_validated_revisions(
                 bmr.created_at,
                 bm.name          AS model_name,
                 p.name           AS project_name,
-                au.email         AS created_by_email
+                au.email         AS created_by_email,
+                latest_vr.status AS last_validation_status
             FROM battery_model_revision bmr
             JOIN battery_model bm ON bm.model_id   = bmr.model_id
             JOIN project        p  ON p.project_id  = bm.project_id
             JOIN app_user       au ON au.user_id    = bmr.created_by
+            LEFT JOIN LATERAL (
+                SELECT status
+                FROM validation_run
+                WHERE revision_id = bmr.revision_id
+                ORDER BY run_at DESC
+                LIMIT 1
+            ) latest_vr ON TRUE
             WHERE bmr.status IN ('validated', 'frozen')
+              AND (latest_vr.status IS NULL OR latest_vr.status != 'fail')
             ORDER BY bmr.created_at DESC
         """),
     )).mappings().all()
@@ -311,6 +321,7 @@ async def list_validated_revisions(
             frozen_at=row["frozen_at"],
             created_at=row["created_at"],
             created_by_email=row["created_by_email"],
+            last_validation_status=row["last_validation_status"],
         )
         for row in rows
     ]

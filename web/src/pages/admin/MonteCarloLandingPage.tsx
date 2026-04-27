@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, BarChart2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, BarChart2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
@@ -28,6 +28,29 @@ import type { ValidatedRevisionRow, MonteCarloRunSummary } from '../../hooks/use
 // ---------------------------------------------------------------------------
 // Badge helpers
 // ---------------------------------------------------------------------------
+
+function ValidationBadge({ status }: { status: string | null }) {
+  if (!status) return <span className="text-slate-400 text-xs">—</span>
+  if (status === 'pass')
+    return (
+      <Badge variant="outline" className="w-fit border-green-200 bg-green-50 text-green-700 text-xs gap-1">
+        <CheckCircle2 className="h-3 w-3" />
+        Pass
+      </Badge>
+    )
+  if (status === 'warning')
+    return (
+      <Badge variant="outline" className="w-fit border-amber-200 bg-amber-50 text-amber-700 text-xs gap-1">
+        <AlertTriangle className="h-3 w-3" />
+        Warning
+      </Badge>
+    )
+  return (
+    <Badge variant="outline" className="w-fit border-red-200 bg-red-50 text-red-700 text-xs">
+      Fail
+    </Badge>
+  )
+}
 
 function RevisionStatusBadge({ status }: { status: string }) {
   if (status === 'validated')
@@ -87,7 +110,7 @@ function RunsSubTable({
 
   return (
     <TableRow className="bg-slate-50 hover:bg-slate-50">
-      <TableCell colSpan={6} className="p-0">
+      <TableCell colSpan={7} className="p-0">
         <div className="px-8 py-3">
           {isLoading ? (
             <div className="space-y-2">
@@ -311,6 +334,7 @@ export default function MonteCarloLandingPage() {
                     <TableHead className="text-xs font-semibold text-slate-600">Model</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600">Revision</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600">Status</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600">Validation</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600">Created</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 text-right">
                       Actions
@@ -340,6 +364,9 @@ export default function MonteCarloLandingPage() {
                           </TableCell>
                           <TableCell>
                             <RevisionStatusBadge status={rev.status} />
+                          </TableCell>
+                          <TableCell>
+                            <ValidationBadge status={rev.last_validation_status} />
                           </TableCell>
                           <TableCell className="text-sm text-slate-500">
                             {new Date(rev.created_at).toLocaleDateString()}
