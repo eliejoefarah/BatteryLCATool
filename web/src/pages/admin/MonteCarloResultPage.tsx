@@ -23,6 +23,13 @@ import { getSession } from '../../lib/supabase'
 // Inline SVG histogram  (recharts is not in package.json)
 // ---------------------------------------------------------------------------
 
+function fmtBin(v: number, maxMid: number): string {
+  const absMax = Math.abs(maxMid)
+  if (absMax >= 0.01) return v.toFixed(2)
+  if (absMax >= 0.0001) return v.toFixed(4)
+  return v.toExponential(2)
+}
+
 function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
   const { bin_edges, counts } = flow.histogram
   if (!counts.length || bin_edges.length < 2) {
@@ -41,6 +48,13 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
 
   const maxCount = Math.max(...counts, 1)
   const barW = innerW / counts.length
+
+  const maxMid = Math.max(
+    ...counts.map((_, i) =>
+      Math.abs(((bin_edges[i] ?? 0) + (bin_edges[i + 1] ?? bin_edges[i] ?? 0)) / 2),
+    ),
+    0,
+  )
 
   // Y-axis ticks (4 steps)
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * maxCount))
@@ -83,7 +97,7 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
                 rx={1}
               >
                 <title>
-                  [{(bin_edges[i] ?? 0).toFixed(3)}, {(bin_edges[i + 1] ?? 0).toFixed(3)}): {count}
+                  [{fmtBin(bin_edges[i] ?? 0, maxMid)}, {fmtBin(bin_edges[i + 1] ?? 0, maxMid)}): {count}
                 </title>
               </rect>
               {/* X-axis label — every ~5th bar to avoid crowding */}
@@ -95,7 +109,7 @@ function SvgHistogram({ flow }: { flow: MonteCarloFlowResult }) {
                   fontSize={9}
                   fill="#94a3b8"
                 >
-                  {mid.toFixed(2)}
+                  {fmtBin(mid, maxMid)}
                 </text>
               )}
             </g>
