@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FolderOpen, Users, BookOpen, LayoutGrid, Link2, Download } from 'lucide-react'
+import { FolderOpen, Users, BookOpen, LayoutGrid, Link2, Download, BarChart2 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
 import TopBar from '../../components/TopBar'
 
@@ -39,6 +39,12 @@ const CARDS = [
     title: 'Export',
     description: 'Export fully-mapped revisions as LCI spreadsheets.',
     href: '/admin/export',
+  },
+  {
+    icon: BarChart2,
+    title: 'Monte Carlo',
+    description: 'Run uncertainty analysis on validated revisions.',
+    href: '/admin/montecarlo',
   },
 ]
 
@@ -95,13 +101,13 @@ export default function AdminDashboard() {
                 </button>
               ))}
             </div>
-            {/* Row 3: 1 card (Export) */}
-            <div className="px-[calc(100%/3)]">
+            {/* Row 3: 2 cards (Export + Monte Carlo) */}
+            <div className="grid grid-cols-2 gap-4 px-[calc(100%/6)]">
               {CARDS.slice(5).map(({ icon: Icon, title, description, href }) => (
                 <button
                   key={href}
                   onClick={() => navigate(href)}
-                  className="group flex w-full flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
+                  className="group flex flex-col gap-4 rounded-xl border bg-white p-6 text-left shadow-sm transition-all hover:border-green-200 hover:shadow-md"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700 transition-colors group-hover:bg-green-600 group-hover:text-white">
                     <Icon className="h-5 w-5" />

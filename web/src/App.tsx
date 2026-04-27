@@ -12,6 +12,8 @@ import GlobalDataView from './pages/admin/GlobalDataView'
 import MappingPage from './pages/admin/MappingPage'
 import FlowMappingPage from './pages/admin/FlowMappingPage'
 import ExportPage from './pages/admin/ExportPage'
+import MonteCarloLandingPage from './pages/admin/MonteCarloLandingPage'
+import MonteCarloResultPage from './pages/admin/MonteCarloResultPage'
 import ProjectListPage from './pages/manufacturer/ProjectListPage'
 import ProjectPage from './pages/manufacturer/ProjectPage'
 import ModelPage from './pages/manufacturer/ModelPage'
@@ -104,6 +106,22 @@ export default function App() {
           element={
             <AdminRoute>
               <ExportPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/montecarlo"
+          element={
+            <AdminRoute>
+              <MonteCarloLandingPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/montecarlo/:runId"
+          element={
+            <AdminRoute>
+              <MonteCarloResultPage />
             </AdminRoute>
           }
         />
