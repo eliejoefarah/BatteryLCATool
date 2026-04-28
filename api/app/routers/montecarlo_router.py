@@ -56,11 +56,13 @@ class MonteCarloFlowResult(BaseModel):
     direction: str
     mean: float
     std: float
+    cv_pct: Optional[float] = None
     p5: float
     p25: float
     p50: float
     p75: float
     p95: float
+    range_p5_p95: float = 0.0
     histogram: dict  # {bin_edges: list[float], counts: list[int]}
 
 
@@ -461,33 +463,89 @@ async def export_run(
     n_runs: int = results_data.get("n_runs", 0)
     failed_runs: int = results_data.get("failed_runs", 0)
 
+    # ── Pre-compute cv_pct / range per flow and sort by CV% desc ─────────
+    def _cv_key(f: dict) -> float:
+        mean = f.get("mean", 0.0) or 0.0
+        std = f.get("std", 0.0) or 0.0
+        return (std / mean * 100.0) if mean != 0 else float("-inf")
+
+    flows_sorted = sorted(flows, key=_cv_key, reverse=True)
+    uncertain_flows = [f for f in flows_sorted if (f.get("std") or 0.0) > 0]
+
+    def _row(f: dict) -> list:
+        mean = f.get("mean", 0.0) or 0.0
+        std = f.get("std", 0.0) or 0.0
+        cv = (std / mean * 100.0) if mean != 0 else None
+        p5v = f.get("p5", 0.0) or 0.0
+        p95v = f.get("p95", 0.0) or 0.0
+        return [
+            f.get("flow_name"), f.get("unit"), f.get("direction"),
+            mean, std, cv,
+            p5v, f.get("p25"), f.get("p50"), f.get("p75"), p95v,
+            p95v - p5v,
+        ]
+
+    _FLOW_HEADER = [
+        "flow_name", "unit", "direction",
+        "mean", "std", "CV%", "p5", "p25", "p50", "p75", "p95", "p95-p5",
+    ]
+
     wb = openpyxl.Workbook()
 
-    # ── Sheet 1: Summary ──────────────────────────────────────────────────
+    # ── Sheet 1: Summary (all flows, CV% desc) ────────────────────────────
     ws_summary = wb.active
     ws_summary.title = "Summary"
     ws_summary.append(["Monte Carlo Run", str(run_id)])
     ws_summary.append(["Total runs", n_runs])
     ws_summary.append(["Failed runs", failed_runs])
     ws_summary.append([])
-    ws_summary.append([
-        "flow_name", "unit", "direction",
-        "mean", "std", "p5", "p25", "p50", "p75", "p95",
-    ])
-    for f in flows:
-        ws_summary.append([
-            f.get("flow_name"), f.get("unit"), f.get("direction"),
-            f.get("mean"), f.get("std"),
-            f.get("p5"), f.get("p25"), f.get("p50"), f.get("p75"), f.get("p95"),
+    ws_summary.append(_FLOW_HEADER)
+    for f in flows_sorted:
+        ws_summary.append(_row(f))
+
+    # ── Sheet 2: Uncertain flows (std > 0, CV% desc) ──────────────────────
+    ws_uncertain = wb.create_sheet(title="Uncertain flows")
+    ws_uncertain.append(_FLOW_HEADER)
+    for f in uncertain_flows:
+        ws_uncertain.append(_row(f))
+
+    # ── Sheet 3: Sensitivity (sorted by |ρ| desc) ─────────────────────────
+    sensitivity_sorted = sorted(
+        sensitivity, key=lambda s: abs(s.get("spearman_rho", 0.0)), reverse=True
+    )
+    ws_sens = wb.create_sheet(title="Sensitivity")
+    ws_sens.append(["parameter_name", "flow_name", "spearman_rho", "p_value"])
+    for s in sensitivity_sorted:
+        ws_sens.append([
+            s.get("parameter_name"),
+            s.get("flow_name"),
+            s.get("spearman_rho"),
+            s.get("p_value"),
         ])
 
-    # ── Sheets 2..N: per-flow histogram data ─────────────────────────────
-    for idx, f in enumerate(flows, start=1):
+    # ── Sheet 4: Top drivers (max |ρ| per parameter) ──────────────────────
+    param_max: dict[str, dict] = {}
+    for s in sensitivity:
+        pname = s.get("parameter_name", "")
+        rho = s.get("spearman_rho", 0.0)
+        if pname not in param_max or abs(rho) > abs(param_max[pname].get("spearman_rho", 0.0)):
+            param_max[pname] = s
+    top_drivers = sorted(param_max.values(), key=lambda s: abs(s.get("spearman_rho", 0.0)), reverse=True)
+
+    ws_drivers = wb.create_sheet(title="Top drivers")
+    ws_drivers.append(["parameter_name", "max_abs_rho", "flow_with_max_rho"])
+    for s in top_drivers:
+        ws_drivers.append([
+            s.get("parameter_name"),
+            abs(s.get("spearman_rho", 0.0)),
+            s.get("flow_name"),
+        ])
+
+    # ── Per-flow histogram sheets (uncertain flows only) ──────────────────
+    for idx, f in enumerate(uncertain_flows, start=1):
         title = _sheet_name(f.get("flow_name") or "flow", idx)
         ws = wb.create_sheet(title=title)
-        ws.append([
-            "flow_name", str(f.get("flow_name")),
-        ])
+        ws.append(["flow_name", str(f.get("flow_name"))])
         ws.append(["unit", str(f.get("unit"))])
         ws.append(["direction", str(f.get("direction"))])
         ws.append([])
@@ -501,17 +559,6 @@ async def export_run(
                 bin_edges[j + 1] if (j + 1) < len(bin_edges) else None,
                 counts[j],
             ])
-
-    # ── Sheet N+1: Sensitivity ────────────────────────────────────────────
-    ws_sens = wb.create_sheet(title="Sensitivity")
-    ws_sens.append(["parameter_name", "flow_name", "spearman_rho", "p_value"])
-    for s in sensitivity:
-        ws_sens.append([
-            s.get("parameter_name"),
-            s.get("flow_name"),
-            s.get("spearman_rho"),
-            s.get("p_value"),
-        ])
 
     buf = io.BytesIO()
     wb.save(buf)

@@ -289,17 +289,26 @@ def aggregate_statistics(
 
         p5, p25, p50, p75, p95 = np.percentile(arr, [5, 25, 50, 75, 95])
 
+        mean_val = float(np.mean(arr))
+        std_val = float(np.std(arr))
+        p5_val, p25_val, p50_val, p75_val, p95_val = (
+            float(p5), float(p25), float(p50), float(p75), float(p95)
+        )
+        cv_pct = (std_val / mean_val * 100.0) if mean_val != 0 else None
+
         flows.append({
             "flow_name": raw_name,
             "unit": user_unit,
             "direction": direction,
-            "mean": float(np.mean(arr)),
-            "std": float(np.std(arr)),
-            "p5": float(p5),
-            "p25": float(p25),
-            "p50": float(p50),
-            "p75": float(p75),
-            "p95": float(p95),
+            "mean": mean_val,
+            "std": std_val,
+            "cv_pct": cv_pct,
+            "p5": p5_val,
+            "p25": p25_val,
+            "p50": p50_val,
+            "p75": p75_val,
+            "p95": p95_val,
+            "range_p5_p95": p95_val - p5_val,
             "histogram": {
                 "bin_edges": bin_edges.tolist(),
                 "counts": bin_counts.tolist(),

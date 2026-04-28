@@ -11,11 +11,13 @@ export interface MonteCarloFlowResult {
   direction: string
   mean: number
   std: number
+  cv_pct: number | null
   p5: number
   p25: number
   p50: number
   p75: number
   p95: number
+  range_p5_p95: number
   histogram: { bin_edges: number[]; counts: number[] }
 }
 
