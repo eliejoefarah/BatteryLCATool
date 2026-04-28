@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import { ChevronDown, ChevronRight, BarChart2, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
@@ -263,10 +262,8 @@ export default function MonteCarloLandingPage() {
         onSuccess: (data) => {
           navigate(`/admin/montecarlo/${data.run_id}`)
         },
-        onError: (err) => {
+        onError: () => {
           setGeneratingId(null)
-          const detail = (err as Error & { status?: number }).message
-          toast.error(detail ?? 'Monte Carlo run failed')
         },
       },
     )
