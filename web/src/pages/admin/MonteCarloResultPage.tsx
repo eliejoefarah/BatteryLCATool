@@ -718,7 +718,7 @@ export default function MonteCarloResultPage() {
   const [selectedFlowDirection, setSelectedFlowDirection] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
 
-  const flows = run?.flows ?? []
+  const flows = useMemo(() => run?.flows ?? [], [run])
 
   const activeFlow = useMemo(() => {
     if (selectedFlowName) {
