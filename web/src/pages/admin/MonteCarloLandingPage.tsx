@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, BarChart2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ChevronDown, ChevronRight, BarChart2, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
-import { Progress } from '../../components/ui/progress'
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
 import { Skeleton } from '../../components/ui/skeleton'
 import {
@@ -187,9 +186,9 @@ function GeneratePopover({
 
   if (isGenerating) {
     return (
-      <div className="flex w-36 flex-col gap-1">
-        <Progress className="h-1.5 w-full" value={undefined} />
-        <span className="text-center text-[10px] text-slate-400">Running…</span>
+      <div className="flex items-center gap-2 text-slate-500">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-xs">Running…</span>
       </div>
     )
   }
