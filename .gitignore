@@ -61,7 +61,7 @@ api/tests
 
 
 # ─── Local utility scripts (not for version control) ─────────────────────────
-scripts
+scripts/
 .claude/
 *.md
 *.pdf
