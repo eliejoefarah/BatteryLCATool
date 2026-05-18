@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Link2, ArrowRight, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
+import { Link2, ArrowRight, CheckCheck, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import TopBar from '../../components/TopBar'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -13,6 +16,7 @@ import {
 } from '../../components/ui/table'
 import { useMappingRevisions } from '../../hooks/useMappingRevisions'
 import { useBulkMappingSummary } from '../../hooks/useBwMapping'
+import { supabase } from '../../lib/supabase'
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
@@ -48,7 +52,9 @@ function ValidationBadge({ status, issueCount }: { status: string | null; issueC
 
 export default function FlowMappingPage() {
   const navigate = useNavigate()
-  const { data: revisions, isLoading, error } = useMappingRevisions()
+  const queryClient = useQueryClient()
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const { data: revisions, isLoading, error, refetch: refetchRevisions } = useMappingRevisions()
 
   const revisionIds = revisions?.map((r) => r.revision_id) ?? []
   const { data: summaries } = useBulkMappingSummary(revisionIds)
@@ -56,6 +62,23 @@ export default function FlowMappingPage() {
   const summaryByRevId = Object.fromEntries(
     (summaries ?? []).map((s) => [s.revision_id, s]),
   )
+
+  async function handleConfirmMapped(revisionId: string) {
+    setConfirmingId(revisionId)
+    const { error } = await supabase
+      .from('battery_model_revision')
+      .update({ status: 'mapped' })
+      .eq('revision_id', revisionId)
+    setConfirmingId(null)
+    if (error) {
+      toast.error('Failed to confirm mapping: ' + error.message)
+      return
+    }
+    toast.success('Revision marked as mapped')
+    refetchRevisions()
+    queryClient.invalidateQueries({ queryKey: ['exportable-revisions'] })
+    queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'bulk-summary'] })
+  }
 
   function mappingHref(projectId: string, modelId: string, revisionId: string) {
     return `/admin/projects/${projectId}/models/${modelId}/revisions/${revisionId}/mapping`
@@ -164,15 +187,28 @@ export default function FlowMappingPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {mappingState === 'complete' ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs border-green-300 text-green-700 hover:bg-green-50"
-                              onClick={() => navigate(href)}
-                            >
-                              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                              Double Check
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs border-green-300 text-green-700 hover:bg-green-50"
+                                onClick={() => navigate(href)}
+                              >
+                                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                                Double Check
+                              </Button>
+                              {rev.status !== 'mapped' && rev.status !== 'frozen' && (
+                                <Button
+                                  size="sm"
+                                  className="text-xs bg-green-600 text-white hover:bg-green-700"
+                                  disabled={confirmingId === rev.revision_id}
+                                  onClick={() => handleConfirmMapped(rev.revision_id)}
+                                >
+                                  <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+                                  {confirmingId === rev.revision_id ? 'Confirming…' : 'Confirm Mapped'}
+                                </Button>
+                              )}
+                            </div>
                           ) : mappingState === 'partial' ? (
                             <Button
                               size="sm"
