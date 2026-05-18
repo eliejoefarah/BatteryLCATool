@@ -7,7 +7,25 @@ from __future__ import annotations
 #
 # Supported xlsx formats
 # ──────────────────────
-# tabular    — 3 flat sheets:
+# vub_template — one process per sheet (primary format). Each sheet has:
+#              • Metadata preamble (col A: section label, col B–F: values):
+#                  - 'Process description:'     → activity comment
+#                  - 'Material/product produced' → ref product name, amount,
+#                                                  unit, cost (col F)
+#                  - 'Co-product'               → coproduct name, amount, unit
+#              • Section markers in col A (col C empty):
+#                  'Inventory process' → metadata preamble header (skip next row)
+#                  'Inputs'            → input exchanges follow
+#                  'Transport'         → transport inputs follow
+#                  'Outputs'           → output exchanges follow
+#              • Exchange rows: col C = flow name, col D = amount, col E = unit,
+#                  col F = comment, col G = details, col H = cost_per_unit,
+#                  col I = source_location, col J = observations
+#              • First output → output_type='reference'; coproducts → 'coproduct';
+#                  remaining outputs → 'waste_output'
+#              • Process name taken from sheet name
+#
+# tabular      — 3 flat sheets:
 #              • Parameters  (columns: name, description, value, min_value,
 #                             max_value, mode_value, distribution_type)
 #              • Activities  (columns: name, location, unit, production_amount,
@@ -16,8 +34,9 @@ from __future__ import annotations
 #                             formula, unit, direction, source_database,
 #                             source_location, data_origin)
 #
-# brightway  — N sheets, one activity per sheet (Brightway Excel export format
-#              as used in example_database.xlsx). Each sheet has:
+# brightway   — N sheets, one or more activities per sheet (Brightway Excel
+#              export format as used in example_database.xlsx). Each activity
+#              block has:
 #              • Key-value metadata rows (Activity, location, unit, …)
 #              • An 'Exchanges' row as separator
 #              • A table: name | amount | unit | database | location |
@@ -25,11 +44,14 @@ from __future__ import annotations
 #              Exchange types: production → output/reference,
 #                              technosphere → input,
 #                              biosphere/air → output/waste_output
+#              Multiple activity blocks may be stacked vertically on one sheet.
 #
-# Format auto-detection:
-#   tabular      → 'Activities' and 'Exchanges' sheet names present
-#   vub_template → one process per sheet; col A has 'INPUTS' / 'INVENTORY PROCESS'
-#   brightway    → one activity per sheet; key-value rows start with 'Activity'
+# Format auto-detection (checked in this order):
+#   tabular      → 'Activities' and 'Exchanges' sheet names both present
+#   vub_template → first non-skip sheet has col A row matching
+#                  'inputs', 'inventory process', or 'process description'
+#   brightway    → first non-skip sheet has col A row matching
+#                  'activity', 'database', or 'format'
 # =============================================================================
 
 import io

@@ -13,7 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
   validated: 'bg-green-100 text-green-700',
   mapped: 'bg-green-100 text-green-700',
-  unmapped: 'bg-green-100 text-green-700',
+  unmapped: 'bg-amber-100 text-amber-700',
   frozen: 'bg-blue-100 text-blue-700',
   archived: 'bg-amber-100 text-amber-700',
 }
@@ -21,7 +21,7 @@ const STATUS_STYLES: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   mapped: 'Mapped',
   frozen: 'Frozen',
-  unmapped: 'Validated',
+  unmapped: 'Validated – Unmapped',
 }
 
 function ValidationBadge({ revisionId }: { revisionId: string }) {
@@ -118,9 +118,6 @@ function RevisionCard({
           )}
         >
           {STATUS_LABELS[revision.status] ?? revision.status}
-          {revision.is_active && (
-            <span className="ml-1 text-slate-400">· active</span>
-          )}
         </Badge>
       </div>
     </button>
