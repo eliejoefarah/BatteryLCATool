@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { CheckCircle2, Link2, Loader2 } from 'lucide-react'
+import { CheckCheck, CheckCircle2, Link2, Loader2 } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import TopBar from '../../components/TopBar'
 import { Badge } from '../../components/ui/badge'
 import { Skeleton } from '../../components/ui/skeleton'
@@ -15,6 +17,7 @@ import {
 import { cn } from '../../lib/utils'
 import { useRevisionMappingStatus, type FlowMappingGroup } from '../../hooks/useBwMapping'
 import { FlowMappingDialog } from '../../components/admin/FlowMappingDialog'
+import { supabase } from '../../lib/supabase'
 
 type Filter = 'all' | 'pending' | 'mapped' | 'skipped'
 
@@ -26,6 +29,44 @@ export default function MappingPage() {
   }>()
 
   const { data, isLoading, error } = useRevisionMappingStatus(revisionId)
+  const queryClient = useQueryClient()
+  const [confirming, setConfirming] = useState(false)
+
+  const { data: revisionStatus, refetch: refetchStatus } = useQuery({
+    queryKey: ['revision-status', revisionId],
+    queryFn: async () => {
+      const { data: row, error } = await supabase
+        .from('battery_model_revision')
+        .select('status')
+        .eq('revision_id', revisionId!)
+        .single()
+      if (error) throw error
+      return row.status as string
+    },
+    enabled: !!revisionId,
+  })
+
+  const showConfirm =
+    !!data?.ready_for_export &&
+    revisionStatus !== 'mapped' &&
+    revisionStatus !== 'frozen'
+
+  async function handleConfirmMapped() {
+    setConfirming(true)
+    const { error } = await supabase
+      .from('battery_model_revision')
+      .update({ status: 'mapped' })
+      .eq('revision_id', revisionId!)
+    setConfirming(false)
+    if (error) {
+      toast.error('Failed to confirm mapping: ' + error.message)
+      return
+    }
+    toast.success('Revision marked as mapped')
+    refetchStatus()
+    queryClient.invalidateQueries({ queryKey: ['exportable-revisions'] })
+    queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'bulk-summary'] })
+  }
 
   const [filter, setFilter] = useState<Filter>('all')
   const [selectedFlow, setSelectedFlow] = useState<FlowMappingGroup | null>(null)
@@ -81,7 +122,19 @@ export default function MappingPage() {
                 </p>
                 <p className="text-xs text-slate-400">{progressPct}% complete</p>
                 {data.ready_for_export && (
-                  <p className="text-xs text-green-600 font-medium mt-0.5">✓ Ready for export</p>
+                  <div className="mt-0.5 flex items-center justify-end gap-2">
+                    <p className="text-xs text-green-600 font-medium">✓ Ready for export</p>
+                    {showConfirm && (
+                      <button
+                        onClick={handleConfirmMapped}
+                        disabled={confirming}
+                        className="flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50"
+                      >
+                        <CheckCheck className="h-3 w-3" />
+                        {confirming ? 'Confirming…' : 'Confirm Mapped'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
