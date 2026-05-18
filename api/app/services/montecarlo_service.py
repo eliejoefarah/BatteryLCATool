@@ -26,7 +26,6 @@ from __future__ import annotations
 #    but not bit-identical across re-runs.
 # =============================================================================
 
-import math
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -60,7 +59,42 @@ def _make_dist(
     max_value: Any,
     mode_value: Any,
 ) -> Any:
-    """Return a scipy frozen distribution, or None for fixed parameters."""
+    """Return a scipy frozen distribution, or None for fixed (deterministic) parameters.
+
+    Column semantics
+    ----------------
+    The ``mode_value`` DB column serves different roles depending on distribution
+    type — the name is a historical artefact and should not be read literally:
+
+    +--------------+------------------+------------------+--------------------------+
+    | Distribution | ``nominal``      | ``min_value``    | ``mode_value``           |
+    |              | (``value`` col)  |                  | (mis-named col)          |
+    +--------------+------------------+------------------+--------------------------+
+    | uniform      | (unused)         | lower bound      | (unused)                 |
+    | normal       | mean μ           | (unused)         | std deviation            |
+    | lognormal    | physical median  | (unused)         | σ_ln (log-space std dev) |
+    | triangular   | fallback peak    | lower bound      | peak / mode              |
+    +--------------+------------------+------------------+--------------------------+
+
+    Lognormal parametrisation
+    -------------------------
+    ``nominal`` is the **physical median** as entered by the manufacturer (e.g. 2.5
+    for a mass of 2.5 kg).  scipy.stats.lognorm uses ``scale`` as the median, so
+    ``scale = nominal`` is correct.  ``mode_value`` is σ_ln, the standard deviation
+    of the underlying normal distribution (ln X ~ N(ln(median), σ_ln²)).
+
+    Return values
+    -------------
+    Returns a frozen scipy distribution (``rv_frozen``) ready for ``.rvs(size=N)``
+    calls, or ``None`` when:
+      - ``distribution_type`` is None, empty, or unrecognised
+      - Required parameters are missing (e.g. uniform without min/max)
+      - The parameter configuration is invalid (e.g. min >= max, or triangular
+        peak outside [min, max])
+
+    ``None`` means the parameter is treated as a fixed constant; sampling always
+    returns ``nominal_value``.
+    """
     dt = (distribution_type or "").strip().lower()
 
     if dt == "uniform":
@@ -79,7 +113,7 @@ def _make_dist(
     if dt == "lognormal":
         if mode_value is None:
             return None
-        return scipy.stats.lognorm(s=float(mode_value), scale=math.exp(nominal))
+        return scipy.stats.lognorm(s=float(mode_value), scale=nominal)
 
     if dt == "triangular":
         if min_value is None or max_value is None:

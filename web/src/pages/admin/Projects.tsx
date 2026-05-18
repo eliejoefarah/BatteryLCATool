@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink, Users, Link2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, BatteryFull, GitBranch, ExternalLink, Users, Link2, CheckCheck } from 'lucide-react'
+import { useBulkMappingSummary } from '../../hooks/useBwMapping'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getSession } from '../../lib/supabase'
 import TopBar from '../../components/TopBar'
@@ -116,18 +117,40 @@ function RevisionRow({
   revision,
   projectId,
   modelId,
+  readyForExport,
 }: {
   revision: RevisionWithCreator
   projectId: string
   modelId: string
+  readyForExport: boolean
 }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [confirming, setConfirming] = useState(false)
   const { data: exchangeCount } = useRevisionExchangeCount(revision.revision_id)
   const { data: paramCount } = useRevisionParameterCount(revision.revision_id)
   const href = `/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}`
   const mappingHref = `/admin/projects/${projectId}/models/${modelId}/revisions/${revision.revision_id}/mapping`
   const isUnmapped = revision.status === 'unmapped'
   const showMapFlows = revision.status === 'validated' && revision.frozen_at === null
+  const showConfirm = readyForExport && revision.status !== 'mapped' && revision.status !== 'frozen'
+
+  async function handleConfirmMapped() {
+    setConfirming(true)
+    const { error } = await supabase
+      .from('battery_model_revision')
+      .update({ status: 'mapped' })
+      .eq('revision_id', revision.revision_id)
+    setConfirming(false)
+    if (error) {
+      toast.error('Failed to confirm mapping: ' + error.message)
+      return
+    }
+    toast.success('Revision marked as mapped')
+    queryClient.invalidateQueries({ queryKey: ['admin', 'revisions', modelId] })
+    queryClient.invalidateQueries({ queryKey: ['bw-mapping', 'bulk-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['exportable-revisions'] })
+  }
 
   return (
     <div className="flex items-center gap-3 rounded px-2 py-1.5 text-xs hover:bg-slate-50">
@@ -170,6 +193,16 @@ function RevisionRow({
           Map Flows
         </Button>
       )}
+      {showConfirm && (
+        <button
+          onClick={handleConfirmMapped}
+          disabled={confirming}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50"
+        >
+          <CheckCheck className="h-3 w-3" />
+          {confirming ? 'Confirming…' : 'Confirm Mapped'}
+        </button>
+      )}
       <span className="text-slate-400">
         {exchangeCount ?? '—'} exchanges · {paramCount ?? '—'} params
       </span>
@@ -196,13 +229,25 @@ function ModelDrillDown({ modelId, projectId }: { modelId: string; projectId: st
     },
   })
 
+  const revisionIds = (revisions ?? []).map((r) => r.revision_id)
+  const { data: mappingSummary } = useBulkMappingSummary(revisionIds)
+  const readyByRevision = Object.fromEntries(
+    (mappingSummary ?? []).map((s) => [s.revision_id, s.ready_for_export])
+  )
+
   if (isLoading) return <p className="py-1 pl-4 text-xs text-slate-400">Loading…</p>
   if (!revisions?.length) return <p className="py-1 pl-4 text-xs text-slate-400 italic">No revisions</p>
 
   return (
     <div className="ml-4 mt-1 space-y-0.5 border-l pl-3">
       {revisions.map((rev) => (
-        <RevisionRow key={rev.revision_id} revision={rev} projectId={projectId} modelId={modelId} />
+        <RevisionRow
+          key={rev.revision_id}
+          revision={rev}
+          projectId={projectId}
+          modelId={modelId}
+          readyForExport={readyByRevision[rev.revision_id] ?? false}
+        />
       ))}
     </div>
   )

@@ -604,9 +604,9 @@ async def run_validation(
         # Errors always regress to 'draft' regardless of current status.
         if final_status in ("pass", "warning"):
             revision_status = current_status if current_status != "draft" else "unmapped"
-            # If the revision would land at 'unmapped', check whether the admin
-            # has already mapped all input exchanges via scope='all'. If so,
-            # advance directly to 'mapped' to keep the status in sync.
+            # If the revision would land at 'unmapped', check whether all input
+            # exchanges are already resolved (mapped or skipped). A revision with
+            # zero input flows also qualifies — it needs no mapping step.
             if revision_status == "unmapped":
                 pending_count = (await db.execute(
                     text("""
@@ -619,19 +619,7 @@ async def run_validation(
                     """),
                     {"rid": str(revision_id)},
                 )).scalar()
-                has_any_input = (await db.execute(
-                    text("""
-                        SELECT EXISTS (
-                            SELECT 1
-                            FROM process_exchange pe
-                            JOIN process_instance pi ON pi.process_id = pe.process_id
-                            WHERE pi.revision_id = :rid
-                              AND pe.exchange_direction = 'input'
-                        )
-                    """),
-                    {"rid": str(revision_id)},
-                )).scalar()
-                if has_any_input and pending_count == 0:
+                if pending_count == 0:
                     revision_status = "mapped"
         else:
             revision_status = "draft"

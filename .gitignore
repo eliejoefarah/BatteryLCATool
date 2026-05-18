@@ -59,10 +59,9 @@ Thumbs.db
 /docs
 api/tests
 
-# ─── Local utility scripts (not for version control) ─────────────────────────
-scripts/reset_data.sql
-scripts/ecoinvent_activity_catalog.csv
 
+# ─── Local utility scripts (not for version control) ─────────────────────────
+scripts
 .claude/
 *.md
 *.pdf
