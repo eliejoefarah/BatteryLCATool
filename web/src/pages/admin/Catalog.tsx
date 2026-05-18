@@ -51,7 +51,7 @@ type FlowDimension = 'mass' | 'energy' | 'volume' | 'area' | 'length' | 'count' 
 
 const FLOW_KINDS: FlowKind[] = ['material', 'energy', 'emission', 'waste', 'water', 'service', 'infrastructure']
 const FLOW_DIMENSIONS: FlowDimension[] = ['mass', 'energy', 'volume', 'area', 'length', 'count', 'transport', 'radioactivity', 'time', 'other']
-const SEVERITIES: ValidationSeverity[] = ['error', 'warning', 'info']
+// const SEVERITIES: ValidationSeverity[] = ['error', 'warning', 'info']
 const PAGE_SIZE = 100
 const DEFAULT_CATALOG_SET_ID = '00000000-0000-0000-0001-000000000001'
 
@@ -601,86 +601,86 @@ function DataOriginsTab() {
 
 // ── ValidationRulesTab ────────────────────────────────────────────────────────
 
-interface AddRuleForm {
-  code: string
-  severity: ValidationSeverity | ''
-  description: string
-  rule_json: string
-}
+// interface AddRuleForm {
+//   code: string
+//   severity: ValidationSeverity | ''
+//   description: string
+//   rule_json: string
+// }
 
-const EMPTY_RULE_FORM: AddRuleForm = { code: '', severity: '', description: '', rule_json: '{}' }
+// const EMPTY_RULE_FORM: AddRuleForm = { code: '', severity: '', description: '', rule_json: '{}' }
 
 function ValidationRulesTab() {
-  const queryClient = useQueryClient()
-  const [addOpen, setAddOpen] = useState(false)
-  const [form, setForm] = useState<AddRuleForm>(EMPTY_RULE_FORM)
-  const [addBusy, setAddBusy] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<ValidationRuleRow | null>(null)
-  const [deleteBusy, setDeleteBusy] = useState(false)
+  // const queryClient = useQueryClient()
+  // const [addOpen, setAddOpen] = useState(false)
+  // const [form, setForm] = useState<AddRuleForm>(EMPTY_RULE_FORM)
+  // const [addBusy, setAddBusy] = useState(false)
+  // const [deleteTarget, setDeleteTarget] = useState<ValidationRuleRow | null>(null)
+  // const [deleteBusy, setDeleteBusy] = useState(false)
 
   const { data: rules, isLoading, refetch } = useQuery({
     queryKey: ['catalog', 'validation-rules'],
     queryFn: fetchValidationRules,
   })
 
-  async function handleAdd() {
-    if (!form.code.trim() || !form.severity) return
-    let parsedJson: unknown = {}
-    if (form.rule_json.trim()) {
-      try { parsedJson = JSON.parse(form.rule_json) } catch {
-        toast.error('Rule JSON is not valid JSON'); return
-      }
-    }
-    setAddBusy(true)
-    try {
-      const { error } = await supabase.from('validation_rule').insert({
-        code: form.code.trim(),
-        severity: form.severity as ValidationSeverity,
-        description: form.description.trim() || null,
-        rule_json: parsedJson as Database['public']['Tables']['validation_rule']['Insert']['rule_json'],
-      })
-      if (error) throw error
-      toast.success('Validation rule added')
-      setAddOpen(false)
-      setForm(EMPTY_RULE_FORM)
-      queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
-    } catch (err) {
-      toast.error(catalogOpError(err, 'add', 'validation rule'))
-    } finally {
-      setAddBusy(false)
-    }
-  }
+  // async function handleAdd() {
+  //   if (!form.code.trim() || !form.severity) return
+  //   let parsedJson: unknown = {}
+  //   if (form.rule_json.trim()) {
+  //     try { parsedJson = JSON.parse(form.rule_json) } catch {
+  //       toast.error('Rule JSON is not valid JSON'); return
+  //     }
+  //   }
+  //   setAddBusy(true)
+  //   try {
+  //     const { error } = await supabase.from('validation_rule').insert({
+  //       code: form.code.trim(),
+  //       severity: form.severity as ValidationSeverity,
+  //       description: form.description.trim() || null,
+  //       rule_json: parsedJson as Database['public']['Tables']['validation_rule']['Insert']['rule_json'],
+  //     })
+  //     if (error) throw error
+  //     toast.success('Validation rule added')
+  //     setAddOpen(false)
+  //     setForm(EMPTY_RULE_FORM)
+  //     queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
+  //   } catch (err) {
+  //     toast.error(catalogOpError(err, 'add', 'validation rule'))
+  //   } finally {
+  //     setAddBusy(false)
+  //   }
+  // }
 
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleteBusy(true)
-    try {
-      const { error } = await supabase
-        .from('validation_rule')
-        .delete()
-        .eq('rule_id', deleteTarget.rule_id)
-      if (error) throw error
-      toast.success('Validation rule deleted')
-      setDeleteTarget(null)
-      queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
-    } catch (err) {
-      toast.error(catalogOpError(err, 'delete', 'validation rule'))
-    } finally {
-      setDeleteBusy(false)
-    }
-  }
+  // async function handleDelete() {
+  //   if (!deleteTarget) return
+  //   setDeleteBusy(true)
+  //   try {
+  //     const { error } = await supabase
+  //       .from('validation_rule')
+  //       .delete()
+  //       .eq('rule_id', deleteTarget.rule_id)
+  //     if (error) throw error
+  //     toast.success('Validation rule deleted')
+  //     setDeleteTarget(null)
+  //     queryClient.invalidateQueries({ queryKey: ['catalog', 'validation-rules'] })
+  //   } catch (err) {
+  //     toast.error(catalogOpError(err, 'delete', 'validation rule'))
+  //   } finally {
+  //     setDeleteBusy(false)
+  //   }
+  // }
 
   return (
     <div className="space-y-0">
-      <DeleteConfirmDialog
+      {/* <DeleteConfirmDialog
         name={deleteTarget?.code ?? ''}
         open={!!deleteTarget}
         busy={deleteBusy}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
-      />
+      /> */}
 
-      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm(EMPTY_RULE_FORM) }}>
+      {/* <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm(EMPTY_RULE_FORM) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Validation Rule</DialogTitle>
@@ -725,7 +725,7 @@ function ValidationRulesTab() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
 
       <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/60">
         <span className="text-sm font-medium text-slate-600">Validation Rules</span>
@@ -733,9 +733,9 @@ function ValidationRulesTab() {
           <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-slate-500 h-8">
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />Refresh
           </Button>
-          <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
+          {/* <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
             <Plus className="h-3.5 w-3.5 mr-1.5" />Add Rule
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -745,23 +745,23 @@ function ValidationRulesTab() {
             <TableHead>Code</TableHead>
             <TableHead>Severity</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead></TableHead>
+            {/* <TableHead></TableHead> */}
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <SkeletonRows cols={4} />
+            <SkeletonRows cols={3} />
           ) : !rules || rules.length === 0 ? (
-            <NoData cols={4} />
+            <NoData cols={3} />
           ) : (
             rules.map((r) => (
               <TableRow key={r.rule_id}>
                 <TableCell className="font-mono font-medium">{r.code}</TableCell>
                 <TableCell><SeverityBadge severity={r.severity} /></TableCell>
                 <TableCell className="text-slate-600">{r.description ?? '—'}</TableCell>
-                <TableCell className="text-right">
+                {/* <TableCell className="text-right">
                   <DeleteButton onClick={() => setDeleteTarget(r)} />
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))
           )}
@@ -1153,7 +1153,7 @@ export default function CatalogPage() {
         <Tabs defaultValue="units">
           <TabsList>
             <TabsTrigger value="units">Units</TabsTrigger>
-            <TabsTrigger value="data-origins">Data Origins</TabsTrigger>
+            {/* <TabsTrigger value="data-origins">Data Origins</TabsTrigger> */}
             <TabsTrigger value="validation-rules">Validation Rules</TabsTrigger>
             <TabsTrigger value="flows">
               Flows{totalCount != null ? ` (${totalCount.toLocaleString()})` : ''}
@@ -1164,9 +1164,9 @@ export default function CatalogPage() {
             <div className="rounded-md border bg-white overflow-hidden"><UnitsTab /></div>
           </TabsContent>
 
-          <TabsContent value="data-origins" className="mt-4">
+          {/* <TabsContent value="data-origins" className="mt-4">
             <div className="rounded-md border bg-white overflow-hidden"><DataOriginsTab /></div>
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="validation-rules" className="mt-4">
             <div className="rounded-md border bg-white overflow-hidden"><ValidationRulesTab /></div>
