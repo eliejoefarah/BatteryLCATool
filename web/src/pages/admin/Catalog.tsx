@@ -41,7 +41,7 @@ import {
 } from '../../components/ui/tabs'
 
 type UnitRow = Database['public']['Tables']['unit_catalog']['Row']
-type DataOriginRow = Database['public']['Tables']['data_origin_catalog']['Row']
+// type DataOriginRow = Database['public']['Tables']['data_origin_catalog']['Row']
 type ValidationRuleRow = Database['public']['Tables']['validation_rule']['Row']
 type FlowRow = Database['public']['Tables']['flow_catalog']['Row']
 
@@ -173,14 +173,14 @@ async function fetchUnits(): Promise<UnitRow[]> {
   return data
 }
 
-async function fetchDataOrigins(): Promise<DataOriginRow[]> {
-  const { data, error } = await supabase
-    .from('data_origin_catalog')
-    .select('*')
-    .order('code', { ascending: true })
-  if (error) throw error
-  return data
-}
+// async function fetchDataOrigins(): Promise<DataOriginRow[]> {
+//   const { data, error } = await supabase
+//     .from('data_origin_catalog')
+//     .select('*')
+//     .order('code', { ascending: true })
+//   if (error) throw error
+//   return data
+// }
 
 async function fetchValidationRules(): Promise<ValidationRuleRow[]> {
   const { data, error } = await supabase
@@ -452,152 +452,149 @@ function UnitsTab() {
 
 // ── DataOriginsTab ────────────────────────────────────────────────────────────
 
-interface AddOriginForm {
-  code: string
-  label: string
-  description: string
-}
+// interface AddOriginForm {
+//   code: string
+//   label: string
+//   description: string
+// }
 
-const EMPTY_ORIGIN_FORM: AddOriginForm = { code: '', label: '', description: '' }
+// const EMPTY_ORIGIN_FORM: AddOriginForm = { code: '', label: '', description: '' }
 
-function DataOriginsTab() {
-  const queryClient = useQueryClient()
-  const [addOpen, setAddOpen] = useState(false)
-  const [form, setForm] = useState<AddOriginForm>(EMPTY_ORIGIN_FORM)
-  const [addBusy, setAddBusy] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<DataOriginRow | null>(null)
-  const [deleteBusy, setDeleteBusy] = useState(false)
-
-  const { data: origins, isLoading, refetch } = useQuery({
-    queryKey: ['catalog', 'data-origins'],
-    queryFn: fetchDataOrigins,
-  })
-
-  async function handleAdd() {
-    if (!form.code.trim() || !form.label.trim()) return
-    setAddBusy(true)
-    try {
-      const { error } = await supabase.from('data_origin_catalog').insert({
-        code: form.code.trim(),
-        label: form.label.trim(),
-        description: form.description.trim() || null,
-      })
-      if (error) throw error
-      toast.success('Data origin added')
-      setAddOpen(false)
-      setForm(EMPTY_ORIGIN_FORM)
-      queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
-    } catch (err) {
-      toast.error(catalogOpError(err, 'add', 'data origin'))
-    } finally {
-      setAddBusy(false)
-    }
-  }
-
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleteBusy(true)
-    try {
-      const { error } = await supabase
-        .from('data_origin_catalog')
-        .delete()
-        .eq('code', deleteTarget.code)
-      if (error) throw error
-      toast.success('Data origin deleted')
-      setDeleteTarget(null)
-      queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
-    } catch (err) {
-      toast.error(catalogOpError(err, 'delete', 'data origin'))
-    } finally {
-      setDeleteBusy(false)
-    }
-  }
-
-  return (
-    <div className="space-y-0">
-      <DeleteConfirmDialog
-        name={deleteTarget?.code ?? ''}
-        open={!!deleteTarget}
-        busy={deleteBusy}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
-
-      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm(EMPTY_ORIGIN_FORM) }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Data Origin</DialogTitle>
-            <DialogDescription>Add a new data origin to the catalog.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="do-code">Code *</Label>
-              <Input id="do-code" placeholder="e.g. MEASURED" value={form.code}
-                onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="do-label">Label *</Label>
-              <Input id="do-label" placeholder="e.g. Measured data" value={form.label}
-                onChange={(e) => setForm(f => ({ ...f, label: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="do-desc">Description</Label>
-              <Input id="do-desc" placeholder="Optional" value={form.description}
-                onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addBusy}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={addBusy || !form.code.trim() || !form.label.trim()}>
-              {addBusy ? 'Adding…' : 'Add Origin'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/60">
-        <span className="text-sm font-medium text-slate-600">Data Origins</span>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-slate-500 h-8">
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />Refresh
-          </Button>
-          <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />Add Origin
-          </Button>
-        </div>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Code</TableHead>
-            <TableHead>Label</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <SkeletonRows cols={4} />
-          ) : !origins || origins.length === 0 ? (
-            <NoData cols={4} />
-          ) : (
-            origins.map((o) => (
-              <TableRow key={o.code}>
-                <TableCell className="font-mono font-medium">{o.code}</TableCell>
-                <TableCell>{o.label}</TableCell>
-                <TableCell className="text-slate-600">{o.description ?? '—'}</TableCell>
-                <TableCell className="text-right">
-                  <DeleteButton onClick={() => setDeleteTarget(o)} />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  )
-}
+// function DataOriginsTab() {
+//   const queryClient = useQueryClient()
+//   const [addOpen, setAddOpen] = useState(false)
+//   const [form, setForm] = useState<AddOriginForm>(EMPTY_ORIGIN_FORM)
+//   const [addBusy, setAddBusy] = useState(false)
+//   const [deleteTarget, setDeleteTarget] = useState<DataOriginRow | null>(null)
+//   const [deleteBusy, setDeleteBusy] = useState(false)
+//
+//   const { data: origins, isLoading, refetch } = useQuery({
+//     queryKey: ['catalog', 'data-origins'],
+//     queryFn: fetchDataOrigins,
+//   })
+//
+//   async function handleAdd() {
+//     if (!form.code.trim() || !form.label.trim()) return
+//     setAddBusy(true)
+//     try {
+//       const { error } = await supabase.from('data_origin_catalog').insert({
+//         code: form.code.trim(),
+//         label: form.label.trim(),
+//         description: form.description.trim() || null,
+//       })
+//       if (error) throw error
+//       toast.success('Data origin added')
+//       setAddOpen(false)
+//       setForm(EMPTY_ORIGIN_FORM)
+//       queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
+//     } catch (err) {
+//       toast.error(catalogOpError(err, 'add', 'data origin'))
+//     } finally {
+//       setAddBusy(false)
+//     }
+//   }
+//
+//   async function handleDelete() {
+//     if (!deleteTarget) return
+//     setDeleteBusy(true)
+//     try {
+//       const { error } = await supabase
+//         .from('data_origin_catalog')
+//         .delete()
+//         .eq('code', deleteTarget.code)
+//       if (error) throw error
+//       toast.success('Data origin deleted')
+//       setDeleteTarget(null)
+//       queryClient.invalidateQueries({ queryKey: ['catalog', 'data-origins'] })
+//     } catch (err) {
+//       toast.error(catalogOpError(err, 'delete', 'data origin'))
+//     } finally {
+//       setDeleteBusy(false)
+//     }
+//   }
+//
+//   return (
+//     <div className="space-y-0">
+//       <DeleteConfirmDialog
+//         name={deleteTarget?.code ?? ''}
+//         open={!!deleteTarget}
+//         busy={deleteBusy}
+//         onConfirm={handleDelete}
+//         onCancel={() => setDeleteTarget(null)}
+//       />
+//       <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm(EMPTY_ORIGIN_FORM) }}>
+//         <DialogContent className="max-w-md">
+//           <DialogHeader>
+//             <DialogTitle>Add Data Origin</DialogTitle>
+//             <DialogDescription>Add a new data origin to the catalog.</DialogDescription>
+//           </DialogHeader>
+//           <div className="grid gap-3 py-2">
+//             <div className="space-y-1.5">
+//               <Label htmlFor="do-code">Code *</Label>
+//               <Input id="do-code" placeholder="e.g. MEASURED" value={form.code}
+//                 onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))} />
+//             </div>
+//             <div className="space-y-1.5">
+//               <Label htmlFor="do-label">Label *</Label>
+//               <Input id="do-label" placeholder="e.g. Measured data" value={form.label}
+//                 onChange={(e) => setForm(f => ({ ...f, label: e.target.value }))} />
+//             </div>
+//             <div className="space-y-1.5">
+//               <Label htmlFor="do-desc">Description</Label>
+//               <Input id="do-desc" placeholder="Optional" value={form.description}
+//                 onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
+//             </div>
+//           </div>
+//           <DialogFooter>
+//             <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addBusy}>Cancel</Button>
+//             <Button onClick={handleAdd} disabled={addBusy || !form.code.trim() || !form.label.trim()}>
+//               {addBusy ? 'Adding…' : 'Add Origin'}
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+//       <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/60">
+//         <span className="text-sm font-medium text-slate-600">Data Origins</span>
+//         <div className="flex items-center gap-2">
+//           <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-slate-500 h-8">
+//             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />Refresh
+//           </Button>
+//           <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>
+//             <Plus className="h-3.5 w-3.5 mr-1.5" />Add Origin
+//           </Button>
+//         </div>
+//       </div>
+//       <Table>
+//         <TableHeader>
+//           <TableRow>
+//             <TableHead>Code</TableHead>
+//             <TableHead>Label</TableHead>
+//             <TableHead>Description</TableHead>
+//             <TableHead></TableHead>
+//           </TableRow>
+//         </TableHeader>
+//         <TableBody>
+//           {isLoading ? (
+//             <SkeletonRows cols={4} />
+//           ) : !origins || origins.length === 0 ? (
+//             <NoData cols={4} />
+//           ) : (
+//             origins.map((o) => (
+//               <TableRow key={o.code}>
+//                 <TableCell className="font-mono font-medium">{o.code}</TableCell>
+//                 <TableCell>{o.label}</TableCell>
+//                 <TableCell className="text-slate-600">{o.description ?? '—'}</TableCell>
+//                 <TableCell className="text-right">
+//                   <DeleteButton onClick={() => setDeleteTarget(o)} />
+//                 </TableCell>
+//               </TableRow>
+//             ))
+//           )}
+//         </TableBody>
+//       </Table>
+//     </div>
+//   )
+// }
 
 // ── ValidationRulesTab ────────────────────────────────────────────────────────
 
