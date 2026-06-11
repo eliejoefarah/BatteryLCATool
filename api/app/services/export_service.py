@@ -569,6 +569,31 @@ def _add_parameters_sheet(wb, params: list[dict[str, Any]]) -> None:
         ws.cell(row=row_i, column=7, value=p.get("description"))
 
 
+def _add_mapping_sheet(wb, mapping_rows: list[dict[str, Any]]) -> None:
+    ws = wb.create_sheet(title="Flow Mapping")
+
+    headers = [
+        "Foreground Flow", "Unit", "Direction",
+        "Ecoinvent Activity", "Reference Product",
+        "Location", "Unit (ecoinvent)",
+        "Version", "System Model", "Status",
+    ]
+    for i, h in enumerate(headers, start=1):
+        ws.cell(row=1, column=i, value=h).font = _BOLD_FONT
+
+    for row_i, row in enumerate(mapping_rows, start=2):
+        ws.cell(row=row_i, column=1, value=row.get("raw_name"))
+        ws.cell(row=row_i, column=2, value=row.get("user_unit"))
+        ws.cell(row=row_i, column=3, value=row.get("exchange_direction"))
+        ws.cell(row=row_i, column=4, value=row.get("confirmed_activity_name"))
+        ws.cell(row=row_i, column=5, value=row.get("confirmed_reference_product"))
+        ws.cell(row=row_i, column=6, value=row.get("confirmed_location"))
+        ws.cell(row=row_i, column=7, value=row.get("confirmed_unit"))
+        ws.cell(row=row_i, column=8, value=row.get("confirmed_ecoinvent_version"))
+        ws.cell(row=row_i, column=9, value=row.get("confirmed_system_model"))
+        ws.cell(row=row_i, column=10, value=row.get("mapping_status"))
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
@@ -656,6 +681,31 @@ async def generate_export_xlsx(
     )).fetchall()
     params = [dict(r._mapping) for r in param_rows]
 
+    # ── 4b. Fetch mapping data for input exchanges ────────────────────────
+    mapping_rows_raw = (await db.execute(
+        text("""
+            SELECT
+                pe.raw_name,
+                pe.user_unit,
+                pe.exchange_direction,
+                bms.confirmed_activity_name,
+                bms.confirmed_reference_product,
+                bms.confirmed_location,
+                bms.confirmed_unit,
+                bms.confirmed_ecoinvent_version,
+                bms.confirmed_system_model,
+                pe.mapping_status
+            FROM process_exchange pe
+            LEFT JOIN bw_mapping_selection bms ON bms.exchange_id = pe.exchange_id
+            JOIN process_instance pi ON pi.process_id = pe.process_id
+            WHERE pi.revision_id = :rid
+              AND pe.exchange_direction = 'input'
+            ORDER BY pe.raw_name
+        """),
+        {"rid": revision_id},
+    )).fetchall()
+    mapping_data = [dict(r._mapping) for r in mapping_rows_raw]
+
     # ── 5. Load and fill workbook ─────────────────────────────────────────
     wb = load_workbook(_TEMPLATE_PATH)
 
@@ -665,7 +715,7 @@ async def generate_export_xlsx(
             del wb[name]
 
     ws_template = wb["Process 1"]
-    used_names: set[str] = {"Version history", "Process 1", "Parameters"}
+    used_names: set[str] = {"Version history", "Process 1", "Parameters", "Flow Mapping"}
 
     process_sheets = []
     for proc in processes:
@@ -690,8 +740,11 @@ async def generate_export_xlsx(
     # ── 7. Parameters sheet ───────────────────────────────────────────────
     _add_parameters_sheet(wb, params)
 
-    # ── 8. Reorder sheets: process sheets first, then Version history, Parameters
-    sheet_order = [ws.title for ws in process_sheets] + ["Version history", "Parameters"]
+    # ── 7b. Flow Mapping sheet ────────────────────────────────────────────
+    _add_mapping_sheet(wb, mapping_data)
+
+    # ── 8. Reorder sheets: process sheets first, then Version history, Parameters, Flow Mapping
+    sheet_order = [ws.title for ws in process_sheets] + ["Version history", "Parameters", "Flow Mapping"]
     for i, title in enumerate(sheet_order):
         if title in wb.sheetnames:
             wb.move_sheet(title, offset=wb.sheetnames.index(title) - i)
