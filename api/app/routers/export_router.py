@@ -167,10 +167,25 @@ def _make_signed_url(storage_path: str) -> str | None:
             storage_path, _SIGNED_URL_TTL
         )
         # supabase-py v1 returns {"signedURL": "..."} and v2 returns {"signedUrl": "..."}
-        return result.get("signedUrl") or result.get("signedURL")
+        return _to_public_url(result.get("signedUrl") or result.get("signedURL"))
     except Exception as exc:
         log.warning("Failed to generate signed URL for %s: %s", storage_path, exc)
         return None
+
+
+def _to_public_url(url: str | None) -> str | None:
+    """Rewrite a signed URL from the internal Supabase URL to the public one.
+
+    Self-hosted, FastAPI reaches Supabase on the internal Docker network
+    (SUPABASE_URL=http://kong:8000), so supabase-py builds signed URLs on that
+    host, which browsers can't reach. When SUPABASE_PUBLIC_URL is set, swap the
+    prefix. Unset (Supabase Cloud), the URL is returned unchanged.
+    """
+    internal = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    public = os.environ.get("SUPABASE_PUBLIC_URL", "").rstrip("/")
+    if url and internal and public and url.startswith(internal):
+        return public + url[len(internal):]
+    return url
 
 
 # ---------------------------------------------------------------------------

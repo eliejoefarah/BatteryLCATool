@@ -48,8 +48,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# ─── Docker ─────────────────────────────────────────────────────────────────
-*.dockerignore
 
 
 /MasterData
@@ -64,4 +62,5 @@ api/tests
 scripts/
 .claude/
 *.md
+!deploy/README.md
 *.pdf

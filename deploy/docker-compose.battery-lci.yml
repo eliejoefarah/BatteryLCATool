@@ -1,0 +1,59 @@
+# Battery LCA tool additions to Supabase's official self-hosting compose file.
+#
+# Copied by ship.sh next to Supabase's docker-compose.yml on the VM and
+# registered in .env's COMPOSE_FILE (Supabase's .env sets COMPOSE_FILE, so
+# Compose would not auto-load a docker-compose.override.yml). Variables come
+# from that directory's .env
+# (Supabase's keys plus the app keys listed in production.env.example).
+# Written against supabase/supabase docker/ as of 2026-10: Envoy gateway
+# service `api-gw` (network alias `kong`), Postgres 17.
+#
+# Images are built on the laptop and loaded onto the VM by ship.sh, because
+# the VM can pull images but can't reach PyPI/npm to build them.
+
+services:
+  fastapi:
+    image: battery-lci-api:latest
+    container_name: battery-lci-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api-gw:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+
+  web:
+    image: battery-lci-web:latest
+    container_name: battery-lci-web
+    restart: unless-stopped
+    depends_on:
+      - fastapi
+      - api-gw
+    ports:
+      - "${WEB_HTTP_PORT:-80}:80"
+
+  functions:
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      APP_BASE_URL: ${SITE_URL}
+      FASTAPI_URL: http://fastapi:8000
+
+  # API gateway (Envoy; reachable as `kong` on the network): localhost only.
+  # All public traffic goes through `web`. Reach Studio with an SSH tunnel:
+  #   ssh -L 8000:localhost:8000 eliejoe@10.67.0.29
+  api-gw:
+    ports: !override
+      - "127.0.0.1:${API_GW_HTTP_PORT:-8000}:8000"
+
+  # Supavisor: don't publish Postgres on the VM's network interface. Every
+  # service connects to `db` directly on the Docker network.
+  supavisor:
+    ports: !reset []

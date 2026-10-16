@@ -3,7 +3,11 @@
 // Shared helpers imported by every Edge Function.
 // =============================================================================
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+// Explicit npm: specifier (not the deno.json import-map alias) so the import
+// resolves on the self-hosted Edge Runtime, which doesn't read deno.json.
+// Exact version: the VM can't download packages, so ship.sh caches exactly
+// this one (see deploy/README.md, "Updating"). Keep in sync with deno.json.
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2.98.0";
 
 // ---------------------------------------------------------------------------
 // Env vars — resolved once at module load (available in every invocation).

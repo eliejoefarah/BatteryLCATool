@@ -1,0 +1,31 @@
+# Serves the built SPA and routes API traffic inside the Docker network.
+# TLS is terminated on VUB's F5 load balancer, so this listens on plain HTTP.
+{
+	admin off
+	auto_https off
+	servers {
+		# Trust X-Forwarded-* headers from the F5 (private address space)
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy fastapi:8000
+	}
+
+	@supabase path /auth/* /rest/* /storage/* /functions/*
+	handle @supabase {
+		reverse_proxy kong:8000
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}
