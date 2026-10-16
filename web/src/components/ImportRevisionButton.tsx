@@ -64,10 +64,15 @@ export default function ImportRevisionButton({ revisionId, modelId, hasData = fa
     const apiUrl = import.meta.env.VITE_RAILWAY_FASTAPI_URL as string
     setUndoing(true)
     try {
-      await fetch(`${apiUrl}/api/v1/import/${revisionId}`, {
+      const res = await fetch(`${apiUrl}/api/v1/import/${revisionId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
+      if (!res.ok) {
+        const body: { detail?: string } = await res.json().catch(() => ({}))
+        toast.error(body.detail ?? 'Could not undo the import.')
+        return
+      }
       queryClient.invalidateQueries({ queryKey: ['processes', revisionId] })
       queryClient.invalidateQueries({ queryKey: ['exchanges'] })
       queryClient.invalidateQueries({ queryKey: ['exchange-count', revisionId] })

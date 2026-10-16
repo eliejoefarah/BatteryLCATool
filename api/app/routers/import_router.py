@@ -163,6 +163,62 @@ class ImportJobResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Authorization
+# ---------------------------------------------------------------------------
+
+
+async def _authorize_revision_write(
+    db: AsyncSession, revision_id: UUID, user_id: UUID
+) -> UUID:
+    """Allow writing a revision's process data on the same terms as RLS.
+
+    This router connects as the table owner, so RLS doesn't apply and the
+    rule from 008_revision_owner_rls.sql is enforced here instead: admins may
+    write any revision; otherwise the caller must be a project member, the
+    revision's creator, and the revision must not be frozen.
+
+    Locks the revision row (FOR UPDATE) for the rest of the transaction, so a
+    concurrent freeze can't land between this check and the writes.
+    Returns the revision's project_id.
+    """
+    row = (await db.execute(
+        text("""
+            SELECT bm.project_id, r.created_by, r.frozen_at,
+                   (SELECT role FROM app_user WHERE user_id = :uid) AS role,
+                   EXISTS (
+                       SELECT 1 FROM project_member pm
+                       WHERE pm.project_id = bm.project_id AND pm.user_id = :uid
+                   ) AS is_member
+            FROM battery_model_revision r
+            JOIN battery_model bm ON bm.model_id = r.model_id
+            WHERE r.revision_id = :rid
+            FOR UPDATE OF r
+        """),
+        {"rid": str(revision_id), "uid": str(user_id)},
+    )).fetchone()
+
+    if row is None or not (row.is_member or row.role == "admin"):
+        raise HTTPException(
+            status_code=404,
+            detail="Revision not found or you do not have access to this project.",
+        )
+    if row.role != "admin":
+        if row.frozen_at is not None:
+            # 423, not 409: the frontend treats 409 as "already imported,
+            # offer to overwrite", which would be wrong here.
+            raise HTTPException(
+                status_code=423,
+                detail="This revision is frozen and can no longer be changed.",
+            )
+        if str(row.created_by) != str(user_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Only the revision's creator can change its data.",
+            )
+    return UUID(str(row.project_id))
+
+
+# ---------------------------------------------------------------------------
 # Route
 # ---------------------------------------------------------------------------
 
@@ -176,24 +232,9 @@ async def clear_import_data(
     """Remove all imported processes, exchanges, and parameters for a revision.
 
     Called by the frontend when the user chooses 'Undo import' after reviewing
-    import issues. Requires the caller to be a project member.
+    import issues. Same access rule as RLS: see _authorize_revision_write.
     """
-    row = (await db.execute(
-        text("""
-            SELECT 1
-            FROM battery_model_revision r
-            JOIN battery_model bm ON bm.model_id = r.model_id
-            JOIN project_member pm ON pm.project_id = bm.project_id
-            WHERE r.revision_id = :rid AND pm.user_id = :uid
-        """),
-        {"rid": str(revision_id), "uid": str(user_id)},
-    )).fetchone()
-
-    if row is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Revision not found or you do not have access.",
-        )
+    await _authorize_revision_write(db, revision_id, user_id)
 
     # Delete validation data first (FK: validation_issue.exchange_id → process_exchange)
     await db.execute(
@@ -272,25 +313,8 @@ async def upload_and_import(
             detail=f"File too large — maximum size is {_MAX_FILE_SIZE // (1024 * 1024)} MB.",
         )
 
-    # ── 2. Verify revision exists and caller has project membership ───────
-    row = (await db.execute(
-        text("""
-            SELECT bm.project_id
-            FROM battery_model_revision r
-            JOIN battery_model bm ON bm.model_id = r.model_id
-            JOIN project_member pm ON pm.project_id = bm.project_id
-            WHERE r.revision_id = :rid
-              AND pm.user_id    = :uid
-        """),
-        {"rid": str(revision_id), "uid": str(user_id)},
-    )).fetchone()
-
-    if row is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Revision not found or you do not have access to this project.",
-        )
-    project_id = UUID(str(row[0]))
+    # ── 2. Verify the caller may write this revision (same rule as RLS) ───
+    project_id = await _authorize_revision_write(db, revision_id, user_id)
 
     # ── 3. Upload xlsx to Supabase Storage ────────────────────────────────
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
