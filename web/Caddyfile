@@ -16,7 +16,10 @@
 		reverse_proxy fastapi:8000
 	}
 
-	@supabase path /auth/* /rest/* /storage/* /functions/*
+	# Only the versioned API prefixes the app uses. The gateway sends any path it
+	# doesn't route (e.g. /auth/callback) to Supabase Studio's basic-auth login,
+	# so broader matchers like /auth/* would expose Studio publicly.
+	@supabase path /auth/v1/* /rest/v1/* /storage/v1/* /functions/v1/*
 	handle @supabase {
 		reverse_proxy kong:8000
 	}

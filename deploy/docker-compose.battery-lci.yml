@@ -21,13 +21,15 @@ services:
         condition: service_healthy
       api-gw:
         condition: service_healthy
+    # ${VAR:?msg} makes `docker compose` refuse to start if a secret is unset or
+    # empty (plain ${VAR} would silently substitute ""), see deploy/check-env.sh.
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD not set in .env}@db:${POSTGRES_PORT}/${POSTGRES_DB}
       SUPABASE_URL: http://kong:8000
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
-      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
-      SUPABASE_JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:?SERVICE_ROLE_KEY not set in .env}
+      SUPABASE_JWT_SECRET: ${JWT_SECRET:?JWT_SECRET not set in .env}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET not set in .env}
 
   web:
     image: battery-lci-web:latest
@@ -41,8 +43,8 @@ services:
 
   functions:
     environment:
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
-      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET not set in .env}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:?INTERNAL_API_SECRET not set in .env}
       APP_BASE_URL: ${SITE_URL}
       FASTAPI_URL: http://fastapi:8000
 

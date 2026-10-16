@@ -59,7 +59,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // inviteUserByEmail sends the built-in invite email and creates the auth.users row.
   // role is stored in user_metadata so on_user_created can read it.
   const { data, error } = await svc.auth.admin.inviteUserByEmail(email, {
-    redirectTo: APP_BASE_URL ? `${APP_BASE_URL}/auth/callback` : undefined,
+    // The SPA root: supabase-js picks the session up from the URL fragment on
+    // any route (there is no /auth/callback page).
+    redirectTo: APP_BASE_URL ? `${APP_BASE_URL}/` : undefined,
     data: {
       display_name: displayName ?? email.split("@")[0],
       role,

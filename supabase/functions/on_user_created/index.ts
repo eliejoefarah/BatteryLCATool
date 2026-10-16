@@ -32,15 +32,31 @@ interface AuthRecord {
 
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 
+// Constant-time string comparison, so response timing doesn't leak how much
+// of the secret a guess got right.
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const x = enc.encode(a), y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
   // ── Shared-secret verification ──────────────────────────────────────────────
+  // Fails closed: this endpoint is publicly reachable (/functions/v1/), so an
+  // unset secret must reject everything rather than accept everything.
+  if (!WEBHOOK_SECRET) {
+    console.error("on_user_created: WEBHOOK_SECRET is not set, rejecting request");
+    return json({ error: "Server Error: webhook not configured" }, 500);
+  }
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (WEBHOOK_SECRET && token !== WEBHOOK_SECRET) {
+  if (!timingSafeEqual(token, WEBHOOK_SECRET)) {
     return json({ error: "Unauthorized" }, 401);
   }
 

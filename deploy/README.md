@@ -10,7 +10,7 @@ laptop ── ship.sh ──(ssh/rsync)──> /data/battery-lci/stack/         
   builds battery-lci-web          ├─ docker-compose.battery-lci.yml (ours: fastapi, web, tweaks)
                                   ├─ .env                          (secrets, only on the VM)
                                   ├─ volumes/functions/            (Supabase main/ + our functions)
-                                  └─ battery-lci/                  (migrations, init.sql, migrate.sh)
+                                  └─ battery-lci/                  (migrations, init.sql, migrate.sh, remote-deploy.sh)
 ```
 
 Browser → F5 (TLS) → `web` (Caddy :80) → `/api/*` to `fastapi`, `/auth /rest /storage /functions` to `kong`, everything else served as the SPA.
@@ -19,11 +19,13 @@ Browser → F5 (TLS) → `web` (Caddy :80) → `/api/*` to `fastapi`, `/auth /re
 
 | File | Runs where | Purpose |
 |---|---|---|
-| `ship.sh` | laptop | Build images, copy everything, restart, migrate. **The deploy command.** |
+| `ship.sh` | laptop | Check `.env`, build images, copy everything, then run `remote-deploy.sh` on the VM. **The deploy command.** |
+| `check-env.sh` | VM (fed over SSH by `ship.sh`) | Preflight: refuses to deploy if a required `.env` value is empty, a `<placeholder>`, a Supabase demo default, or an unsafe setting (e.g. `DISABLE_SIGNUP` not `true`). |
+| `remote-deploy.sh` | VM (called by `ship.sh`) | Load images, `compose up`, wait for auth and storage, migrate, install the Deno cache, restart functions. Stops at the first failed step. |
 | `docker-compose.battery-lci.yml` | VM | Override registered in `.env`'s `COMPOSE_FILE` by `ship.sh`. Adds `fastapi` + `web`; sets Edge Function env vars; binds Kong to localhost; stops publishing Postgres. |
 | `production.env.example` | — | Checklist of `.env` values to set on the VM. |
 | `warm-deno-cache.sh` | laptop | Called by `ship.sh`. Boots every Edge Function once with internet and packages the filled Deno cache, which `ship.sh` copies into the VM's functions container (the VM can't reach npm/jsr). |
-| `migrate.sh` | VM | Applies new migrations (tracked in `public._deploy_migration`), then `init.sql`. |
+| `migrate.sh` | VM | Applies new migrations (tracked in `deploy.migration`, a schema PostgREST doesn't expose), then `init.sql`. |
 | `init.sql` | VM | Storage buckets, export download policy, `on_user_created` trigger (dashboard-only setup in the cloud project). |
 | `../web/Dockerfile`, `../web/Caddyfile` | laptop build | Frontend image (build SPA → serve with Caddy). |
 
@@ -79,10 +81,22 @@ docker exec battery-lci-api python -c "import urllib.request;print(urllib.reques
 
 Logging in via the tunnel at `localhost:8080` won't fully work, because auth redirects and the frontend's baked-in URLs point at `https://battery-lci.vub.be`. Use the tunnel to check that pages load, and the real URL for login.
 
-**First admin user.** Sign-up is disabled, and only admins can invite. Create the first user in Studio (Authentication → Add user). The `on_user_created` trigger gives it an `app_user` row with role `manufacturer`. Promote it in the SQL editor:
+**First admin user.** Sign-up is disabled, and only admins can invite. **Login is by email link only, so nobody can log in until SMTP works** (see Known gaps). Create the first user in Studio (Authentication → Add user). The `on_user_created` trigger gives it an `app_user` row with role `manufacturer`. Promote it in the SQL editor:
 ```sql
 UPDATE public.app_user SET role = 'admin' WHERE email = '<you>@vub.be';
 ```
+
+**Seed the ecoinvent catalog** (once, after the first deploy). Flow mapping and export need `bw_activity_catalog`. It's filled from `scripts/ecoinvent_activity_catalog.csv` (ecoinvent 3.12 cutoff, ~26.5k activities) by the existing seed script, run from the laptop through an SSH tunnel. Postgres isn't published on the VM, so the tunnel points at the database container's internal IP:
+```bash
+# on the laptop, VPN on, from the repo root
+DBIP=$(ssh eliejoe@10.67.0.29 "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' supabase-db")
+ssh -fN -L 5433:$DBIP:5432 eliejoe@10.67.0.29          # tunnel in the background
+PW=$(ssh eliejoe@10.67.0.29 "grep -E '^POSTGRES_PASSWORD=' /data/battery-lci/stack/.env | cut -d= -f2-")
+scripts/venv/bin/python scripts/seed_bw_catalog.py --file scripts/ecoinvent_activity_catalog.csv \
+  --db "postgresql://postgres:$PW@localhost:5433/postgres"
+pkill -f "5433:$DBIP:5432"                              # close the tunnel
+```
+It's safe to re-run, since duplicates are skipped. For a new ecoinvent version, export a new CSV and run it again, adding `--clear` to replace that version's rows. **The CSV is licensed ecoinvent data:** it stays out of git (`scripts/` is ignored) and out of the images. It only goes into the VM's database.
 
 **Full test pass:** login, create a project, xlsx import, validation, export download, catalog edit, Monte Carlo, invite a user (needs SMTP), and confirm the invited user has an `app_user` row.
 
@@ -98,10 +112,11 @@ The rule of thumb: **every change is made on the laptop and delivered with `./de
 | FastAPI code or `api/requirements.txt` | `./deploy/ship.sh` | Packages are installed on the laptop during the build, never on the VM. |
 | Edge Function code, same imports | `./deploy/ship.sh` | Nothing new to download. The cache is still valid. |
 | An Edge Function import (new package, or a version bump) | Change it, then `./deploy/ship.sh` | See **Edge Function dependency cache** below. The cache is re-warmed automatically. |
-| A new migration in `supabase/migrations/` | `./deploy/ship.sh` | `migrate.sh` applies only files not yet in `public._deploy_migration`. **Never edit a migration that's already been applied.** Add a new numbered file instead. |
+| A new migration in `supabase/migrations/` | `./deploy/ship.sh` | `migrate.sh` applies only files not yet in `deploy.migration`. **Never edit a migration that's already been applied.** Add a new numbered file instead. |
 | `.env` on the VM (URLs, SMTP, secrets) | Edit on the VM, then `./deploy/ship.sh` | `ship.sh` recreates changed containers and rebuilds the frontend with the current `ANON_KEY`. |
 | `deploy/init.sql` | `./deploy/ship.sh` | Idempotent, re-run on every deploy. |
 | The Supabase stack itself | See **Updating Supabase** below | |
+| A new ecoinvent version / catalog CSV | Re-run the seed command in **Checking it works** (with `--clear`) | No deploy needed. |
 
 ### Edge Function dependency cache
 
@@ -167,7 +182,7 @@ Uploaded and exported files live in `/data/battery-lci/stack/volumes/storage/`. 
 
 ## Known gaps
 
-- **SMTP** is pending from VUB IT. Until it's set, invites fail. Create users in Studio instead.
+- **SMTP is required to log in at all.** The login page only offers email links (`signInWithOtp`), so until VUB IT provides the relay, nobody can log in, including users created in Studio. Stopgap for testing: generate a login link over the SSH tunnel with the service key (`POST http://localhost:8000/auth/v1/admin/generate_link` with `{"type":"magiclink","email":"…"}`) and open the returned `action_link`.
 - **F5 → VM port 80** (confirmed by IT). `web` listens on 80 (`WEB_HTTP_PORT`). If the F5 can't connect, the VM's own firewall (`fwbuilder`) may need the port opened by IT.
 - **External access** is being requested by IT. Until then the site is VPN-only.
 - **AI Suggest** (flow mapping) calls the Anthropic API, a third party, and is blocked anyway. `ANTHROPIC_API_KEY` is deliberately not set, so the feature is off.

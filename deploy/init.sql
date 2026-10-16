@@ -1,8 +1,8 @@
 -- One-time setup that was done by hand in the Supabase Cloud dashboard and
 -- is therefore not in supabase/migrations/. Idempotent, safe to re-run.
 --
--- Run by migrate.sh as supabase_admin (owns the auth and storage schemas):
---   psql -v webhook_secret=<WEBHOOK_SECRET> -f init.sql
+-- Run by migrate.sh as supabase_admin (owns the auth and storage schemas),
+-- which prepends `\set webhook_secret '<WEBHOOK_SECRET>'` on stdin.
 
 \set ON_ERROR_STOP on
 
@@ -35,7 +35,7 @@ SELECT set_config('deploy.webhook_secret', :'webhook_secret', false);
 DO $$
 BEGIN
   IF current_setting('deploy.webhook_secret') = '' THEN
-    RAISE EXCEPTION 'webhook_secret is empty: pass -v webhook_secret=<WEBHOOK_SECRET>';
+    RAISE EXCEPTION 'webhook_secret is empty: run init.sql through migrate.sh';
   END IF;
 
   DROP TRIGGER IF EXISTS on_user_created ON auth.users;

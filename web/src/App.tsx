@@ -133,6 +133,8 @@ export default function App() {
             </AdminRoute>
           }
         />
+        {/* Unknown paths go home instead of rendering a blank page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
       {/* 1 min inactivity → "still there?" dialog → 30 s grace → sign out */}
