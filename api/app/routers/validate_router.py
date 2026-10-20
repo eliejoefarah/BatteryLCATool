@@ -623,11 +623,14 @@ async def run_validation(
                     revision_status = "mapped"
         else:
             revision_status = "draft"
+        # Frozen revisions keep their status: setting it back to 'draft' while
+        # frozen_at stays set leaves the revision stuck (unfreeze_version only
+        # accepts status 'frozen', and RLS blocks edits while frozen_at is set).
         await db.execute(
             text("""
                 UPDATE battery_model_revision
                 SET status = :s
-                WHERE revision_id = :rid
+                WHERE revision_id = :rid AND frozen_at IS NULL
             """),
             {"s": revision_status, "rid": str(revision_id)},
         )
@@ -661,4 +664,5 @@ async def run_validation(
             await db.commit()
         except Exception:
             pass
-        raise HTTPException(status_code=500, detail=f"Validation failed: {exc}") from exc
+        # Details are in the log above; don't return internal error text.
+        raise HTTPException(status_code=500, detail="Validation failed.") from exc

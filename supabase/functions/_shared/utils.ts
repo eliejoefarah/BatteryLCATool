@@ -58,6 +58,17 @@ export function adminClient(): SupabaseClient {
   });
 }
 
+/**
+ * Client that acts as the caller (their JWT), so RLS decides what they can
+ * see. Use it for access checks instead of re-implementing the RLS rules.
+ */
+export function userClient(authHeader: string): SupabaseClient {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: authHeader } },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Auth helpers
 // ---------------------------------------------------------------------------

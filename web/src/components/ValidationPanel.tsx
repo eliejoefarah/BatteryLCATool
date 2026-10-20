@@ -319,7 +319,12 @@ export default function ValidationPanel({
       const { error } = await supabase.functions.invoke('trigger_validation', {
         body: { revision_id: revisionId },
       })
-      if (error) throw error
+      if (error) {
+        // Non-2xx responses carry the function's own message in the body
+        const ctx = (error as { context?: Response }).context
+        const body = ctx ? await ctx.json().catch(() => null) : null
+        throw new Error(body?.error ?? body?.detail ?? error.message)
+      }
       await refetch()
       queryClient.invalidateQueries({ queryKey: ['revision-validation', revisionId] })
       queryClient.invalidateQueries({ queryKey: ['revisions', modelId] })

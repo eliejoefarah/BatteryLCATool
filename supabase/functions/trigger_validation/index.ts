@@ -6,7 +6,8 @@
 // validation_issue rows. The triggered_by user_id is forwarded so FastAPI
 // can record it in validation_run.triggered_by.
 //
-// Auth: any authenticated user.
+// Auth: the caller must be able to see the revision under RLS (project member
+// or admin). Frozen revisions can only be re-validated by an admin.
 //
 // POST /functions/v1/trigger_validation
 // Authorization: Bearer <user-jwt>
@@ -22,7 +23,11 @@
 //   INTERNAL_API_SECRET       (shared secret forwarded to FastAPI to restrict /validate access)
 // =============================================================================
 
-import { CORS_HEADERS, handleCors, json, requireAuth } from "../_shared/utils.ts";
+import {
+  adminClient, CORS_HEADERS, handleCors, isAdmin, json, requireAuth, userClient,
+} from "../_shared/utils.ts";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const FASTAPI_URL     = (Deno.env.get("FASTAPI_URL") ?? "").replace(/\/$/, "");
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_API_SECRET") ?? "";
@@ -33,7 +38,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const authResult = await requireAuth(req.headers.get("Authorization"));
+  const authHeader = req.headers.get("Authorization");
+  const authResult = await requireAuth(authHeader);
   if (authResult instanceof Response) return authResult;
   const { callerId } = authResult;
 
@@ -46,8 +52,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   const revisionId = (body.revision_id ?? "").trim();
-  if (!revisionId) {
-    return json({ error: "Bad Request: revision_id is required" }, 400);
+  if (!UUID_RE.test(revisionId)) {
+    return json({ error: "Bad Request: revision_id must be a UUID" }, 400);
+  }
+
+  // ── Authorization ─────────────────────────────────────────────────────────
+  // Look the revision up as the caller: RLS only returns it to admins and
+  // members of its project. FastAPI /validate runs as the table owner and
+  // checks nothing, so this is the only gate.
+  const { data: revision, error: revErr } = await userClient(authHeader!)
+    .from("battery_model_revision")
+    .select("revision_id, frozen_at")
+    .eq("revision_id", revisionId)
+    .maybeSingle();
+  if (revErr) {
+    console.error("trigger_validation: revision lookup failed:", revErr);
+    return json({ error: "Server Error: could not look up the revision" }, 500);
+  }
+  if (!revision) {
+    return json({ error: "Not Found: revision not found or you do not have access" }, 404);
+  }
+  if (revision.frozen_at && !(await isAdmin(adminClient(), callerId))) {
+    return json({ error: "Locked: this revision is frozen; only an admin can re-validate it" }, 423);
   }
 
   // ── Proxy to FastAPI /validate ────────────────────────────────────────────
