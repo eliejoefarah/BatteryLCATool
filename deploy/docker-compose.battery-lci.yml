@@ -16,6 +16,10 @@ services:
     image: battery-lci-api:latest
     container_name: battery-lci-api
     restart: unless-stopped
+    # Upload spool files go to /tmp: keep them in a capped tmpfs, not on the
+    # /data disk Postgres shares, so uploads can never fill it.
+    tmpfs:
+      - /tmp:size=512m
     depends_on:
       db:
         condition: service_healthy

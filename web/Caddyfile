@@ -6,6 +6,12 @@
 	servers {
 		# Trust X-Forwarded-* headers from the F5 (private address space)
 		trusted_proxies static private_ranges
+		# Slow clients can't hold connections open indefinitely: headers must
+		# arrive within 10s, a whole body (up to 52 MB) within 5 minutes.
+		timeouts {
+			read_header 10s
+			read_body 5m
+		}
 	}
 }
 
@@ -13,6 +19,10 @@
 	encode gzip
 
 	handle /api/* {
+		# Import accepts xlsx files up to 50 MB (+ multipart overhead)
+		request_body {
+			max_size 52MB
+		}
 		reverse_proxy fastapi:8000
 	}
 
@@ -21,6 +31,10 @@
 	# so broader matchers like /auth/* would expose Studio publicly.
 	@supabase path /auth/v1/* /rest/v1/* /storage/v1/* /functions/v1/*
 	handle @supabase {
+		# Auth, PostgREST, Storage and Edge Function calls from the app are small
+		request_body {
+			max_size 10MB
+		}
 		reverse_proxy kong:8000
 	}
 
