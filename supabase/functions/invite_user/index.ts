@@ -57,14 +57,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // ── Send invite via Supabase Auth Admin API ───────────────────────────────
   // inviteUserByEmail sends the built-in invite email and creates the auth.users row.
-  // role is stored in user_metadata so on_user_created can read it.
+  // The role is NOT put in user_metadata (users can write that themselves); it
+  // is written to app_user below with the service role, the only source of
+  // truth for roles.
   const { data, error } = await svc.auth.admin.inviteUserByEmail(email, {
     // The SPA root: supabase-js picks the session up from the URL fragment on
     // any route (there is no /auth/callback page).
     redirectTo: APP_BASE_URL ? `${APP_BASE_URL}/` : undefined,
     data: {
       display_name: displayName ?? email.split("@")[0],
-      role,
     },
   });
 
@@ -75,9 +76,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const newUserId = data.user.id;
 
-  // ── Pre-create app_user row ───────────────────────────────────────────────
-  // on_user_created will also upsert on first login; this makes the row
-  // immediately visible in the admin UI before the invite is accepted.
+  // ── Write the app_user row with the chosen role ───────────────────────────
+  // This is where invited users get their role. on_user_created (fired by the
+  // auth.users insert above) only inserts a 'manufacturer' row if none exists
+  // and never overwrites, so the admin's choice wins whichever runs first.
   const { error: upsertErr } = await svc.from("app_user").upsert(
     {
       user_id:      newUserId,
@@ -89,8 +91,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     { onConflict: "user_id" },
   );
   if (upsertErr) {
-    // Non-fatal: on_user_created will retry on first login.
-    console.warn("invite_user: pre-create app_user failed:", upsertErr);
+    // The account exists but may be left as 'manufacturer'; tell the admin.
+    console.error("invite_user: setting app_user role failed:", upsertErr);
+    return json({ error: `Invite sent, but setting the role failed: ${upsertErr.message}` }, 500);
   }
 
   console.log(

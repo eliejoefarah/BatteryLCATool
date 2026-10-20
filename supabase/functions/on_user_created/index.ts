@@ -82,12 +82,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     record.raw_user_meta_data?.full_name ??
     (email ? email.split("@")[0] : null);
 
-  // The invite_user function may have pre-set a role in metadata.
-  const requestedRole = record.raw_user_meta_data?.role;
-  const VALID_ROLES = ["admin", "manufacturer", "reviewer"];
-  const role = VALID_ROLES.includes(requestedRole ?? "") ? requestedRole! : "manufacturer";
-
-  // ── Upsert into app_user ────────────────────────────────────────────────────
+  // ── Insert app_user (never overwrite) ───────────────────────────────────────
+  // The role is NOT taken from raw_user_meta_data: that is user_metadata, which
+  // the user supplies themselves at sign-up, so trusting it would let anyone
+  // who can create an account make themselves admin. New accounts get the
+  // least-privileged role; invite_user writes the admin's chosen role to
+  // app_user itself (service role). ignoreDuplicates keeps that row whichever
+  // of the two runs first.
   const svc = adminClient();
   const { error } = await svc
     .from("app_user")
@@ -96,10 +97,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         user_id:      userId,
         email:        email,
         display_name: displayName ?? null,
-        role:         role,
+        role:         "manufacturer",
         is_active:    true,
       },
-      { onConflict: "user_id" },
+      { onConflict: "user_id", ignoreDuplicates: true },
     );
 
   if (error) {
@@ -107,6 +108,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: error.message }, 500);
   }
 
-  console.log(`on_user_created: app_user created for ${userId} (${email}, role=${role})`);
+  console.log(`on_user_created: app_user ensured for ${userId} (${email})`);
   return json({ ok: true, user_id: userId });
 });

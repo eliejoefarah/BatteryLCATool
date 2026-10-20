@@ -49,6 +49,8 @@ pw=$(env_get POSTGRES_PASSWORD)
 # Settings that are unsafe or broken when wrong
 [[ "$(env_get DISABLE_SIGNUP)" == "true" ]] \
   || fail "DISABLE_SIGNUP must be true (open sign-up lets anyone create an account)"
+[[ "$(env_get ENABLE_ANONYMOUS_USERS)" == "false" ]] \
+  || fail "ENABLE_ANONYMOUS_USERS must be false (anonymous sign-ins would create accounts without an invite)"
 [[ "$(env_get FUNCTIONS_VERIFY_JWT)" == "false" ]] \
   || fail "FUNCTIONS_VERIFY_JWT must be false (on_user_created is called with the webhook secret, not a JWT)"
 api_ext=$(env_get API_EXTERNAL_URL)

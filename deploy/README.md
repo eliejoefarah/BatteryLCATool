@@ -182,6 +182,7 @@ Uploaded and exported files live in `/data/battery-lci/stack/volumes/storage/`. 
 
 ## Known gaps
 
+- **SMTP needs TLS if it uses a password.** GoTrue refuses to send SMTP credentials over an unencrypted connection (invites then fail with `Error sending invite email`, and the auth logs say `unencrypted connection`). VUB's relay on port 587 should offer STARTTLS. If it doesn't, ask IT for a TLS port, or for relay without credentials (`SMTP_USER`/`SMTP_PASS` empty).
 - **SMTP is required to log in at all.** The login page only offers email links (`signInWithOtp`), so until VUB IT provides the relay, nobody can log in, including users created in Studio. Stopgap for testing: generate a login link over the SSH tunnel with the service key (`POST http://localhost:8000/auth/v1/admin/generate_link` with `{"type":"magiclink","email":"…"}`) and open the returned `action_link`.
 - **F5 → VM port 80** (confirmed by IT). `web` listens on 80 (`WEB_HTTP_PORT`). If the F5 can't connect, the VM's own firewall (`fwbuilder`) may need the port opened by IT.
 - **External access** is being requested by IT. Until then the site is VPN-only.
