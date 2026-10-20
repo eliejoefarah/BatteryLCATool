@@ -54,10 +54,12 @@ from __future__ import annotations
 #                  'activity', 'database', or 'format'
 # =============================================================================
 
+import asyncio
 import io
 import json
 import logging
 import re
+import zipfile
 import uuid
 from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
@@ -186,6 +188,66 @@ def _hdr(row: tuple[Any, ...]) -> dict[str, int]:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Size limits for uploaded workbooks
+# ---------------------------------------------------------------------------
+# An xlsx is a zip of XML, so a small upload can expand enormously: openpyxl
+# pads every row out to its last cell (one cell in column XFD makes a 16,384-
+# wide row) and trusts the sheet's row numbers (a single row numbered 1,048,576
+# yields a million padding rows). Real templates are ~5 sheets x ~60 rows x
+# ~10 columns, so these limits are generous.
+MAX_SHEETS = 100
+MAX_DATA_ROWS = 20_000          # rows with data, per sheet
+MAX_COLS = 64                   # columns read per row; the parsers use <= 10
+MAX_UNCOMPRESSED_BYTES = 250 * 1024 * 1024
+
+
+def _check_workbook_size(content: bytes) -> None:
+    """Reject non-xlsx uploads and decompression bombs before openpyxl reads them.
+
+    openpyxl loads sharedStrings.xml fully into memory, so the total
+    uncompressed size has to be checked up front.
+    """
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            total = sum(info.file_size for info in zf.infolist())
+            sheets = sum(1 for n in zf.namelist() if n.startswith("xl/worksheets/sheet"))
+    except zipfile.BadZipFile:
+        raise ValueError("the file is not a valid .xlsx workbook") from None
+    if total > MAX_UNCOMPRESSED_BYTES:
+        raise ValueError(
+            f"the workbook expands to {total // (1024 * 1024)} MB when unpacked "
+            f"(limit {MAX_UNCOMPRESSED_BYTES // (1024 * 1024)} MB)"
+        )
+    if sheets > MAX_SHEETS:
+        raise ValueError(f"the workbook has {sheets} sheets (limit {MAX_SHEETS})")
+
+
+def _read_rows(ws) -> list[tuple]:
+    """Read a worksheet's rows with explicit bounds.
+
+    At most MAX_COLS columns per row. Empty rows are kept only when a data row
+    follows them (so row positions stay correct) and trailing empty rows are
+    dropped, so padding rows cost nothing to store. More than MAX_DATA_ROWS
+    rows of data raises ValueError instead of silently truncating.
+    """
+    rows: list[tuple] = []
+    pending_empty = 0
+    for row in ws.iter_rows(max_col=MAX_COLS, values_only=True):
+        if all(v is None for v in row):
+            pending_empty += 1
+            continue
+        if len(rows) + pending_empty >= MAX_DATA_ROWS:
+            raise ValueError(
+                f"sheet '{ws.title}' has more than {MAX_DATA_ROWS} rows; "
+                "split the data or remove unused rows"
+            )
+        rows.extend([(None,) * MAX_COLS] * pending_empty)
+        pending_empty = 0
+        rows.append(row)
+    return rows
+
+
 def _detect_format(wb: openpyxl.Workbook) -> Literal["tabular", "brightway", "vub_template"]:
     lc = {s.lower() for s in wb.sheetnames}
     if "activities" in lc and "exchanges" in lc:
@@ -238,7 +300,7 @@ def _parse_tabular(
     # ── Parameters ────────────────────────────────────────────────────────
     if "parameters" in lc_v:
         ws = wb_vals[lc_v["parameters"]]
-        rows = list(ws.iter_rows(values_only=True))
+        rows = _read_rows(ws)
         if rows:
             idx = _hdr(rows[0])
             for r_i, row in enumerate(rows[1:], start=2):
@@ -262,7 +324,7 @@ def _parse_tabular(
     # ── Activities ────────────────────────────────────────────────────────
     if "activities" in lc_v:
         ws = wb_vals[lc_v["activities"]]
-        rows = list(ws.iter_rows(values_only=True))
+        rows = _read_rows(ws)
         if rows:
             idx = _hdr(rows[0])
             for r_i, row in enumerate(rows[1:], start=2):
@@ -286,8 +348,8 @@ def _parse_tabular(
     if "exchanges" in lc_v:
         ws_v = wb_vals[lc_v["exchanges"]]
         ws_f = wb_fmls[lc_f["exchanges"]] if "exchanges" in lc_f else None
-        rows_v = list(ws_v.iter_rows(values_only=True))
-        rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
+        rows_v = _read_rows(ws_v)
+        rows_f = _read_rows(ws_f) if ws_f else []
         if rows_v:
             idx = _hdr(rows_v[0])
             qty_col = idx.get("quantity", 2)
@@ -361,8 +423,8 @@ def _parse_brightway(
 
         ws_v = wb_vals[sheet_name]
         ws_f = wb_fmls[sheet_name] if sheet_name in wb_fmls.sheetnames else None
-        rows_v = list(ws_v.iter_rows(values_only=True))
-        rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
+        rows_v = _read_rows(ws_v)
+        rows_f = _read_rows(ws_f) if ws_f else []
 
         i = 0
         while i < len(rows_v):
@@ -546,8 +608,8 @@ def _parse_vub_template(
 
         ws_v = wb_vals[sheet_name]
         ws_f = wb_fmls[sheet_name] if sheet_name in wb_fmls.sheetnames else None
-        rows_v = list(ws_v.iter_rows(values_only=True))
-        rows_f = list(ws_f.iter_rows(values_only=True)) if ws_f else []
+        rows_v = _read_rows(ws_v)
+        rows_f = _read_rows(ws_f) if ws_f else []
 
         act_comment: str | None = None   # "Process description:" row col B
         ref_name: str | None = None
@@ -968,27 +1030,30 @@ async def run_import(
         region_rows = (await db.execute(text("SELECT code FROM region_catalog"))).fetchall()
         valid_region_codes: set[str] = {r[0] for r in region_rows}
 
-        # ── 3. Open xlsx twice: computed values + raw formulas ────────────
-        wb_vals = openpyxl.load_workbook(
-            io.BytesIO(content), read_only=True, data_only=True
-        )
-        wb_fmls = openpyxl.load_workbook(
-            io.BytesIO(content), read_only=True, data_only=False
-        )
+        # ── 3. Check size, open xlsx twice (values + formulas), parse ──────
+        # CPU-bound: run in a worker thread so the event loop keeps serving
+        # other requests while a large workbook is parsed.
+        def parse():
+            _check_workbook_size(content)
+            wb_vals = openpyxl.load_workbook(
+                io.BytesIO(content), read_only=True, data_only=True
+            )
+            wb_fmls = openpyxl.load_workbook(
+                io.BytesIO(content), read_only=True, data_only=False
+            )
+            try:
+                fmt = _detect_format(wb_vals)
+                log.info("Import %s: detected format=%s filename=%s", import_job_id, fmt, filename)
+                if fmt == "tabular":
+                    return _parse_tabular(wb_vals, wb_fmls)
+                if fmt == "vub_template":
+                    return _parse_vub_template(wb_vals, wb_fmls)
+                return _parse_brightway(wb_vals, wb_fmls)
+            finally:
+                wb_vals.close()
+                wb_fmls.close()
 
-        # ── 3. Detect format and parse ────────────────────────────────────
-        fmt = _detect_format(wb_vals)
-        log.info("Import %s: detected format=%s filename=%s", import_job_id, fmt, filename)
-
-        if fmt == "tabular":
-            acts, excs, params, parse_errors = _parse_tabular(wb_vals, wb_fmls)
-        elif fmt == "vub_template":
-            acts, excs, params, parse_errors = _parse_vub_template(wb_vals, wb_fmls)
-        else:
-            acts, excs, params, parse_errors = _parse_brightway(wb_vals, wb_fmls)
-
-        wb_vals.close()
-        wb_fmls.close()
+        acts, excs, params, parse_errors = await asyncio.to_thread(parse)
 
         for e in parse_errors:
             result.add_warning(e)
