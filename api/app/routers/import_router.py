@@ -26,13 +26,7 @@ from __future__ import annotations
 #
 # Auth
 # ────
-# Verification strategy (tried in order):
-#   1. JWKS — fetched from {SUPABASE_URL}/auth/v1/.well-known/jwks.json and
-#      cached per process. Handles ES256 (P-256) keys used by production
-#      Supabase projects that have migrated off the legacy shared secret.
-#   2. HS256 fallback — uses SUPABASE_JWT_SECRET env var (or the Supabase CLI
-#      local-dev default). Covers local development and the transition window
-#      while old HS256 tokens are still valid.
+# app.auth.get_active_user_id: valid Supabase JWT and an active account.
 # =============================================================================
 
 import hashlib
@@ -41,17 +35,14 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
 from uuid import UUID
 
-import jwt
-from jwt import PyJWKClient
-from jwt.exceptions import PyJWKClientError
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_active_user_id
 from app.db import get_db, get_service_role_client
 from app.models.import_models import BatchImportResult
 from app.services.import_service import run_import
@@ -64,29 +55,6 @@ router = APIRouter(prefix="/import", tags=["import"])
 # Config
 # ---------------------------------------------------------------------------
 
-# HS256 fallback secret — used when JWKS verification fails (local dev only).
-# In production SUPABASE_JWT_SECRET must be set; the fallback is intentionally
-# empty so that HS256 verification fails rather than silently accepting tokens
-# signed with the publicly-known Supabase CLI development default.
-_HS256_SECRET: str | None = os.environ.get("SUPABASE_JWT_SECRET") or None
-
-# JWKS client — lazily initialised, cached for the process lifetime.
-# Handles ES256 (P-256) keys used by production Supabase since the HS256 legacy
-# secret was deprecated. Cache means the JWKS endpoint is only hit once per start.
-_jwks_client: PyJWKClient | None = None
-
-
-def _get_jwks_client() -> PyJWKClient:
-    global _jwks_client
-    if _jwks_client is None:
-        supabase_url = os.environ.get("SUPABASE_URL", "http://127.0.0.1:54321")
-        _jwks_client = PyJWKClient(
-            f"{supabase_url}/auth/v1/.well-known/jwks.json",
-            cache_keys=True,
-        )
-    return _jwks_client
-
-
 _STORAGE_BUCKET = "lca-files"
 _MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
@@ -94,54 +62,6 @@ _MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 _DEFAULT_CATALOG_ID = UUID("00000000-0000-0000-0001-000000000001")
 
 _XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-
-# ---------------------------------------------------------------------------
-# Auth dependency
-# ---------------------------------------------------------------------------
-
-
-async def get_current_user_id(
-    authorization: Annotated[str | None, Header()] = None,
-) -> UUID:
-    """Decode the Supabase Bearer JWT and return the caller's user_id (sub).
-
-    Tries JWKS (ES256/RS256) first — required for production Supabase projects
-    that have migrated to the new ECC signing keys. Falls back to the legacy
-    HS256 shared secret for local development and the transition window.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Missing or invalid Authorization header.",
-        )
-    token = authorization.removeprefix("Bearer ")
-    try:
-        # 1. Try JWKS — production ES256 / RS256 tokens
-        try:
-            client = _get_jwks_client()
-            signing_key = client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["ES256", "RS256"],
-                options={"verify_aud": False},
-            )
-        except (PyJWKClientError, Exception):
-            # 2. Fall back to HS256 — local dev only (requires SUPABASE_JWT_SECRET env var)
-            if not _HS256_SECRET:
-                raise HTTPException(status_code=401, detail="Unauthorized.")
-            payload = jwt.decode(
-                token,
-                _HS256_SECRET,
-                algorithms=["HS256"],
-                options={"verify_aud": False},
-            )
-        return UUID(payload["sub"])
-    except HTTPException:
-        raise
-    except (jwt.PyJWTError, KeyError, ValueError):
-        raise HTTPException(status_code=401, detail="Unauthorized.")
-
 
 # ---------------------------------------------------------------------------
 # Response model
@@ -252,7 +172,7 @@ async def _authorize_revision_write(
 async def clear_import_data(
     revision_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user_id: UUID = Depends(get_current_user_id),
+    user_id: UUID = Depends(get_active_user_id),
 ) -> None:
     """Remove all imported processes, exchanges, and parameters for a revision.
 
@@ -320,7 +240,7 @@ async def upload_and_import(
         description="Flow catalog set to use for this import.",
     ),
     db: AsyncSession = Depends(get_db),
-    user_id: UUID = Depends(get_current_user_id),
+    user_id: UUID = Depends(get_active_user_id),
 ) -> ImportJobResponse:
     # ── 1. Validate file type and size ────────────────────────────────────
     filename = _safe_display_name(file.filename)

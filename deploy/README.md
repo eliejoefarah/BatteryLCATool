@@ -83,6 +83,10 @@ Logging in via the tunnel at `localhost:8080` won't fully work, because auth red
 
 **How login works.** Users sign in with email + password, or with an emailed sign-in link. Invited users get a "Choose a password" screen when they open their invite link (they can skip it and keep using links). "Forgot password?" emails a reset link. Passwords need 12+ characters, and changing one in Profile requires the current password (settings in `docker-compose.battery-lci.yml`, `auth` service).
 
+**Brute-force protection.** After **6 failed password attempts** an account's password sign-in is locked for an hour, even with the right password (migration `026`). Signing in with an email link or resetting the password clears it at once. An admin can also clear it in Studio's SQL editor: `DELETE FROM app_private.password_lockout WHERE user_id = '<id>';`. Typing the emailed one-time code is disabled at Caddy (`POST /auth/v1/verify` returns 403); the links in the emails keep working.
+
+**Deactivating a user** (admin → Users → Deactivate) removes their access immediately, including any session they have open, and bans the account so they can't log in. Reactivate reverses it. It goes through the `set_user_active` Edge Function; don't change `app_user.is_active` by hand in SQL, or the account won't be banned/unbanned to match.
+
 **First admin user.** Sign-up is disabled, and only admins can invite. Create the first user in Studio (Authentication → Add user) **with a password of 12+ characters**: password login works without SMTP, so this account can log in before the relay exists. The `on_user_created` trigger gives it an `app_user` row with role `manufacturer`. Promote it in the SQL editor:
 ```sql
 UPDATE public.app_user SET role = 'admin' WHERE email = '<you>@vub.be';
@@ -188,6 +192,6 @@ Uploaded and exported files live in `/data/battery-lci/stack/volumes/storage/`. 
 - **SMTP is needed for invites, sign-in links and password resets.** Password login works without it, so the Studio-created admin can log in, but nobody else can be onboarded until VUB IT provides the relay. Stopgap for testing a link-based flow: generate a login link over the SSH tunnel with the service key (`POST http://localhost:8000/auth/v1/admin/generate_link` with `{"type":"magiclink","email":"…"}`) and open the returned `action_link`.
 - **F5 → VM port 80** (confirmed by IT). `web` listens on 80 (`WEB_HTTP_PORT`). If the F5 can't connect, the VM's own firewall (`fwbuilder`) may need the port opened by IT.
 - **External access** is being requested by IT. Until then the site is VPN-only.
-- **Per-IP rate limits on login are not set yet, and they're required before the site is public.** With password login, `/auth/v1/token` would otherwise allow unlimited password guessing. Needs the F5 details from VUB IT (its source IPs, and whether it sends `X-Forwarded-For`) to set `GOTRUE_RATE_LIMIT_HEADER` safely.
+- **Per-IP rate limits are not set yet** (hardening, no longer required to go public: account lockout and the blocked code sign-in cover login brute force). They'd add flood protection and correct client IPs in logs. Needs the F5 details from VUB IT (its source IPs, and whether it sends `X-Forwarded-For`) to set `GOTRUE_RATE_LIMIT_HEADER` and Caddy's `trusted_proxies` safely.
 - **AI Suggest** (flow mapping) calls the Anthropic API, a third party, and is blocked anyway. `ANTHROPIC_API_KEY` is deliberately not set, so the feature is off.
 - **No automatic app-level backups yet.** A nightly cron job for the dump command in **Backups** would make restores quicker than restoring the whole VM.

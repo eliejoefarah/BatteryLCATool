@@ -159,12 +159,15 @@ function UserActions({ user }: { user: AppUser }) {
 
   async function toggleActive() {
     const next = !user.is_active
-    const { error } = await supabase
-      .from('app_user')
-      .update({ is_active: next })
-      .eq('user_id', user.user_id)
+    // Through the Edge Function, not a direct update: it also bans/unbans the
+    // account in Auth, so a deactivated user can't log in at all.
+    const { error } = await supabase.functions.invoke('set_user_active', {
+      body: { user_id: user.user_id, active: next },
+    })
     if (error) {
-      toast.error(error.message)
+      const ctx = (error as { context?: Response }).context
+      const body = ctx ? await ctx.json().catch(() => null) : null
+      toast.error(body?.error ?? error.message)
     } else {
       toast.success(next ? 'User reactivated' : 'User deactivated')
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })

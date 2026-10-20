@@ -56,6 +56,13 @@ services:
       # GoTrue's default of 30 would lock everyone out of email login at busy
       # times. Per-IP limits (GOTRUE_RATE_LIMIT_HEADER) still need the F5 setup.
       GOTRUE_RATE_LIMIT_EMAIL_SENT: "200"
+      # Account lockout: 6 failed password attempts lock password sign-in for
+      # an hour (email-link sign-in or a reset clears it). Migration 026.
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED: "true"
+      GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI: "pg-functions://postgres/app_private/hook_password_verification_attempt"
+      # Email one-time codes: the maximum length GoTrue allows. Code sign-in is
+      # also blocked at Caddy (web/Caddyfile); the app only uses the links.
+      GOTRUE_MAILER_OTP_LENGTH: "10"
 
   functions:
     environment:

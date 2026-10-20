@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.on_user_created]
 verify_jwt = false
+
+[functions.set_user_active]
+verify_jwt = false

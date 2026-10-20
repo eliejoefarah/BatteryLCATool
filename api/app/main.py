@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import get_current_user_id
 from app.middleware import ApiRequestGuard
 from app.routers import router
-from app.routers.import_router import get_current_user_id
 from app.routers.validate_router import router as validate_router
 
 app = FastAPI(title="BatteryLCATool API", version="0.1.0")

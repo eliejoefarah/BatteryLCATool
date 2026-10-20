@@ -15,8 +15,7 @@ from __future__ import annotations
 # bw-search:  any authenticated user (Bearer JWT).
 # bw-mapping: admin role only — checked via get_admin_user_id dependency.
 #
-# Both use the JWKS ES256 + HS256 fallback auth from import_router; the
-# get_current_user_id function is imported directly to avoid duplication.
+# Both use the shared dependencies in app.auth (valid JWT + active account).
 #
 # Schema notes (migration 018)
 # ────────────────────────────
@@ -45,7 +44,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.routers.import_router import get_current_user_id
+from app.auth import get_active_user_id, get_admin_user_id
 
 log = logging.getLogger(__name__)
 
@@ -109,20 +108,6 @@ async def _update_revision_mapped_status(
                 """),
                 {"rid": str(rid)},
             )
-
-
-async def get_admin_user_id(
-    db: AsyncSession = Depends(get_db),
-    user_id: UUID = Depends(get_current_user_id),
-) -> UUID:
-    """Return user_id only when the caller holds the 'admin' role."""
-    row = (await db.execute(
-        text("SELECT role FROM app_user WHERE user_id = :uid"),
-        {"uid": str(user_id)},
-    )).fetchone()
-    if not row or row[0] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required.")
-    return user_id
 
 
 # =============================================================================
@@ -191,7 +176,7 @@ async def bw_search(
         description=f"Maximum results to return (1–{_MAX_LIMIT})",
     ),
     db: AsyncSession = Depends(get_db),
-    _user_id: UUID = Depends(get_current_user_id),
+    _user_id: UUID = Depends(get_active_user_id),
 ) -> BwSearchResponse:
     # ── 1. Catalog size check (drives catalog_seeded flag) ────────────────
     count_row = (await db.execute(text("SELECT COUNT(*) FROM bw_activity_catalog"))).fetchone()

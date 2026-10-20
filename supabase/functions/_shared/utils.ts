@@ -100,21 +100,28 @@ export async function resolveCallerId(authHeader: string | null): Promise<string
   return await _verifyToken(jwt);
 }
 
+async function account(
+  svc: SupabaseClient,
+  userId: string,
+): Promise<{ role: string; is_active: boolean } | null> {
+  const { data, error } = await svc
+    .from("app_user")
+    .select("role, is_active")
+    .eq("user_id", userId)
+    .single();
+  return error || !data ? null : (data as { role: string; is_active: boolean });
+}
+
 /**
- * Return true when the given user_id has role = 'admin' in app_user.
+ * Return true when the given user_id is an active admin in app_user.
  * Uses the service-role client to bypass RLS.
  */
 export async function isAdmin(
   svc: SupabaseClient,
   userId: string,
 ): Promise<boolean> {
-  const { data, error } = await svc
-    .from("app_user")
-    .select("role")
-    .eq("user_id", userId)
-    .single();
-  if (error || !data) return false;
-  return (data as { role: string }).role === "admin";
+  const a = await account(svc, userId);
+  return !!a && a.is_active && a.role === "admin";
 }
 
 /**
@@ -127,18 +134,22 @@ export async function requireAdmin(
 ): Promise<{ callerId: string } | Response> {
   const callerId = await resolveCallerId(authHeader);
   if (!callerId) return json({ error: "Unauthorized: missing or invalid token" }, 401);
-  if (!(await isAdmin(svc, callerId))) return json({ error: "Forbidden: admin role required" }, 403);
+  const a = await account(svc, callerId);
+  if (!a?.is_active) return json({ error: "Forbidden: this account is deactivated" }, 403);
+  if (a.role !== "admin") return json({ error: "Forbidden: admin role required" }, 403);
   return { callerId };
 }
 
 /**
- * Convenience: resolve caller, no role check.
- * Returns { callerId } on success, or a 401 Response on failure.
+ * Convenience: resolve caller and require an active account, no role check.
+ * Returns { callerId } on success, or a 401 / 403 Response on failure.
  */
 export async function requireAuth(
   authHeader: string | null,
 ): Promise<{ callerId: string } | Response> {
   const callerId = await resolveCallerId(authHeader);
   if (!callerId) return json({ error: "Unauthorized: missing or invalid token" }, 401);
+  const a = await account(adminClient(), callerId);
+  if (!a?.is_active) return json({ error: "Forbidden: this account is deactivated" }, 403);
   return { callerId };
 }

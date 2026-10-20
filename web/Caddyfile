@@ -26,6 +26,19 @@
 		reverse_proxy fastapi:8000
 	}
 
+	# Code sign-in: GoTrue checks emailed one-time codes on POST /auth/v1/verify
+	# (email + short code, guessable by brute force). The app only uses the
+	# emailed links, which are GET /auth/v1/verify with a long token, so refuse
+	# the POST form outright.
+	@otp_code_verify {
+		method POST
+		path /auth/v1/verify
+	}
+	handle @otp_code_verify {
+		header Content-Type application/json
+		respond `{"error":"code_sign_in_disabled","msg":"Sign in with the link in the email instead."}` 403
+	}
+
 	# Only the versioned API prefixes the app uses. The gateway sends any path it
 	# doesn't route (e.g. /auth/callback) to Supabase Studio's basic-auth login,
 	# so broader matchers like /auth/* would expose Studio publicly.

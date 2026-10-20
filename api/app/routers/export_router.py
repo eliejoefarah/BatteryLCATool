@@ -29,17 +29,14 @@ import logging
 import os
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
 from uuid import UUID
 
-import jwt
-from fastapi import APIRouter, Depends, Header, HTTPException
-from jwt import PyJWKClient
-from jwt.exceptions import PyJWKClientError
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_admin_user_id
 from app.db import get_db, get_service_role_client
 from app.services.export_service import generate_export_xlsx
 
@@ -51,80 +48,9 @@ router = APIRouter(prefix="/export", tags=["export"])
 # Config
 # ---------------------------------------------------------------------------
 
-_HS256_SECRET: str | None = os.environ.get("SUPABASE_JWT_SECRET") or None
-
-_jwks_client: PyJWKClient | None = None
-
-
-def _get_jwks_client() -> PyJWKClient:
-    global _jwks_client
-    if _jwks_client is None:
-        supabase_url = os.environ.get("SUPABASE_URL", "http://127.0.0.1:54321")
-        _jwks_client = PyJWKClient(
-            f"{supabase_url}/auth/v1/.well-known/jwks.json",
-            cache_keys=True,
-        )
-    return _jwks_client
-
-
 _STORAGE_BUCKET = "exports"
 _XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 _SIGNED_URL_TTL = 3600  # seconds
-
-# ---------------------------------------------------------------------------
-# Auth dependency — admin only
-# ---------------------------------------------------------------------------
-
-
-async def get_admin_user_id(
-    authorization: Annotated[str | None, Header()] = None,
-    db: AsyncSession = Depends(get_db),
-) -> UUID:
-    """Decode the Supabase Bearer JWT and verify the caller is an admin.
-
-    Returns the caller's user_id (UUID) on success.
-    Raises HTTP 401 for invalid/missing tokens and HTTP 403 for non-admins.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header.")
-    token = authorization.removeprefix("Bearer ")
-
-    try:
-        try:
-            client = _get_jwks_client()
-            signing_key = client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["ES256", "RS256"],
-                options={"verify_aud": False},
-            )
-        except (PyJWKClientError, Exception):
-            if not _HS256_SECRET:
-                raise HTTPException(status_code=401, detail="Unauthorized.")
-            payload = jwt.decode(
-                token,
-                _HS256_SECRET,
-                algorithms=["HS256"],
-                options={"verify_aud": False},
-            )
-        user_id = UUID(payload["sub"])
-    except HTTPException:
-        raise
-    except (jwt.PyJWTError, KeyError, ValueError):
-        raise HTTPException(status_code=401, detail="Unauthorized.")
-
-    # Check admin role
-    role_row = (await db.execute(
-        text("SELECT role FROM app_user WHERE user_id = :uid"),
-        {"uid": str(user_id)},
-    )).fetchone()
-
-    if role_row is None or role_row[0] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required.")
-
-    return user_id
-
 
 # ---------------------------------------------------------------------------
 # Request / Response models

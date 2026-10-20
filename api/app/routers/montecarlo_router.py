@@ -33,7 +33,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.routers.bw_mapping_router import get_admin_user_id
+from app.auth import get_admin_user_id
 from app.services.montecarlo_service import (
     aggregate_statistics,
     compute_sensitivity,

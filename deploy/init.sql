@@ -25,6 +25,28 @@ CREATE POLICY exports_admin_read ON storage.objects
     AND (SELECT role FROM public.app_user WHERE user_id = auth.uid()) = 'admin'
   );
 
+-- Deactivated users (app_user.is_active = false) get no Storage access either.
+-- Restrictive: ANDed with the permissive policies above (see migration 025).
+DROP POLICY IF EXISTS require_active_user ON storage.objects;
+CREATE POLICY require_active_user ON storage.objects AS RESTRICTIVE
+  FOR ALL TO authenticated
+  USING ((SELECT public.is_active_user()))
+  WITH CHECK ((SELECT public.is_active_user()));
+
+-- Same policy on public tables added by migrations after 025 (idempotent)
+SELECT public.ensure_active_user_policies();
+
+-- ── Password lockout (migration 026) ─────────────────────────────────────────
+-- Signing in by email link (last_sign_in_at changes) or setting a new password
+-- (encrypted_password changes) clears a password lockout.
+DROP TRIGGER IF EXISTS clear_password_lockout ON auth.users;
+CREATE TRIGGER clear_password_lockout
+  AFTER UPDATE OF last_sign_in_at, encrypted_password ON auth.users
+  FOR EACH ROW
+  WHEN (NEW.last_sign_in_at IS DISTINCT FROM OLD.last_sign_in_at
+        OR NEW.encrypted_password IS DISTINCT FROM OLD.encrypted_password)
+  EXECUTE FUNCTION app_private.clear_password_lockout();
+
 -- ── on_user_created webhook ──────────────────────────────────────────────────
 -- Database webhook on auth.users INSERT → on_user_created Edge Function, which
 -- creates the app_user row. Same trigger the dashboard's Webhooks UI generates.
