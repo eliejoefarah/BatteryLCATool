@@ -19,7 +19,8 @@ from __future__ import annotations
 #
 # 3. No inter-process formula dependencies — formula_user strings may only
 #    reference model_parameter names. References to output quantities of other
-#    processes will fail as undefined variables in asteval.
+#    processes will fail as unknown parameters (see app/services/formula.py
+#    for the allowed formula syntax).
 #
 # 4. Raw sample storage deferred — only statistics and histogram bins are
 #    stored, not raw sample arrays. Results are statistically reproducible
@@ -35,7 +36,8 @@ from typing import Any
 import numpy as np
 import scipy.stats
 from scipy.stats import spearmanr
-from asteval import Interpreter
+
+from app.services.formula import CompiledFormula, FormulaError, compile_formula, evaluate
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -228,9 +230,10 @@ def run_montecarlo_loop(
     """Run the Monte Carlo sampling loop synchronously.
 
     Pre-samples all distributions once as numpy arrays of shape (n_runs,),
-    then iterates run-by-run, populating a fresh asteval Interpreter symbol
-    table from the pre-sampled arrays and evaluating each elementary exchange
-    formula.
+    then iterates run-by-run, evaluating each exchange formula with that
+    run's parameter values. Formulas are untrusted (they come from uploaded
+    spreadsheets): each is validated and compiled once by app.services.formula,
+    which only allows arithmetic on numbers and parameters.
 
     Returns:
         run_results       — list of {_FlowKey: float} dicts, one per successful run
@@ -241,9 +244,22 @@ def run_montecarlo_loop(
                              aligned with run_results for Spearman sensitivity analysis
 
     Raises:
-        ValueError if more than 10% of runs fail, including the unique failing
-        formula strings in the message.
+        ValueError if a formula is not allowed, or if more than 10% of runs
+        fail, including the failing formula strings in the message.
     """
+    # Validate and compile every distinct formula once, up front: an invalid
+    # formula would fail every run anyway.
+    compiled: dict[str, CompiledFormula] = {}
+    invalid: list[str] = []
+    for exc in exchanges:
+        if exc.formula_user and exc.formula_user not in compiled:
+            try:
+                compiled[exc.formula_user] = compile_formula(exc.formula_user)
+            except FormulaError as err:
+                invalid.append(f"{exc.formula_user!r} ({err})")
+    if invalid:
+        raise ValueError("Formulas not allowed: " + "; ".join(sorted(set(invalid))))
+
     # Pre-sample all distributions up front
     samples: dict[str, np.ndarray] = {}
     for p in parameters:
@@ -258,18 +274,16 @@ def run_montecarlo_loop(
     success_indices: list[int] = []
 
     for i in range(n_runs):
-        aeval = Interpreter()
-        for name, arr in samples.items():
-            aeval.symtable[name] = float(arr[i])
+        values = {name: float(arr[i]) for name, arr in samples.items()}
 
         flow_totals: defaultdict[_FlowKey, float] = defaultdict(float)
         run_failed = False
 
         for exc in exchanges:
             if exc.formula_user:
-                formula = exc.formula_user.lstrip("=")
-                qty = aeval(formula)
-                if aeval.error:
+                try:
+                    qty = evaluate(compiled[exc.formula_user], values)
+                except FormulaError:
                     failed_formulas.append(exc.formula_user)
                     run_failed = True
                     break

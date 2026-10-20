@@ -14,6 +14,7 @@ from __future__ import annotations
 #   GET    /run/{run_id}/export        — download multi-sheet xlsx
 # =============================================================================
 
+import asyncio
 import io
 import json
 import logging
@@ -202,19 +203,21 @@ async def trigger_montecarlo(
         parameters = preflight_params
         exchanges = await load_exchanges(revision_id, db)
 
-        run_results, failed_runs, _failed_formulas, samples_successful = (
-            run_montecarlo_loop(parameters, exchanges, n_runs)
-        )
+        # CPU-bound: run it in a worker thread so the event loop keeps serving
+        # other users' requests while the simulation runs.
+        def compute():
+            run_results, failed_runs, _failed_formulas, samples_successful = (
+                run_montecarlo_loop(parameters, exchanges, n_runs)
+            )
+            all_flow_keys = list({key for run in run_results for key in run.keys()})
+            flows_stats = aggregate_statistics(run_results, all_flow_keys)
+            flow_arrays = {
+                key: np.array([run.get(key, 0.0) for run in run_results])
+                for key in all_flow_keys
+            }
+            return failed_runs, flows_stats, compute_sensitivity(samples_successful, flow_arrays)
 
-        all_flow_keys = list({key for run in run_results for key in run.keys()})
-
-        flows_stats = aggregate_statistics(run_results, all_flow_keys)
-
-        flow_arrays = {
-            key: np.array([run.get(key, 0.0) for run in run_results])
-            for key in all_flow_keys
-        }
-        sensitivity_rows = compute_sensitivity(samples_successful, flow_arrays)
+        failed_runs, flows_stats, sensitivity_rows = await asyncio.to_thread(compute)
 
         results_blob = {
             "n_runs": n_runs,
