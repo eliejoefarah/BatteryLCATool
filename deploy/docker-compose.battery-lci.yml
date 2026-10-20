@@ -45,6 +45,18 @@ services:
     ports:
       - "${WEB_HTTP_PORT:-80}:80"
 
+  auth:
+    environment:
+      # Password login (alongside magic links): users choose a password when
+      # accepting their invite. 12+ characters; changing it needs the current
+      # one, so a hijacked session can't silently lock the owner out.
+      GOTRUE_PASSWORD_MIN_LENGTH: "12"
+      GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD: "true"
+      # Emails per hour for the whole instance (invites, links, resets).
+      # GoTrue's default of 30 would lock everyone out of email login at busy
+      # times. Per-IP limits (GOTRUE_RATE_LIMIT_HEADER) still need the F5 setup.
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: "200"
+
   functions:
     environment:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET not set in .env}

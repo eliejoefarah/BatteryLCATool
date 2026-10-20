@@ -1,7 +1,13 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, FlaskConical, FolderOpen, GitBranch, ShieldCheck, User } from 'lucide-react'
+import { CalendarDays, FlaskConical, FolderOpen, GitBranch, KeyRound, ShieldCheck, User } from 'lucide-react'
+import { toast } from 'sonner'
+import { MIN_PASSWORD_LENGTH, passwordProblem } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/auth'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 import {
   Dialog,
   DialogContent,
@@ -98,6 +104,100 @@ function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 // ---------------------------------------------------------------------------
+// Change password
+// ---------------------------------------------------------------------------
+
+function ChangePassword() {
+  const [open, setOpen] = useState(false)
+  const [current, setCurrent] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function reset() {
+    setOpen(false); setCurrent(''); setPassword(''); setConfirm(''); setError(null)
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    const problem = passwordProblem(password, confirm)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    setSaving(true)
+    setError(null)
+    // The server requires the current password when one is set
+    // (GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD); users who
+    // never chose one leave the field empty.
+    const { error } = await supabase.auth.updateUser(
+      current ? { password, current_password: current } : { password },
+    )
+    setSaving(false)
+    if (error) {
+      setError(error.message)
+      return
+    }
+    toast.success('Password changed.')
+    reset()
+  }
+
+  if (!open) {
+    return (
+      <Button variant="outline" className="w-full" onClick={() => setOpen(true)}>
+        <KeyRound className="mr-2 h-4 w-4" />
+        Change password
+      </Button>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSave} className="space-y-3 rounded-lg border p-3">
+      <div className="space-y-1">
+        <Label htmlFor="current-password">Current password</Label>
+        <Input
+          id="current-password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Leave empty if you never set one"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="profile-new-password">New password</Label>
+        <Input
+          id="profile-new-password"
+          type="password"
+          autoComplete="new-password"
+          minLength={MIN_PASSWORD_LENGTH}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="profile-confirm-password">Repeat new password</Label>
+        <Input
+          id="profile-confirm-password"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          required
+        />
+      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={reset}>Cancel</Button>
+        <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+      </div>
+    </form>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Dialog
 // ---------------------------------------------------------------------------
 
@@ -158,6 +258,8 @@ export default function ProfileDialog({ open, onClose }: Props) {
           <StatTile icon={<GitBranch className="h-4 w-4" />}    label="Revisions" value={stats?.revisionCount} />
           <StatTile icon={<FlaskConical className="h-4 w-4" />} label="Validations run" value={stats?.validationRunCount} />
         </div>
+
+        <ChangePassword />
       </DialogContent>
     </Dialog>
   )

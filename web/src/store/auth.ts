@@ -1,18 +1,42 @@
 import { create } from 'zustand'
 import type { User } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { PASSWORD_SETUP_KEY, supabase } from '../lib/supabase'
+
+export type PasswordSetup = 'invite' | 'recovery' | null
 
 interface AuthState {
   user: User | null
   role: string | null
   loading: boolean
+  /** Set when the user arrived from an invite or password-reset link. */
+  passwordSetup: PasswordSetup
+}
+
+function initialPasswordSetup(): PasswordSetup {
+  try {
+    const v = window.sessionStorage.getItem(PASSWORD_SETUP_KEY)
+    return v === 'invite' || v === 'recovery' ? v : null
+  } catch {
+    return null
+  }
 }
 
 export const useAuthStore = create<AuthState>()(() => ({
   user: null,
   role: null,
   loading: true,
+  passwordSetup: initialPasswordSetup(),
 }))
+
+/** Close the "choose a password" step (saved, skipped or cancelled). */
+export function finishPasswordSetup() {
+  try {
+    window.sessionStorage.removeItem(PASSWORD_SETUP_KEY)
+  } catch {
+    // storage unavailable: the in-memory state below is enough
+  }
+  useAuthStore.setState({ passwordSetup: null })
+}
 
 async function fetchRole(userId: string): Promise<string | null> {
   const { data } = await supabase

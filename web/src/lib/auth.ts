@@ -9,6 +9,18 @@ export interface AuthUser {
   role: AppUserRole | null
 }
 
+/** Keep in sync with GOTRUE_PASSWORD_MIN_LENGTH (deploy/docker-compose.battery-lci.yml). */
+export const MIN_PASSWORD_LENGTH = 12
+
+/** Client-side check before sending a new password; returns a message or null. */
+export function passwordProblem(password: string, confirm: string): string | null {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+  }
+  if (password !== confirm) return 'The two passwords do not match.'
+  return null
+}
+
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error

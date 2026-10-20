@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from './components/ui/sonner'
 import AdminRoute from './components/AdminRoute'
 import InactivityDialog from './components/InactivityDialog'
+import SetPasswordDialog from './components/SetPasswordDialog'
 import Unauthorized from './pages/Unauthorized'
 import Login from './pages/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -137,6 +138,8 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
+      {/* After an invite or password-reset link: choose a password */}
+      <SetPasswordDialog />
       {/* 1 min inactivity → "still there?" dialog → 30 s grace → sign out */}
       <InactivityDialog timeoutMs={60*60_000} />
     </BrowserRouter>

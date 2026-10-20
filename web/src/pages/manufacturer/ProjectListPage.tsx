@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FolderOpen, ChevronRight } from 'lucide-react'
 import { useProjects } from '../../hooks/useProjects'
 import { useAuthStore } from '../../store/auth'
-import { supabase } from '../../lib/supabase'
-import { Button } from '../../components/ui/button'
+import TopBar from '../../components/TopBar'
 import { Skeleton } from '../../components/ui/skeleton'
 
 export default function ProjectListPage() {
@@ -19,26 +18,12 @@ export default function ProjectListPage() {
     }
   }, [user, authLoading, navigate])
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    navigate('/login', { replace: true })
-  }
-
   if (authLoading || !user) return null
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="flex h-12 items-center justify-between border-b bg-white px-6">
-        <span className="text-sm font-semibold text-slate-800">
-          Battery LCA Tool
-        </span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">{user.email}</span>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            Sign out
-          </Button>
-        </div>
-      </header>
+      {/* Shared top bar: user menu with Profile (incl. change password) and Sign out */}
+      <TopBar />
 
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-6 text-xl font-semibold text-slate-900">

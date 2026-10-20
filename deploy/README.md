@@ -81,7 +81,9 @@ docker exec battery-lci-api python -c "import urllib.request;print(urllib.reques
 
 Logging in via the tunnel at `localhost:8080` won't fully work, because auth redirects and the frontend's baked-in URLs point at `https://battery-lci.vub.be`. Use the tunnel to check that pages load, and the real URL for login.
 
-**First admin user.** Sign-up is disabled, and only admins can invite. **Login is by email link only, so nobody can log in until SMTP works** (see Known gaps). Create the first user in Studio (Authentication → Add user). The `on_user_created` trigger gives it an `app_user` row with role `manufacturer`. Promote it in the SQL editor:
+**How login works.** Users sign in with email + password, or with an emailed sign-in link. Invited users get a "Choose a password" screen when they open their invite link (they can skip it and keep using links). "Forgot password?" emails a reset link. Passwords need 12+ characters, and changing one in Profile requires the current password (settings in `docker-compose.battery-lci.yml`, `auth` service).
+
+**First admin user.** Sign-up is disabled, and only admins can invite. Create the first user in Studio (Authentication → Add user) **with a password of 12+ characters**: password login works without SMTP, so this account can log in before the relay exists. The `on_user_created` trigger gives it an `app_user` row with role `manufacturer`. Promote it in the SQL editor:
 ```sql
 UPDATE public.app_user SET role = 'admin' WHERE email = '<you>@vub.be';
 ```
@@ -183,8 +185,9 @@ Uploaded and exported files live in `/data/battery-lci/stack/volumes/storage/`. 
 ## Known gaps
 
 - **SMTP needs TLS if it uses a password.** GoTrue refuses to send SMTP credentials over an unencrypted connection (invites then fail with `Error sending invite email`, and the auth logs say `unencrypted connection`). VUB's relay on port 587 should offer STARTTLS. If it doesn't, ask IT for a TLS port, or for relay without credentials (`SMTP_USER`/`SMTP_PASS` empty).
-- **SMTP is required to log in at all.** The login page only offers email links (`signInWithOtp`), so until VUB IT provides the relay, nobody can log in, including users created in Studio. Stopgap for testing: generate a login link over the SSH tunnel with the service key (`POST http://localhost:8000/auth/v1/admin/generate_link` with `{"type":"magiclink","email":"…"}`) and open the returned `action_link`.
+- **SMTP is needed for invites, sign-in links and password resets.** Password login works without it, so the Studio-created admin can log in, but nobody else can be onboarded until VUB IT provides the relay. Stopgap for testing a link-based flow: generate a login link over the SSH tunnel with the service key (`POST http://localhost:8000/auth/v1/admin/generate_link` with `{"type":"magiclink","email":"…"}`) and open the returned `action_link`.
 - **F5 → VM port 80** (confirmed by IT). `web` listens on 80 (`WEB_HTTP_PORT`). If the F5 can't connect, the VM's own firewall (`fwbuilder`) may need the port opened by IT.
 - **External access** is being requested by IT. Until then the site is VPN-only.
+- **Per-IP rate limits on login are not set yet, and they're required before the site is public.** With password login, `/auth/v1/token` would otherwise allow unlimited password guessing. Needs the F5 details from VUB IT (its source IPs, and whether it sends `X-Forwarded-For`) to set `GOTRUE_RATE_LIMIT_HEADER` safely.
 - **AI Suggest** (flow mapping) calls the Anthropic API, a third party, and is blocked anyway. `ANTHROPIC_API_KEY` is deliberately not set, so the feature is off.
 - **No automatic app-level backups yet.** A nightly cron job for the dump command in **Backups** would make restores quicker than restoring the whole VM.
