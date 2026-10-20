@@ -18,7 +18,9 @@ from __future__ import annotations
 # Storage
 # ───────
 # Files are stored at:
-#   lca-files/projects/{project_id}/revisions/{revision_id}/imports/{ts}_{filename}
+#   lca-files/projects/{project_id}/revisions/{revision_id}/imports/{ts}_{artifact_id}.xlsx
+# The key is generated server-side: the client's filename is only kept as a
+# sanitized display name (artifact.filename), never used in the path.
 # If the Storage upload fails (e.g. bucket not yet created), the import still
 # proceeds and the response will have artifact_id=null and a warning.
 #
@@ -36,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Annotated
@@ -163,13 +166,35 @@ class ImportJobResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _safe_display_name(name: str | None) -> str:
+    """Reduce a client-supplied upload filename to a harmless display label.
+
+    Keeps only the final path component (so '../../x.xlsx' or 'a\\b.xlsx'
+    can't smuggle path segments), replaces anything outside a conservative
+    character set, and caps the length. Never used to build a storage path.
+    """
+    base = (name or "").replace("\\", "/").rsplit("/", 1)[-1]
+    # \w is Unicode-aware, so accented names (é, ë, ...) survive; control
+    # characters, quotes, <>, etc. become "_".
+    base = re.sub(r"[^\w.() -]", "_", base).strip(" .")
+    if len(base) > 120:
+        stem, ext = os.path.splitext(base)
+        base = stem[: 120 - len(ext)] + ext
+    return base or "import.xlsx"
+
+
+# ---------------------------------------------------------------------------
 # Authorization
 # ---------------------------------------------------------------------------
 
 
 async def _authorize_revision_write(
     db: AsyncSession, revision_id: UUID, user_id: UUID
-) -> UUID:
+) -> tuple[UUID, bool]:
     """Allow writing a revision's process data on the same terms as RLS.
 
     This router connects as the table owner, so RLS doesn't apply and the
@@ -179,7 +204,7 @@ async def _authorize_revision_write(
 
     Locks the revision row (FOR UPDATE) for the rest of the transaction, so a
     concurrent freeze can't land between this check and the writes.
-    Returns the revision's project_id.
+    Returns (project_id, caller_is_admin).
     """
     row = (await db.execute(
         text("""
@@ -215,7 +240,7 @@ async def _authorize_revision_write(
                 status_code=403,
                 detail="Only the revision's creator can change its data.",
             )
-    return UUID(str(row.project_id))
+    return UUID(str(row.project_id)), row.role == "admin"
 
 
 # ---------------------------------------------------------------------------
@@ -298,7 +323,7 @@ async def upload_and_import(
     user_id: UUID = Depends(get_current_user_id),
 ) -> ImportJobResponse:
     # ── 1. Validate file type and size ────────────────────────────────────
-    filename = file.filename or "import.xlsx"
+    filename = _safe_display_name(file.filename)
     content_type = file.content_type or ""
     if content_type not in (_XLSX_MIME, "application/octet-stream") and not filename.endswith(".xlsx"):
         raise HTTPException(
@@ -314,13 +339,14 @@ async def upload_and_import(
         )
 
     # ── 2. Verify the caller may write this revision (same rule as RLS) ───
-    project_id = await _authorize_revision_write(db, revision_id, user_id)
+    project_id, is_admin = await _authorize_revision_write(db, revision_id, user_id)
 
     # ── 3. Upload xlsx to Supabase Storage ────────────────────────────────
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    new_artifact_id = uuid.uuid4()
     storage_path = (
         f"projects/{project_id}/revisions/{revision_id}"
-        f"/imports/{timestamp}_{filename}"
+        f"/imports/{timestamp}_{new_artifact_id}.xlsx"
     )
     artifact_id: UUID | None = None
     upload_ok = False
@@ -343,7 +369,7 @@ async def upload_and_import(
 
     # ── 4. Insert artifact row (only if storage upload succeeded) ─────────
     if upload_ok:
-        artifact_id = uuid.uuid4()
+        artifact_id = new_artifact_id
         sha256 = hashlib.sha256(content).hexdigest()
         await db.execute(
             text("""
@@ -376,6 +402,7 @@ async def upload_and_import(
         imported_by=user_id,
         filename=filename,
         force=force,
+        allow_frozen=is_admin,
     )
 
     # ── 6. Handle double-import conflict ──────────────────────────────────

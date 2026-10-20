@@ -897,6 +897,7 @@ async def run_import(
     imported_by: UUID,
     filename: str,
     force: bool = False,
+    allow_frozen: bool = False,
 ) -> BatchImportResult:
     """
     Parse *content* (raw xlsx bytes) and persist results to the database.
@@ -915,6 +916,13 @@ async def run_import(
     process_instance, process_exchange, and model_parameter rows for
     *revision_id* are deleted before re-inserting. All inserts run inside
     a single transaction; a mid-import error triggers a full rollback.
+
+    Frozen revisions
+    ────────────────
+    The data transaction starts by locking the revision row and re-checking
+    ``frozen_at`` (unless *allow_frozen*, i.e. the caller is an admin), so a
+    revision frozen after the router's access check aborts the import instead
+    of being overwritten.
 
     Negative quantities
     ───────────────────
@@ -1005,6 +1013,16 @@ async def run_import(
                     f"defined value — created with value 0. Set the correct "
                     "value in the Parameters panel."
                 )
+
+        # ── 4a. Lock the revision for the data transaction ────────────────
+        # The router's access check ran in an earlier, already-committed
+        # transaction; re-check frozen_at under a row lock held until commit.
+        frozen_at = (await db.execute(
+            text("SELECT frozen_at FROM battery_model_revision WHERE revision_id = :rid FOR UPDATE"),
+            {"rid": str(revision_id)},
+        )).scalar()
+        if frozen_at is not None and not allow_frozen:
+            raise ValueError("the revision was frozen while the import was running")
 
         # ── 4. Idempotency — clear previous rows for this revision ────────
         # Must delete validation data first (FK: validation_issue.exchange_id
